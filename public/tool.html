@@ -1,0 +1,1953 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+<title>Dê Valor · Planejamento Financeiro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
+<!-- PapaParse para CSV -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<!-- SheetJS para XLSX -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* ══ RESET ══════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg-body);color:var(--text-primary);min-height:100dvh;line-height:1.6}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:var(--gold2);border-radius:99px}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:6px}
+img,svg{display:block;max-width:100%}
+
+/* ══ TOKENS ═════════════════════════════════════ */
+:root{
+  --brand:#745341;--brand2:#5a3e2f;--brand3:#3d2a1e;
+  --gold:#C8B18F;--gold2:#b09070;--gold-light:#f5ede0;--gold-pale:#fdf8f2;
+  --bg-body:#faf8f5;--bg-surface:#ffffff;--bg-muted:#f0ebe3;
+  --text-primary:#2a1f17;--text-secondary:#6b5344;--text-muted:#a89080;
+  --border-subtle:rgba(116,83,65,0.08);--border-default:rgba(116,83,65,0.18);
+  --success:#1a7a4a;--success-bg:#f0faf4;
+  --warning:#a07820;--warning-bg:#fdf8e8;
+  --danger:#c0392b;--danger-bg:#fdf0f0;
+  --shadow-sm:0 1px 3px rgba(116,83,65,0.08);
+  --shadow-md:0 4px 16px rgba(116,83,65,0.10);
+  --shadow-lg:0 12px 40px rgba(116,83,65,0.14);
+  --topbar-h:58px;--sidebar-w:240px;
+  --r:10px;--rl:16px;--rxl:24px;
+  --t:150ms ease;--tm:250ms ease;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg-body:#1a140f;--bg-surface:#231a13;--bg-muted:#2d2018;
+  --text-primary:#f0e8df;--text-secondary:#c4a888;--text-muted:#8a6e5a;
+  --border-subtle:rgba(200,177,143,0.07);--border-default:rgba(200,177,143,0.16);
+  --gold-pale:#231a13;--gold-light:#2d2018;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.3);--shadow-md:0 4px 16px rgba(0,0,0,.35);--shadow-lg:0 12px 40px rgba(0,0,0,.45);
+}}
+
+/* ══ AUTH ════════════════════════════════════════ */
+.auth-screen{position:fixed;inset:0;background:var(--brand3);display:flex;align-items:center;justify-content:center;z-index:1000;transition:opacity var(--tm)}
+.auth-screen.hiding{opacity:0;pointer-events:none}
+.auth-box{background:var(--bg-surface);border-radius:var(--rxl);padding:48px 44px;width:100%;max-width:420px;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;align-items:center;gap:24px;margin:16px}
+.auth-divider{width:100%;height:1px;background:var(--border-subtle)}
+.auth-title{font-family:'Playfair Display',Georgia,serif;font-size:1.3rem;color:var(--brand);text-align:center}
+.auth-form{width:100%;display:flex;flex-direction:column;gap:14px}
+.auth-field{display:flex;flex-direction:column;gap:6px}
+.auth-lbl{font-size:.74rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.07em}
+.auth-inp{padding:11px 14px;border:1.5px solid var(--border-default);border-radius:var(--r);background:var(--bg-muted);color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:.95rem;width:100%;transition:border-color var(--t)}
+.auth-inp:focus{border-color:var(--brand);outline:none;background:var(--bg-surface)}
+.auth-btn{width:100%;padding:13px;background:var(--brand);color:#fff;border:none;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:600;cursor:pointer;transition:background var(--t)}
+.auth-btn:hover{background:var(--brand2)}:disabled{opacity:.6;cursor:not-allowed}
+.auth-err{background:var(--danger-bg);color:var(--danger);border:1px solid rgba(192,57,43,.2);border-radius:var(--r);padding:10px 14px;font-size:.82rem;text-align:center;display:none}
+.auth-err.show{display:block}
+.auth-foot{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--text-muted);text-align:center}
+
+/* ══ CONSULTOR ═══════════════════════════════════ */
+.consultor-screen{position:fixed;inset:0;background:var(--bg-body);z-index:999;display:none;flex-direction:column}
+.consultor-screen.active{display:flex}
+.consult-hd{height:var(--topbar-h);background:var(--bg-surface);border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;padding:0 28px;gap:14px;box-shadow:var(--shadow-sm);flex-shrink:0}
+.consult-logo{height:34px;width:auto}
+.consult-badge{background:var(--gold-light);color:var(--brand);font-size:.68rem;font-weight:700;padding:4px 12px;border-radius:99px;text-transform:uppercase;letter-spacing:.1em;margin-left:auto}
+.consult-year{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--text-muted);border:1px solid var(--border-subtle);padding:3px 10px;border-radius:99px}
+.consult-body{flex:1;overflow-y:auto;padding:36px 44px}
+.consult-title{font-family:'Playfair Display',Georgia,serif;font-size:1.85rem;color:var(--brand);margin-bottom:6px}
+.consult-sub{color:var(--text-muted);font-size:.88rem;margin-bottom:28px}
+.consult-actions{display:flex;gap:10px;margin-bottom:28px;flex-wrap:wrap}
+.clients-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+.client-card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--rl);padding:22px;transition:all var(--t);box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:11px}
+.client-card:hover{box-shadow:var(--shadow-md);border-color:var(--gold);transform:translateY(-2px)}
+.client-avatar{width:42px;height:42px;border-radius:50%;background:var(--gold-light);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--brand);font-weight:600;flex-shrink:0}
+.client-name{font-weight:600;font-size:.93rem;color:var(--text-primary)}
+.client-email{font-size:.74rem;color:var(--text-muted)}
+.client-footer{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border-subtle);padding-top:11px;margin-top:4px}
+.client-status{font-size:.67rem;font-weight:700;padding:3px 10px;border-radius:99px;background:var(--success-bg);color:var(--success);text-transform:uppercase}
+.client-actions-row{display:flex;gap:6px;align-items:center}
+.client-open{font-size:.74rem;font-weight:600;color:var(--brand);cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;padding:4px 10px;border-radius:6px;transition:background var(--t)}
+.client-open:hover{background:var(--gold-light)}
+.client-del{font-size:.72rem;font-weight:600;color:var(--danger);cursor:pointer;background:none;border:1px solid var(--border-subtle);font-family:'DM Sans',sans-serif;padding:4px 9px;border-radius:6px;transition:all var(--t)}
+.client-del:hover{background:var(--danger-bg);border-color:var(--danger)}
+.clients-empty{padding:48px;text-align:center;color:var(--text-muted);font-size:.88rem;grid-column:1/-1}
+
+/* ══ MODAL ════════════════════════════════════════ */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:2000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:16px}
+.modal-ov.active{display:flex}
+.modal-box{background:var(--bg-surface);border-radius:var(--rxl);padding:36px;width:100%;max-width:480px;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;gap:18px;max-height:90vh;overflow-y:auto}
+.modal-box.wide{max-width:720px}
+.modal-title{font-family:'Playfair Display',Georgia,serif;font-size:1.2rem;color:var(--brand)}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:4px;flex-shrink:0}
+
+/* ══ TOPBAR ══════════════════════════════════════ */
+.topbar{position:fixed;top:0;left:0;right:0;height:var(--topbar-h);background:var(--bg-surface);border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;gap:14px;padding:0 20px 0 14px;z-index:100;box-shadow:var(--shadow-sm)}
+.topbar__logo svg{height:34px;width:auto}
+.topbar__right{display:flex;align-items:center;gap:9px;margin-left:auto}
+.tbadge-year{font-family:'DM Mono',monospace;font-size:.66rem;color:var(--text-muted);border:1px solid var(--border-subtle);padding:3px 9px;border-radius:99px}
+.tbadge-client{font-size:.72rem;font-weight:600;background:var(--gold-light);color:var(--brand);padding:4px 13px;border-radius:99px;white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.btn-icon{width:32px;height:32px;border-radius:50%;border:1px solid var(--border-default);background:var(--bg-surface);color:var(--text-secondary);font-size:.88rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all var(--t);flex-shrink:0}
+.btn-icon:hover{background:var(--gold-light);color:var(--brand);border-color:var(--gold)}
+.sidebar-toggle{display:none}
+
+/* ══ APP LAYOUT (topbar + sidebar + content) ══════ */
+.app-wrap{display:none;padding-top:var(--topbar-h);min-height:100dvh}
+.app-wrap.active{display:flex}
+.app-sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  background:var(--bg-surface);border-right:1px solid var(--border-subtle);
+  position:fixed;top:var(--topbar-h);left:0;bottom:0;
+  overflow-y:auto;z-index:50;
+  display:flex;flex-direction:column;
+  transition:transform var(--tm);
+}
+.app-content{flex:1;margin-left:var(--sidebar-w);min-height:calc(100dvh - var(--topbar-h));overflow-x:hidden}
+
+/* Sidebar nav */
+.nav-section{padding:16px 12px 4px}
+.nav-section-label{font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);padding:0 8px;margin-bottom:4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r);cursor:pointer;transition:all var(--t);color:var(--text-muted);font-size:.82rem;font-weight:500;user-select:none;border:none;background:transparent;width:100%;text-align:left;font-family:'DM Sans',sans-serif}
+.nav-item:hover{background:var(--gold-pale);color:var(--text-secondary)}
+.nav-item.active{background:var(--gold-light);color:var(--brand);font-weight:600}
+.nav-item.done{color:var(--success)}
+.nav-item.done .nav-dot{background:var(--success);border-color:var(--success)}
+.nav-dot{width:7px;height:7px;border-radius:50%;border:1.5px solid var(--border-default);background:transparent;flex-shrink:0;transition:all var(--t)}
+.nav-item.active .nav-dot{background:var(--brand);border-color:var(--brand)}
+.nav-icon{font-size:.9rem;width:18px;text-align:center;flex-shrink:0}
+.nav-divider{height:1px;background:var(--border-subtle);margin:8px 12px}
+.nav-year-tag{margin:8px 12px;font-family:'DM Mono',monospace;font-size:.66rem;color:var(--gold2);text-align:center;letter-spacing:.1em;text-transform:uppercase}
+
+/* ══ CONTENT PANELS ══════════════════════════════ */
+.panel{display:none;padding:32px 36px;max-width:1100px}
+.panel.active{display:block}
+
+/* ══ FORMS ════════════════════════════════════════ */
+.card-form{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--rl);padding:28px;margin-bottom:20px;box-shadow:var(--shadow-sm)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:18px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field-full{grid-column:1/-1}
+.lbl{font-size:.74rem;font-weight:600;color:var(--text-secondary);letter-spacing:.02em}
+.inp{padding:9px 13px;border:1.5px solid var(--border-default);border-radius:var(--r);background:var(--bg-body);color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:.86rem;width:100%;transition:border-color var(--t),box-shadow var(--t)}
+.inp:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(116,83,65,.1);outline:none}
+.inp:read-only{opacity:.7;cursor:default;background:var(--bg-muted)}
+.inp-money{font-family:'DM Mono',monospace;text-align:right}
+.inp-sm{padding:7px 11px;font-size:.8rem}
+.sel{padding:9px 13px;border:1.5px solid var(--border-default);border-radius:var(--r);background:var(--bg-body);color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:.86rem;width:100%;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%23a89080' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:34px;transition:border-color var(--t)}
+.sel:focus{border-color:var(--brand);outline:none;box-shadow:0 0 0 3px rgba(116,83,65,.1)}
+.sel-sm{padding:7px 11px;font-size:.8rem;padding-right:30px}
+.fset{border:1.5px solid var(--border-subtle);border-radius:var(--r);padding:16px;margin-bottom:18px}
+.fset legend{padding:0 7px;font-size:.7rem;font-weight:700;color:var(--brand);letter-spacing:.05em;text-transform:uppercase}
+.radio-grp{display:flex;gap:12px;flex-wrap:wrap}
+.radio-opt{display:flex;align-items:center;gap:6px;font-size:.86rem;cursor:pointer;color:var(--text-secondary)}
+.radio-opt input[type=radio]{accent-color:var(--brand);width:15px;height:15px}
+.toggle-lbl{display:flex;align-items:center;gap:11px;font-size:.86rem;font-weight:500;color:var(--text-secondary);cursor:pointer;user-select:none}
+.toggle-lbl input[type=checkbox]{position:absolute;opacity:0;width:0;height:0}
+.toggle-sl{position:relative;width:40px;height:22px;background:var(--border-default);border-radius:99px;transition:background var(--t);flex-shrink:0}
+.toggle-sl::after{content:'';position:absolute;width:16px;height:16px;top:3px;left:3px;background:#fff;border-radius:50%;transition:transform var(--t);box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle-lbl input:checked~.toggle-sl{background:var(--brand)}
+.toggle-lbl input:checked~.toggle-sl::after{transform:translateX(18px)}
+.form-footer{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border-subtle);padding-top:16px;margin-top:4px}
+
+/* ══ BUTTONS ══════════════════════════════════════ */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 17px;border-radius:var(--r);border:1.5px solid transparent;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:500;cursor:pointer;white-space:nowrap;transition:all var(--t);line-height:1}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-p{background:var(--brand);color:#fff;border-color:var(--brand)}
+.btn-p:hover:not(:disabled){background:var(--brand2)}
+.btn-s{background:transparent;color:var(--brand);border-color:var(--brand)}
+.btn-s:hover:not(:disabled){background:var(--gold-light)}
+.btn-g{background:transparent;color:var(--text-secondary);border-color:var(--border-default)}
+.btn-g:hover:not(:disabled){background:var(--bg-muted)}
+.btn-d{background:transparent;color:var(--danger);border-color:var(--danger)}
+.btn-d:hover:not(:disabled){background:var(--danger-bg)}
+.btn-sm{padding:6px 12px;font-size:.76rem}
+.btn-xs{padding:3px 7px;font-size:.7rem;border-radius:6px}
+
+/* ══ TABLES ═══════════════════════════════════════ */
+.tbl-wrap{overflow-x:auto;border-radius:var(--rl);border:1px solid var(--border-subtle);background:var(--bg-surface)}
+.tbl{width:100%;border-collapse:collapse;font-size:.8rem}
+.tbl th{padding:10px 14px;text-align:left;font-size:.69rem;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;background:var(--bg-muted);border-bottom:1px solid var(--border-subtle);white-space:nowrap}
+.tbl td{padding:10px 14px;border-bottom:1px solid var(--border-subtle);color:var(--text-primary);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr:hover td{background:var(--gold-pale)}
+.preview-ttl{font-size:.74rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;padding:12px 14px 0}
+
+/* Section headers */
+.sec-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:24px;flex-wrap:wrap}
+.sec-title{font-family:'Playfair Display',Georgia,serif;font-size:1.5rem;color:var(--brand);line-height:1.2}
+.sec-sub{font-size:.82rem;color:var(--text-muted);margin-top:4px}
+.panel-hd{margin-bottom:28px}
+.panel-title{font-family:'Playfair Display',Georgia,serif;font-size:1.6rem;color:var(--brand);letter-spacing:-.01em}
+.panel-sub{font-size:.84rem;color:var(--text-muted);margin-top:5px}
+
+/* ══ TOAST ════════════════════════════════════════ */
+.toast-wrap{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:7px;z-index:9999;pointer-events:none}
+.toast{display:flex;align-items:center;gap:10px;padding:11px 17px;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--r);box-shadow:var(--shadow-lg);font-size:.84rem;font-weight:500;max-width:320px;pointer-events:all;animation:tIn .2s ease forwards}
+.t-ok{border-left:4px solid var(--success)}.t-err{border-left:4px solid var(--danger)}.t-inf{border-left:4px solid var(--gold)}
+.toast.removing{animation:tOut .2s ease forwards}
+@keyframes tIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes tOut{from{opacity:1}to{opacity:0;transform:translateY(8px)}}
+
+/* ══ RESERVA ══════════════════════════════════════ */
+.res-box{display:flex;gap:20px;background:var(--gold-light);border:1.5px solid var(--gold);border-radius:var(--rl);padding:20px 26px;margin:18px 0;flex-wrap:wrap;align-items:center}
+.res-panel{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start}
+.res-qs{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--rl);padding:26px;display:flex;flex-direction:column;gap:18px}
+.res-q{display:flex;flex-direction:column;gap:7px}
+.res-card{background:var(--brand);color:#fff;border-radius:var(--rxl);padding:32px;text-align:center;box-shadow:var(--shadow-lg)}
+.res-card__months{font-size:3rem;font-weight:700;font-family:'DM Mono',monospace;line-height:1;color:var(--gold)}
+.res-card__val{font-size:1.5rem;font-weight:600;font-family:'DM Mono',monospace;color:var(--gold-light)}
+
+/* ══ DREAMS ═══════════════════════════════════════ */
+.dreams-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:16px}
+.dream-card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--rl);padding:20px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:10px;transition:all var(--t);position:relative;overflow:hidden}
+.dream-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--rl) var(--rl) 0 0}
+.dream-card.tc::before{background:var(--success)}.dream-card.tm::before{background:var(--gold)}.dream-card.tl::before{background:var(--brand)}
+.dream-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+
+/* ══ AÇÕES ════════════════════════════════════════ */
+.acao-inp{width:100%;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:.8rem;color:var(--text-primary);padding:3px 0}
+.acao-inp:focus{outline:none;border-bottom:1.5px solid var(--brand)}
+
+/* ══ EXTRAORDINÁRIO ═══════════════════════════════ */
+.extra-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(236px,1fr));gap:13px}
+.extra-card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--r);overflow:hidden}
+.extra-card-hd{background:var(--gold-light);border-bottom:1px solid var(--border-subtle);padding:8px 13px;font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--brand)}
+.extra-cat-lbl{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);padding:3px 0 2px;border-bottom:1px dashed var(--border-subtle);margin-bottom:2px}
+.extra-item{display:flex;align-items:center;gap:5px;margin-bottom:3px}
+.extra-desc{flex:1;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:.75rem;color:var(--text-primary);padding:2px 4px;border-radius:5px;transition:background var(--t)}
+.extra-desc:focus{background:var(--bg-muted);outline:none}
+.extra-val{width:82px;text-align:right;border:1px solid var(--border-subtle);border-radius:5px;background:var(--bg-body);font-family:'DM Mono',monospace;font-size:.73rem;color:var(--text-primary);padding:2px 6px}
+.extra-val:focus{border-color:var(--brand);outline:none}
+.extra-add{font-size:.67rem;color:var(--brand);background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;transition:background var(--t)}
+.extra-add:hover{background:var(--gold-light)}
+
+/* ══ PAINEL ═══════════════════════════════════════ */
+.painel-toggle{display:flex;gap:0;background:var(--bg-muted);border-radius:var(--r);padding:3px;width:fit-content}
+.painel-toggle-btn{padding:6px 18px;border-radius:8px;border:none;background:transparent;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:500;cursor:pointer;transition:all var(--t)}
+.painel-toggle-btn.active{background:var(--bg-surface);color:var(--brand);font-weight:600;box-shadow:var(--shadow-sm)}
+.painel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:13px;margin-bottom:24px}
+.painel-card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--rl);padding:20px;display:flex;flex-direction:column;gap:9px;position:relative;overflow:hidden}
+.painel-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.pc-rec::after{background:var(--success)}.pc-obl::after{background:var(--warning)}.pc-noo::after{background:var(--brand)}.pc-inv::after{background:var(--gold)}
+.pc-lbl{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)}
+.pc-row{font-size:.77rem;color:var(--text-secondary);line-height:1.3}
+.pc-row strong{display:block;font-family:'DM Mono',monospace;font-size:.97rem;font-weight:600;color:var(--text-primary);margin-top:2px}
+.pc-diff{font-family:'DM Mono',monospace;font-size:.8rem;font-weight:700;padding:2px 8px;border-radius:5px;align-self:flex-start}
+.pc-diff.pos{background:var(--success-bg);color:var(--success)}.pc-diff.neg{background:var(--danger-bg);color:var(--danger)}
+.saldo-bar{display:flex;gap:20px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--rl);padding:20px 26px;flex-wrap:wrap}
+.saldo-item{flex:1;min-width:120px;display:flex;flex-direction:column;gap:3px}
+.saldo-lbl{font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)}
+.saldo-val{font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:700;color:var(--text-primary)}
+/* Annual table */
+.annual-tbl-wrap{overflow-x:auto;border-radius:var(--rl);border:1px solid var(--border-subtle)}
+.annual-tbl{width:100%;border-collapse:collapse;font-size:.77rem;min-width:800px}
+.annual-tbl th{padding:9px 13px;text-align:left;font-size:.67rem;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;background:var(--bg-muted);border-bottom:1px solid var(--border-subtle);white-space:nowrap}
+.annual-tbl td{padding:9px 13px;border-bottom:1px solid var(--border-subtle);color:var(--text-primary);font-family:'DM Mono',monospace;font-size:.77rem}
+.annual-tbl tr:last-child td{border-bottom:none;font-weight:700;background:var(--gold-pale)}
+.annual-tbl tbody tr:hover td{background:var(--gold-pale)}
+
+/* ══ DESPESAS TABS ════════════════════════════════ */
+.desp-tabs{display:flex;gap:0;border-bottom:1px solid var(--border-subtle);margin-bottom:22px}
+.desp-tab{padding:11px 20px;border:none;background:transparent;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;transition:all var(--t);white-space:nowrap}
+.desp-tab:hover{color:var(--text-secondary)}
+.desp-tab.active{color:var(--brand);border-bottom-color:var(--brand);font-weight:600}
+.desp-panel{display:none}.desp-panel.active{display:block}
+
+/* Import area */
+.import-drop{border:2px dashed var(--border-default);border-radius:var(--rl);padding:40px;text-align:center;cursor:pointer;transition:all var(--t);background:var(--bg-body)}
+.import-drop:hover,.import-drop.drag{border-color:var(--brand);background:var(--gold-pale)}
+.import-drop__icon{font-size:2.2rem;margin-bottom:10px;opacity:.4}
+.import-drop__title{font-size:.9rem;font-weight:600;color:var(--text-secondary);margin-bottom:4px}
+.import-drop__sub{font-size:.78rem;color:var(--text-muted)}
+.import-preview{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--rl);margin-top:18px}
+.import-preview-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border-subtle)}
+.import-preview-title{font-size:.82rem;font-weight:700;color:var(--text-primary)}
+.cat-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:6px;font-size:.72rem;font-weight:600;background:var(--bg-muted);color:var(--text-secondary);cursor:pointer;border:1px solid var(--border-subtle);transition:all var(--t)}
+.cat-chip.selected{background:var(--gold-light);color:var(--brand);border-color:var(--gold)}
+
+/* ══ SIMULADORES ══════════════════════════════════ */
+.sim-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:24px;align-items:start}
+.sim-inputs{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--rl);padding:26px}
+.sim-result{background:var(--brand);color:#fff;border-radius:var(--rxl);padding:32px;box-shadow:var(--shadow-lg)}
+.sim-result__title{font-size:.76rem;opacity:.65;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
+.sim-result__main{font-family:'DM Mono',monospace;font-size:2.4rem;font-weight:700;line-height:1;color:var(--gold);margin-bottom:16px}
+.sim-result__row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.1);font-size:.82rem}
+.sim-result__row:last-child{border-bottom:none}
+.sim-result__row span:last-child{font-family:'DM Mono',monospace;font-weight:600;color:var(--gold-light)}
+.sim-rate-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.rate-pill{padding:5px 12px;border-radius:99px;font-size:.76rem;font-weight:600;cursor:pointer;border:1.5px solid var(--border-default);background:transparent;color:var(--text-secondary);transition:all var(--t);font-family:'DM Mono',monospace}
+.rate-pill.active,.rate-pill:hover{background:var(--gold-light);color:var(--brand);border-color:var(--gold)}
+
+/* ══ CATEGORIAS ═══════════════════════════════════ */
+.cat-group{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--rl);margin-bottom:14px;overflow:hidden}
+.cat-group-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg-muted);border-bottom:1px solid var(--border-subtle)}
+.cat-group-name{font-size:.8rem;font-weight:700;color:var(--brand)}
+.cat-items{padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+.cat-item-row{display:flex;align-items:center;gap:8px}
+.cat-item-inp{flex:1;padding:6px 10px;border:1.5px solid var(--border-default);border-radius:var(--r);background:var(--bg-body);color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:.82rem}
+.cat-item-inp:focus{border-color:var(--brand);outline:none}
+
+/* ══ PARCEL ═══════════════════════════════════════ */
+.parcel-row{display:flex;align-items:flex-start;gap:26px;flex-wrap:wrap;margin-bottom:16px}
+.parcel-fields{display:flex;gap:16px;flex-wrap:wrap}
+
+/* ══ MISC ══════════════════════════════════════════ */
+.hidden{display:none!important}
+.mt8{margin-top:8px}.mt16{margin-top:16px}.mt24{margin-top:24px}
+.mono{font-family:'DM Mono',monospace}
+.text-danger{color:var(--danger)}
+.warn-box{background:var(--danger-bg);border:1px solid rgba(192,57,43,.15);border-radius:var(--r);padding:11px 14px;font-size:.8rem;color:var(--danger)}
+.info-box{background:var(--gold-light);border:1px solid var(--gold);border-radius:var(--r);padding:11px 14px;font-size:.8rem;color:var(--brand2)}
+
+/* ══ RESPONSIVE ═══════════════════════════════════ */
+@media(max-width:900px){
+  .res-panel{grid-template-columns:1fr}.res-card{position:static}
+  .sim-grid{grid-template-columns:1fr}
+}
+@media(max-width:768px){
+  :root{--sidebar-w:240px}
+  .topbar{padding:0 14px}
+  .sidebar-toggle{display:flex}
+  .app-sidebar{transform:translateX(-100%)}
+  .app-sidebar.open{transform:translateX(0);box-shadow:var(--shadow-lg)}
+  .app-content{margin-left:0}
+  .panel{padding:20px 16px}
+  .grid2,.grid3{grid-template-columns:1fr}
+  .card-form{padding:18px}
+  .form-footer{flex-direction:column;align-items:stretch}
+  .auth-box{padding:32px 20px}
+  .consult-body{padding:22px 18px}
+}
+@media(max-width:640px){.painel-grid{grid-template-columns:1fr 1fr}.saldo-bar{flex-direction:column;padding:16px}.clients-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- LOGO TEMPLATE -->
+<template id="tplLogo">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 52">
+  <circle cx="26" cy="26" r="23" stroke="#C8B18F" stroke-width="1.5" fill="none"/>
+  <rect x="24.5" y="32" width="3" height="10" rx="1.5" fill="#C8B18F"/>
+  <path d="M26 32C26 26 17 21 15 14" stroke="#C8B18F" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <path d="M26 32C26 26 35 21 37 14" stroke="#C8B18F" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <path d="M26 28C26 23 19 20 18 15" stroke="#C8B18F" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+  <path d="M26 28C26 23 33 20 34 15" stroke="#C8B18F" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+  <line x1="26" y1="14" x2="26" y2="24" stroke="#C8B18F" stroke-width="1.5" stroke-linecap="round"/>
+  <circle cx="15" cy="13" r="2.4" fill="#C8B18F"/><circle cx="37" cy="13" r="2.4" fill="#C8B18F"/>
+  <circle cx="18" cy="13.5" r="1.9" fill="#C8B18F" opacity=".72"/><circle cx="34" cy="13.5" r="1.9" fill="#C8B18F" opacity=".72"/>
+  <circle cx="26" cy="12" r="2.4" fill="#C8B18F"/>
+  <text x="58" y="22" font-family="Georgia,serif" font-size="16.5" font-weight="700" fill="#745341" letter-spacing="-.3">Dê Valor</text>
+  <text x="58" y="35" font-family="Georgia,serif" font-size="8.2" fill="#C8B18F" letter-spacing="2.4">INTELIGÊNCIA</text>
+  <text x="58" y="46" font-family="Georgia,serif" font-size="8.2" fill="#C8B18F" letter-spacing="2.4">FINANCEIRA</text>
+</svg>
+</template>
+
+<!-- ══ AUTH ══════════════════════════════════════════════ -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-box">
+    <div id="authLogo" style="width:156px"></div>
+    <div class="auth-divider"></div>
+    <p class="auth-title">Acesse sua conta</p>
+    <div class="auth-form">
+      <div class="auth-field"><label class="auth-lbl">E-mail</label><input class="auth-inp" type="email" id="authEmail" placeholder="seu@email.com" autocomplete="email"/></div>
+      <div class="auth-field"><label class="auth-lbl">Senha</label><input class="auth-inp" type="password" id="authPwd" placeholder="••••••••" autocomplete="current-password"/></div>
+      <div class="auth-err" id="authErr"></div>
+      <button class="auth-btn" id="authSubmit" onclick="doLogin()">Entrar</button>
+    </div>
+    <p class="auth-foot" id="authYear"></p>
+  </div>
+</div>
+
+<!-- ══ CONSULTOR ══════════════════════════════════════════ -->
+<div class="consultor-screen" id="consultorScreen">
+  <div class="consult-hd">
+    <div id="consultorLogo" style="height:34px"></div>
+    <span class="consult-badge">Painel Consultor</span>
+    <span class="consult-year" id="consultorYear"></span>
+    <button class="btn-icon" onclick="doLogout()" title="Sair" style="margin-left:8px">↩</button>
+  </div>
+  <div class="consult-body">
+    <h2 class="consult-title">Gestão de Clientes</h2>
+    <p class="consult-sub">Selecione um cliente para acessar o planejamento financeiro.</p>
+    <div class="consult-actions">
+      <button class="btn btn-p" onclick="openModal('modalNewClient')">+ Novo cliente</button>
+      <button class="btn btn-g" onclick="loadClientes()">↻ Atualizar</button>
+    </div>
+    <div class="clients-grid" id="clientsGrid"><div class="clients-empty">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- Modal: novo cliente -->
+<div class="modal-ov" id="modalNewClient">
+  <div class="modal-box">
+    <p class="modal-title">Cadastrar novo cliente</p>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="field"><label class="lbl">Nome completo</label><input class="inp" type="text" id="ncNome" placeholder="Ex: João da Silva"/></div>
+      <div class="field"><label class="lbl">E-mail de acesso</label><input class="inp" type="email" id="ncEmail" placeholder="joao@email.com"/></div>
+      <div class="field"><label class="lbl">Senha inicial</label><input class="inp" type="text" id="ncSenha" placeholder="Mínimo 6 caracteres"/></div>
+    </div>
+    <div class="auth-err" id="ncErr" style="margin-top:4px"></div>
+    <div class="modal-footer">
+      <button class="btn btn-g" onclick="closeModal('modalNewClient')">Cancelar</button>
+      <button class="btn btn-p" onclick="createCliente()">Criar cliente</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: confirmar exclusão -->
+<div class="modal-ov" id="modalDeleteClient">
+  <div class="modal-box" style="max-width:400px">
+    <p class="modal-title" style="color:var(--danger)">Excluir cliente</p>
+    <p id="deleteClientMsg" style="font-size:.87rem;color:var(--text-secondary);line-height:1.6"></p>
+    <div class="warn-box">⚠️ Esta ação remove o acesso e todos os dados do cliente. Não pode ser desfeita.</div>
+    <div class="modal-footer">
+      <button class="btn btn-g" onclick="closeModal('modalDeleteClient')">Cancelar</button>
+      <button class="btn btn-d" id="btnConfirmDel" onclick="executarExclusao()">Sim, excluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: editor de categorias -->
+<div class="modal-ov" id="modalCats">
+  <div class="modal-box wide">
+    <p class="modal-title">Gerenciar Categorias</p>
+    <div id="catEditor"></div>
+    <div class="modal-footer">
+      <button class="btn btn-g" onclick="closeModal('modalCats')">Fechar</button>
+      <button class="btn btn-p" onclick="saveCats()">✓ Salvar categorias</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOPBAR ══════════════════════════════════════════════ -->
+<header class="topbar" id="topbar" style="display:none">
+  <button class="btn-icon sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">☰</button>
+  <div id="topbarLogo"></div>
+  <div class="topbar__right">
+    <span class="tbadge-year" id="yearBadge"></span>
+    <span class="tbadge-client" id="clientBadge">—</span>
+    <button class="btn-icon" id="btnBack" style="display:none" title="Voltar para clientes" onclick="backToConsultor()">⊞</button>
+    <button class="btn-icon" onclick="doLogout()" title="Sair">↩</button>
+  </div>
+</header>
+
+<!-- ══ APP (sidebar + content) ════════════════════════════ -->
+<div class="app-wrap" id="appWrap">
+
+  <!-- SIDEBAR NAV -->
+  <aside class="app-sidebar" id="appSidebar">
+    <div class="nav-year-tag" id="navYear"></div>
+    <div style="margin:0 12px 8px;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--success);text-align:center;letter-spacing:.05em;padding:3px;background:var(--success-bg);border-radius:5px">v3.5 · fBRL fix</div>
+
+    <!-- CADASTRO -->
+    <div class="nav-section">
+      <div class="nav-section-label">Cadastro</div>
+      <button class="nav-item active" data-panel="perfil" onclick="goPanel('perfil',this)"><span class="nav-dot"></span><span class="nav-icon">👤</span>Perfil & Reserva</button>
+      <button class="nav-item" data-panel="sonhos" onclick="goPanel('sonhos',this)"><span class="nav-dot"></span><span class="nav-icon">✨</span>Sonhos & Objetivos</button>
+      <button class="nav-item" data-panel="dividas" onclick="goPanel('dividas',this)"><span class="nav-dot"></span><span class="nav-icon">📋</span>Inventário de Dívidas</button>
+      <button class="nav-item" data-panel="renda" onclick="goPanel('renda',this)"><span class="nav-dot"></span><span class="nav-icon">💰</span>Renda & Planejamento</button>
+    </div>
+
+    <div class="nav-divider"></div>
+
+    <!-- ACOMPANHAMENTO -->
+    <div class="nav-section">
+      <div class="nav-section-label">Acompanhamento</div>
+      <button class="nav-item" data-panel="vidarica" onclick="goPanel('vidarica',this)"><span class="nav-dot"></span><span class="nav-icon">🌟</span>Vida Rica</button>
+      <button class="nav-item" data-panel="planoacao" onclick="goPanel('planoacao',this)"><span class="nav-dot"></span><span class="nav-icon">✅</span>Plano de Ação</button>
+      <button class="nav-item" data-panel="reserva" onclick="goPanel('reserva',this)"><span class="nav-dot"></span><span class="nav-icon">🛡️</span>Reserva Ideal</button>
+      <button class="nav-item" data-panel="quitacao" onclick="goPanel('quitacao',this)"><span class="nav-dot"></span><span class="nav-icon">🏦</span>Quitação de Dívidas</button>
+      <button class="nav-item" data-panel="despesas" onclick="goPanel('despesas',this)"><span class="nav-dot"></span><span class="nav-icon">💳</span>Despesas</button>
+      <button class="nav-item" data-panel="extraordinario" onclick="goPanel('extraordinario',this)"><span class="nav-dot"></span><span class="nav-icon">📅</span>Extraordinário</button>
+      <button class="nav-item" data-panel="painel" onclick="goPanel('painel',this)"><span class="nav-dot"></span><span class="nav-icon">📊</span>Painel Comparativo</button>
+    </div>
+
+    <div class="nav-divider"></div>
+
+    <!-- SIMULADORES -->
+    <div class="nav-section">
+      <div class="nav-section-label">Simuladores</div>
+      <button class="nav-item" data-panel="simApos" onclick="goPanel('simApos',this)"><span class="nav-dot"></span><span class="nav-icon">🏖️</span>Aposentadoria</button>
+      <button class="nav-item" data-panel="simInvest" onclick="goPanel('simInvest',this)"><span class="nav-dot"></span><span class="nav-icon">📈</span>Investimentos</button>
+    </div>
+
+    <div class="nav-divider"></div>
+
+    <!-- CONFIGURAÇÕES -->
+    <div class="nav-section">
+      <div class="nav-section-label">Configurações</div>
+      <button class="nav-item" onclick="openModal('modalCats')"><span class="nav-dot"></span><span class="nav-icon">🏷️</span>Categorias</button>
+    </div>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="app-content" id="appContent">
+
+    <!-- ══ PERFIL ════════════════════════════════ -->
+    <div class="panel active" id="panel-perfil">
+      <div class="panel-hd"><h1 class="panel-title">Perfil do Cliente</h1><p class="panel-sub">Dados iniciais para cálculo da Reserva de Emergência</p></div>
+      <div class="card-form">
+        <div class="grid2">
+          <div class="field"><label class="lbl">Nome completo</label><input class="inp" type="text" id="nomeCliente" placeholder="Ex: Maria Silva"/></div>
+          <div class="field"><label class="lbl">E-mail</label><input class="inp" type="email" id="emailCliente" placeholder="maria@email.com"/></div>
+        </div>
+        <fieldset class="fset"><legend>Perguntas para cálculo da reserva</legend>
+          <div class="grid2" style="margin-top:12px">
+            <div class="field"><label class="lbl">Possui carteira assinada (CLT)?</label><div class="radio-grp"><label class="radio-opt"><input type="radio" name="clt" value="sim"/> Sim</label><label class="radio-opt"><input type="radio" name="clt" value="nao" checked/> Não</label></div></div>
+            <div class="field"><label class="lbl">Tem filhos?</label><div class="radio-grp"><label class="radio-opt"><input type="radio" name="filhos" value="sim"/> Sim</label><label class="radio-opt"><input type="radio" name="filhos" value="nao" checked/> Não</label></div></div>
+            <div class="field"><label class="lbl">Tem a quem recorrer em emergência?</label><div class="radio-grp"><label class="radio-opt"><input type="radio" name="rede" value="sim" checked/> Sim</label><label class="radio-opt"><input type="radio" name="rede" value="nao"/> Não</label></div></div>
+            <div class="field"><label class="lbl">Gastos fixos mensais (R$)</label><input class="inp inp-money" type="text" id="gastosMensais" placeholder="0,00" data-money/></div>
+          </div>
+        </fieldset>
+        <div class="res-box hidden" id="reserveResult">
+          <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--brand2)">Meses recomendados</span><span style="font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:600;color:var(--brand)" id="reserveMonths">—</span></div>
+          <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--brand2)">Valor ideal</span><span style="font-family:'DM Mono',monospace;font-size:1.6rem;font-weight:700;color:var(--brand)" id="reserveAmount">R$ —</span></div>
+        </div>
+        <div class="form-footer">
+          <button class="btn btn-g" onclick="calcReserve()">Calcular reserva</button>
+          <button class="btn btn-p" onclick="submitPerfil()">Salvar & avançar →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SONHOS ══════════════════════════════════ -->
+    <div class="panel" id="panel-sonhos">
+      <div class="panel-hd"><h1 class="panel-title">Sonhos & Objetivos de Vida</h1><p class="panel-sub">Cadastre os objetivos que dão sentido ao planejamento</p></div>
+      <div class="card-form">
+        <div class="grid2">
+          <div class="field"><label class="lbl">Quem</label><input class="inp" type="text" id="sonhoQuem" placeholder="Ex: Família toda"/></div>
+          <div class="field"><label class="lbl">Objetivo / Sonho</label><input class="inp" type="text" id="sonhoObj" placeholder="Ex: Casa própria"/></div>
+          <div class="field"><label class="lbl">Motivo</label><input class="inp" type="text" id="sonhoMotivo" placeholder="Por que é importante?"/></div>
+          <div class="field"><label class="lbl">Valor total (R$)</label><input class="inp inp-money" type="text" id="sonhoValor" placeholder="0,00" data-money/></div>
+          <div class="field"><label class="lbl">Prazo (data limite)</label><input class="inp" type="date" id="sonhoPrazo"/></div>
+          <div class="field"><label class="lbl">Tipo de prazo</label><select class="sel" id="sonhoTipo"><option value="Curto">Curto (até 2 anos)</option><option value="Médio">Médio (2–5 anos)</option><option value="Longo">Longo (acima de 5 anos)</option></select></div>
+        </div>
+        <div class="form-footer">
+          <button class="btn btn-s" onclick="addSonhoPreview()">+ Adicionar à lista</button>
+          <button class="btn btn-p" onclick="submitSonhos()">Salvar & avançar →</button>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table class="tbl hidden" id="sonhosTable"><thead><tr><th>Quem</th><th>Objetivo</th><th>Motivo</th><th>Valor</th><th>Prazo</th><th>Tipo</th><th></th></tr></thead><tbody id="sonhosTbody"></tbody></table></div>
+    </div>
+
+    <!-- ══ DÍVIDAS ═════════════════════════════════ -->
+    <div class="panel" id="panel-dividas">
+      <div class="panel-hd"><h1 class="panel-title">Inventário de Dívidas</h1><p class="panel-sub">Mapeie todos os passivos para iniciar o plano de quitação</p></div>
+      <div class="card-form">
+        <div class="grid3">
+          <div class="field"><label class="lbl">Banco / Credor</label><input class="inp" type="text" id="divBanco" placeholder="Ex: Nubank"/></div>
+          <div class="field"><label class="lbl">Descrição</label><input class="inp" type="text" id="divDesc" placeholder="Ex: Cartão de crédito"/></div>
+          <div class="field"><label class="lbl">Valor solicitado (R$)</label><input class="inp inp-money" type="text" id="divValorSolic" placeholder="0,00" data-money/></div>
+          <div class="field"><label class="lbl">Nº parcelas totais</label><input class="inp" type="number" id="divParcTotais" placeholder="12" min="1"/></div>
+          <div class="field"><label class="lbl">Valor da parcela (R$)</label><input class="inp inp-money" type="text" id="divValorParc" placeholder="0,00" data-money/></div>
+          <div class="field"><label class="lbl">Saldo devedor (R$)</label><input class="inp inp-money" type="text" id="divSaldo" placeholder="0,00" data-money/></div>
+          <div class="field"><label class="lbl">Taxa de juros (% a.m.)</label><input class="inp" type="number" id="divJuros" placeholder="2,5" step="0.1"/></div>
+          <div class="field"><label class="lbl">Última parcela (R$)</label><input class="inp inp-money" type="text" id="divUltParc" placeholder="0,00" data-money/></div>
+          <div class="field"><label class="lbl">Total pago até hoje (R$)</label><input class="inp inp-money" type="text" id="divTotalPago" placeholder="0,00" data-money/></div>
+        </div>
+        <div class="form-footer">
+          <button class="btn btn-s" onclick="addDividaPreview()">+ Adicionar à lista</button>
+          <button class="btn btn-p" onclick="submitDividas()">Salvar & avançar →</button>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table class="tbl hidden" id="dividasTable"><thead><tr><th>Credor</th><th>Descrição</th><th>Saldo</th><th>Parcela</th><th>Juros %</th><th></th></tr></thead><tbody id="dividasTbody"></tbody></table></div>
+    </div>
+
+    <!-- ══ RENDA ════════════════════════════════════ -->
+    <div class="panel" id="panel-renda">
+      <div class="panel-hd"><h1 class="panel-title">Renda & Planejamento Extraordinário</h1><p class="panel-sub">Defina a base de receitas e os eventos financeiros anuais</p></div>
+      <div class="card-form">
+        <fieldset class="fset"><legend>Renda base mensal</legend>
+          <div class="grid2" style="margin-top:12px">
+            <div class="field"><label class="lbl">Salário / Pró-labore (R$)</label><input class="inp inp-money" type="text" id="rendaSalario" placeholder="0,00" data-money/></div>
+            <div class="field"><label class="lbl">Outras rendas (R$)</label><input class="inp inp-money" type="text" id="rendaOutras" placeholder="0,00" data-money/></div>
+          </div>
+        </fieldset>
+        <fieldset class="fset"><legend>Planejamento extraordinário anual</legend>
+          <div id="extraOnboarding" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:12px;margin-top:12px"></div>
+        </fieldset>
+        <div class="form-footer">
+          <button class="btn btn-p" onclick="submitRenda()">Finalizar cadastro ✓</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VIDA RICA ═══════════════════════════════ -->
+    <div class="panel" id="panel-vidarica">
+      <div class="sec-hd">
+        <div><h2 class="sec-title">Vida Rica</h2><p class="sec-sub">Objetivos e sonhos em construção</p></div>
+        <button class="btn btn-p btn-sm" onclick="goPanel('sonhos')">+ Novo sonho</button>
+      </div>
+      <div class="dreams-grid" id="dreamsGrid"><div style="grid-column:1/-1;padding:48px;text-align:center;color:var(--text-muted)"><span style="font-size:2.5rem;opacity:.25;display:block;margin-bottom:10px">◈</span>Nenhum sonho cadastrado ainda.</div></div>
+    </div>
+
+    <!-- ══ PLANO DE AÇÃO ═══════════════════════════ -->
+    <div class="panel" id="panel-planoacao">
+      <div class="sec-hd">
+        <div><h2 class="sec-title">Plano de Ação</h2><p class="sec-sub">Tarefas combinadas nas sessões</p></div>
+        <button class="btn btn-p btn-sm" onclick="addAcaoRow()">+ Nova ação</button>
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl"><thead><tr><th style="width:38px">✓</th><th>Descrição da ação</th><th>Observações</th><th style="width:92px">Status</th><th style="width:38px"></th></tr></thead>
+        <tbody id="acaoTbody"></tbody></table>
+      </div>
+      <button class="btn btn-s mt16" onclick="saveAcoes()">✓ Salvar</button>
+    </div>
+
+    <!-- ══ RESERVA IDEAL ════════════════════════════ -->
+    <div class="panel" id="panel-reserva">
+      <div class="sec-hd"><div><h2 class="sec-title">Reserva Ideal</h2><p class="sec-sub">Cálculo personalizado de segurança financeira</p></div></div>
+      <div class="res-panel">
+        <div class="res-qs">
+          <div class="res-q"><span style="font-size:.86rem;font-weight:500;color:var(--text-primary)">Possui carteira assinada (CLT)?</span><div class="radio-grp"><label class="radio-opt"><input type="radio" name="rClt" value="sim" onchange="calcReserveDash()"/> Sim</label><label class="radio-opt"><input type="radio" name="rClt" value="nao" checked onchange="calcReserveDash()"/> Não</label></div></div>
+          <div class="res-q"><span style="font-size:.86rem;font-weight:500;color:var(--text-primary)">Tem filhos?</span><div class="radio-grp"><label class="radio-opt"><input type="radio" name="rFilhos" value="sim" onchange="calcReserveDash()"/> Sim</label><label class="radio-opt"><input type="radio" name="rFilhos" value="nao" checked onchange="calcReserveDash()"/> Não</label></div></div>
+          <div class="res-q"><span style="font-size:.86rem;font-weight:500;color:var(--text-primary)">Tem a quem recorrer em emergência?</span><div class="radio-grp"><label class="radio-opt"><input type="radio" name="rRede" value="sim" checked onchange="calcReserveDash()"/> Sim</label><label class="radio-opt"><input type="radio" name="rRede" value="nao" onchange="calcReserveDash()"/> Não</label></div></div>
+          <div class="res-q"><label style="font-size:.86rem;font-weight:500;color:var(--text-primary)">Gastos fixos mensais (R$)</label><input class="inp inp-money inp-sm" type="text" id="rGastos" placeholder="0,00" data-money oninput="calcReserveDash()"/></div>
+        </div>
+        <div><div class="res-card"><p style="font-size:.74rem;opacity:.65;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Sugerimos uma reserva de</p><div class="res-card__months"><span id="drMonths">—</span> meses</div><p style="font-size:.74rem;opacity:.55;margin:12px 0 6px;text-transform:uppercase;letter-spacing:.08em">equivalente a</p><div class="res-card__val" id="drAmount">R$ —</div></div></div>
+      </div>
+    </div>
+
+    <!-- ══ QUITAÇÃO ════════════════════════════════ -->
+    <div class="panel" id="panel-quitacao">
+      <div class="sec-hd">
+        <div><h2 class="sec-title">Quitação de Dívidas</h2><p class="sec-sub">Diagnóstico e plano de eliminação de passivos</p></div>
+        <button class="btn btn-p btn-sm" onclick="goPanel('dividas')">+ Nova dívida</button>
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl"><thead><tr><th>Credor</th><th>Descrição</th><th>Valor solic.</th><th>Parcelas</th><th>Valor parc.</th><th>Saldo devedor</th><th>Juros %</th><th>Últ. parcela</th><th>Total pago</th><th></th></tr></thead>
+        <tbody id="quitacaoTbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- ══ DESPESAS ════════════════════════════════ -->
+    <div class="panel" id="panel-despesas">
+      <div class="sec-hd">
+        <div><h2 class="sec-title">Despesas</h2><p class="sec-sub">Lançamento e importação de despesas</p></div>
+        <button class="btn btn-g btn-sm" onclick="openModal('modalCats')">🏷️ Categorias</button>
+      </div>
+      <div class="desp-tabs">
+        <button class="desp-tab active" onclick="switchDespTab('manual',this)">✏️ Lançamento manual</button>
+        <button class="desp-tab" onclick="switchDespTab('importar',this)">📂 Importar arquivo</button>
+      </div>
+
+      <!-- Manual -->
+      <div class="desp-panel active" id="desp-manual">
+        <div class="card-form">
+          <div class="grid3">
+            <div class="field"><label class="lbl">Forma de pagamento</label><select class="sel" id="despFormaPag"><option value="Cartão de Crédito">Cartão de Crédito</option><option value="Débito/Dinheiro/Pix">Débito / Dinheiro / Pix</option></select></div>
+            <div class="field"><label class="lbl">Banco</label><select class="sel" id="despBanco"><option>Bradesco</option><option>Nubank</option><option>Banco do Brasil</option><option>Caixa Econômica</option><option>Itaú</option><option>Santander</option><option>Inter</option><option>C6 Bank</option><option>Outro</option></select></div>
+            <div class="field"><label class="lbl">Data base</label><input class="inp" type="date" id="despData"/></div>
+            <div class="field field-full"><label class="lbl">Descrição</label><input class="inp" type="text" id="despDesc" placeholder="Ex: Mercado, Escola, Netflix..."/></div>
+            <div class="field"><label class="lbl">Valor da parcela (R$)</label><input class="inp inp-money" type="text" id="despValorParc" placeholder="0,00" data-money/></div>
+            <div class="field"><label class="lbl">Categoria</label><select class="sel" id="despCategoria"></select></div>
+            <div class="field"><label class="lbl">Mês de competência inicial</label>
+              <select class="sel" id="despMesComp"><option value="JANEIRO">Janeiro</option><option value="FEVEREIRO">Fevereiro</option><option value="MARÇO">Março</option><option value="ABRIL">Abril</option><option value="MAIO">Maio</option><option value="JUNHO">Junho</option><option value="JULHO">Julho</option><option value="AGOSTO">Agosto</option><option value="SETEMBRO">Setembro</option><option value="OUTUBRO">Outubro</option><option value="NOVEMBRO">Novembro</option><option value="DEZEMBRO">Dezembro</option></select>
+            </div>
+          </div>
+          <div class="parcel-row">
+            <label class="toggle-lbl"><input type="checkbox" id="chkParcelado" onchange="toggleParcelado(this.checked)"/><span class="toggle-sl"></span>Despesa parcelada</label>
+            <div class="parcel-fields hidden" id="parcelFields"><div class="field"><label class="lbl">Nº total de parcelas</label><input class="inp inp-sm" type="number" id="despNParcelas" min="2" max="120" placeholder="Ex: 12" oninput="genPreview()"/></div></div>
+          </div>
+          <div class="form-footer">
+            <button class="btn btn-g" onclick="clearDespForm()">Limpar</button>
+            <button class="btn btn-s" onclick="genPreview()">Visualizar parcelas</button>
+            <button class="btn btn-p" onclick="submitDespesas()">Enviar ↗</button>
+          </div>
+        </div>
+        <div class="tbl-wrap mt16">
+          <p class="preview-ttl hidden" id="prevTitle">Prévia dos lançamentos</p>
+          <table class="tbl hidden" id="prevTable"><thead><tr><th>Forma Pag.</th><th>Banco</th><th>Data</th><th>Descrição</th><th>Valor</th><th>Categoria</th><th>Mês Comp.</th></tr></thead><tbody id="prevTbody"></tbody></table>
+        </div>
+      </div>
+
+      <!-- Importar -->
+      <div class="desp-panel" id="desp-importar">
+        <div class="import-drop" id="importDrop" onclick="document.getElementById('fileInput').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onFileDrop(event)">
+          <div class="import-drop__icon">📂</div>
+          <div class="import-drop__title">Arraste ou clique para selecionar o arquivo</div>
+          <div class="import-drop__sub">Suporta <strong>.CSV</strong>, <strong>.XLSX</strong> e <strong>.XLS</strong></div>
+        </div>
+        <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFileSelect(this.files[0])"/>
+        <div id="importPreviewWrap" class="hidden mt16">
+          <div class="import-preview">
+            <div class="import-preview-hd">
+              <span class="import-preview-title" id="importFileName">Arquivo carregado</span>
+              <span style="font-size:.76rem;color:var(--text-muted)" id="importRowCount"></span>
+            </div>
+            <div style="padding:14px 16px">
+              <div class="info-box mb-12" style="margin-bottom:12px">Clique na célula da coluna <strong>Categoria</strong> para alterar. Revise os dados antes de enviar.</div>
+              <div class="tbl-wrap">
+                <table class="tbl" id="importTable">
+                  <thead><tr><th>Data</th><th>Descrição</th><th>Valor (R$)</th><th>Categoria</th><th>Mês Comp.</th><th>✓</th></tr></thead>
+                  <tbody id="importTbody"></tbody>
+                </table>
+              </div>
+              <div class="form-footer mt16">
+                <button class="btn btn-g" onclick="clearImport()">Limpar</button>
+                <button class="btn btn-s" onclick="selectAllImport(true)">Selecionar todos</button>
+                <button class="btn btn-p" onclick="submitImport()">Enviar selecionados ↗</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ EXTRAORDINÁRIO ══════════════════════════ -->
+    <div class="panel" id="panel-extraordinario">
+      <div class="sec-hd">
+        <div><h2 class="sec-title">Planejamento Extraordinário</h2><p class="sec-sub">Despesas sazonais e receitas extras organizadas por categoria</p></div>
+        <button class="btn btn-p btn-sm" onclick="saveExtraordinario()">✓ Salvar</button>
+      </div>
+      <div class="extra-grid" id="extraGrid"></div>
+    </div>
+
+    <!-- ══ PAINEL ══════════════════════════════════ -->
+    <div class="panel" id="panel-painel">
+      <div class="sec-hd">
+        <div><h2 class="sec-title">Painel Comparativo</h2><p class="sec-sub">Planejado vs. Realizado</p></div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div class="painel-toggle">
+            <button class="painel-toggle-btn active" id="btnViewMensal" onclick="switchPainelView('mensal',this)">Mensal</button>
+            <button class="painel-toggle-btn" id="btnViewAnual" onclick="switchPainelView('anual',this)">Anual</button>
+          </div>
+          <div id="painelMesWrap" style="display:flex;align-items:center;gap:8px">
+            <label class="lbl">Mês</label>
+            <select class="sel sel-sm" id="painelMes" onchange="loadPainelData()">
+              <option value="JANEIRO">Janeiro</option><option value="FEVEREIRO">Fevereiro</option><option value="MARÇO">Março</option><option value="ABRIL">Abril</option><option value="MAIO">Maio</option><option value="JUNHO">Junho</option><option value="JULHO">Julho</option><option value="AGOSTO">Agosto</option><option value="SETEMBRO">Setembro</option><option value="OUTUBRO">Outubro</option><option value="NOVEMBRO">Novembro</option><option value="DEZEMBRO">Dezembro</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensal -->
+      <div id="viewMensal">
+        <div class="painel-grid">
+          <div class="painel-card pc-rec"><div class="pc-lbl">Receitas</div><div class="pc-row">Planejado<strong id="pcRPlan">R$ —</strong></div><div class="pc-row">Realizado<strong id="pcRReal">R$ —</strong></div><div class="pc-diff" id="pcRDiff">—</div></div>
+          <div class="painel-card pc-obl"><div class="pc-lbl">Obrigatórias</div><div class="pc-row">Planejado<strong id="pcOPlan">R$ —</strong></div><div class="pc-row">Realizado<strong id="pcOReal">R$ —</strong></div><div class="pc-diff" id="pcODiff">—</div></div>
+          <div class="painel-card pc-noo"><div class="pc-lbl">Não Obrigatórias</div><div class="pc-row">Planejado<strong id="pcNPlan">R$ —</strong></div><div class="pc-row">Realizado<strong id="pcNReal">R$ —</strong></div><div class="pc-diff" id="pcNDiff">—</div></div>
+          <div class="painel-card pc-inv"><div class="pc-lbl">Investimentos</div><div class="pc-row">Planejado<strong id="pcIPlan">R$ —</strong></div><div class="pc-row">Realizado<strong id="pcIReal">R$ —</strong></div><div class="pc-diff" id="pcIDiff">—</div></div>
+        </div>
+        <div class="saldo-bar">
+          <div class="saldo-item"><span class="saldo-lbl">Saldo planejado</span><span class="saldo-val" id="saldoPlan">R$ —</span></div>
+          <div class="saldo-item"><span class="saldo-lbl">Saldo realizado</span><span class="saldo-val" id="saldoReal">R$ —</span></div>
+          <div class="saldo-item"><span class="saldo-lbl">Diferença</span><span class="saldo-val" id="saldoDiff">R$ —</span></div>
+        </div>
+      </div>
+
+      <!-- Anual -->
+      <div id="viewAnual" class="hidden">
+        <div class="info-box" style="margin-bottom:20px">Visão anual — todos os meses com dados de Receitas, Obrigatórias, Não Obrigatórias, Investimentos e Saldo.</div>
+        <div class="annual-tbl-wrap">
+          <table class="annual-tbl" id="annualTbl">
+            <thead><tr><th>Mês</th><th>Receitas Plan.</th><th>Receitas Real.</th><th>Obrig. Plan.</th><th>Obrig. Real.</th><th>Não Obl. Plan.</th><th>Não Obl. Real.</th><th>Invest. Plan.</th><th>Invest. Real.</th><th>Saldo Plan.</th><th>Saldo Real.</th></tr></thead>
+            <tbody id="annualTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SIMULADOR APOSENTADORIA ═════════════════ -->
+    <div class="panel" id="panel-simApos">
+      <div class="panel-hd"><h1 class="panel-title">Simulador de Aposentadoria</h1><p class="panel-sub">Calcule quanto precisa guardar por mês para se aposentar com conforto</p></div>
+      <div class="sim-grid">
+        <div class="sim-inputs">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="field"><label class="lbl">Idade atual</label><input class="inp" type="number" id="aposIdadeAtual" placeholder="35" min="18" max="80" oninput="calcAposDebounced()"/></div>
+            <div class="field"><label class="lbl">Idade de aposentadoria desejada</label><input class="inp" type="number" id="aposIdadeMeta" placeholder="65" min="40" max="90" oninput="calcAposDebounced()"/></div>
+            <div class="field"><label class="lbl">Renda mensal desejada na aposentadoria (R$)</label><input class="inp inp-money" type="text" id="aposRendaMeta" placeholder="5.000,00" data-money oninput="calcAposDebounced()"/></div>
+            <div class="field"><label class="lbl">Quanto já tem investido (R$)</label><input class="inp inp-money" type="text" id="aposPatrimonio" placeholder="0,00" data-money oninput="calcAposDebounced()"/></div>
+            <div class="field"><label class="lbl">Taxa de retorno anual esperada (%)</label><input class="inp" type="number" id="aposTaxa" value="8" step="0.5" min="1" max="30" oninput="calcAposDebounced()"/></div>
+            <div class="field"><label class="lbl">Expectativa de vida (anos)</label><input class="inp" type="number" id="aposExpectativa" value="85" min="70" max="100" oninput="calcAposDebounced()"/></div>
+            <div class="info-box" style="font-size:.76rem">Taxa SELIC atual aprox: <strong>10,5% a.a.</strong> · CDI: <strong>10,4% a.a.</strong> · IPCA: <strong>4,8% a.a.</strong></div>
+          </div>
+        </div>
+        <div class="sim-result" id="aposResult">
+          <div class="sim-result__title">Aporte mensal necessário</div>
+          <div class="sim-result__main" id="aposAporte">R$ —</div>
+          <div class="sim-result__row"><span>Anos para aposentadoria</span><span id="aposAnos">—</span></div>
+          <div class="sim-result__row"><span>Patrimônio necessário</span><span id="aposPatrNecessario">—</span></div>
+          <div class="sim-result__row"><span>Patrimônio projetado</span><span id="aposPatrProjetado">—</span></div>
+          <div class="sim-result__row"><span>Renda mensal projetada</span><span id="aposRendaProjetada">—</span></div>
+          <div class="sim-result__row"><span>Total investido no período</span><span id="aposTotalInvestido">—</span></div>
+          <div class="sim-result__row"><span>Rendimento gerado</span><span id="aposRendimento">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SIMULADOR INVESTIMENTOS ═════════════════ -->
+    <div class="panel" id="panel-simInvest">
+      <div class="panel-hd"><h1 class="panel-title">Simulador de Investimentos</h1><p class="panel-sub">Projete o crescimento do seu patrimônio com diferentes taxas</p></div>
+      <div class="sim-grid">
+        <div class="sim-inputs">
+          <div style="margin-bottom:14px">
+            <div class="lbl" style="margin-bottom:8px">Selecione a taxa de referência</div>
+            <div class="sim-rate-pills">
+              <button class="rate-pill active" onclick="setRate('selic',this)">SELIC 10,5%</button>
+              <button class="rate-pill" onclick="setRate('cdi',this)">CDI 10,4%</button>
+              <button class="rate-pill" onclick="setRate('poupanca',this)">Poupança 6,17%</button>
+              <button class="rate-pill" onclick="setRate('ipca',this)">IPCA+ 4,8%</button>
+              <button class="rate-pill" onclick="setRate('custom',this)">Personalizada</button>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="field"><label class="lbl">Taxa anual (%)</label><input class="inp" type="number" id="investTaxa" value="10.5" step="0.1" min="0.1" oninput="calcInvestDebounced()"/></div>
+            <div class="field"><label class="lbl">Valor inicial (R$)</label><input class="inp inp-money" type="text" id="investInicial" placeholder="1.000,00" data-money oninput="calcInvestDebounced()"/></div>
+            <div class="field"><label class="lbl">Aporte mensal (R$)</label><input class="inp inp-money" type="text" id="investMensal" placeholder="500,00" data-money oninput="calcInvestDebounced()"/></div>
+            <div class="field"><label class="lbl">Período (anos)</label><input class="inp" type="number" id="investAnos" value="10" min="1" max="50" oninput="calcInvestDebounced()"/></div>
+            <div class="field"><label class="lbl">Tipo de rendimento</label>
+              <select class="sel" id="investTipo" onchange="calcInvest()">
+                <option value="composto">Juros compostos</option>
+                <option value="simples">Juros simples</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="sim-result" id="investResult">
+          <div class="sim-result__title">Montante final</div>
+          <div class="sim-result__main" id="investMontante">R$ —</div>
+          <div class="sim-result__row"><span>Total investido</span><span id="investTotalInv">—</span></div>
+          <div class="sim-result__row"><span>Total em rendimentos</span><span id="investTotalRend">—</span></div>
+          <div class="sim-result__row"><span>Rentabilidade total</span><span id="investRentab">—</span></div>
+          <div class="sim-result__row"><span>Equivale a</span><span id="investSalarios">—</span></div>
+          <div style="margin-top:18px;border-top:1px solid rgba(255,255,255,.15);padding-top:14px">
+            <div class="lbl" style="color:rgba(255,255,255,.6);margin-bottom:10px;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em">Evolução por período</div>
+            <div id="investTimeline" style="display:flex;flex-direction:column;gap:5px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- TOAST -->
+<div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
+
+<script>
+/* ═══════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════ */
+const CFG = {
+  GAS: '/api/sheets',
+  ANO: new Date().getFullYear(),
+  TOAST_MS: 3000,
+  MESES: ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'],
+  CATS_EXTRA: [
+    {key:'fixas',lbl:'Obrigatórias Fixas'},
+    {key:'variaveis',lbl:'Obrigatórias Variáveis'},
+    {key:'naoobl',lbl:'Não Obrigatórias'},
+    {key:'invest',lbl:'Investimentos'},
+  ],
+  SH: {
+    PERFIL:'Perfil',SONHOS:'Vida Rica',DIVIDAS:'Quitação de Dívidas',
+    RENDA:'Renda e Planejamento',DESPESAS:'Detalhamento DESPESAS',
+    EXTRA:'Planejamento Extraordinário',ACOES:'Plano de Ação',
+    PAINEL:'Painel Comparativo',USERS:'Usuários'
+  },
+  DEFAULT_CATS: {
+    'Obrigatórias Fixas':    ['Moradia','Transporte','Saúde','Educação','Outros Fixos'],
+    'Obrigatórias Variáveis':['Alimentação','Farmácia','Manutenção','Outros Variáveis'],
+    'Não Obrigatórias':      ['Lazer','Vestuário','Assinaturas','Outros'],
+    'Investimentos':         ['Aposentadoria','Reserva','Outros Invest.'],
+  }
+};
+
+/* ═══════════════════════════════════════════
+   ESTADO
+═══════════════════════════════════════════ */
+let _user    = null;
+let _cliente = null;
+const _sonhosQ  = [];
+const _dividasQ = [];
+const _acoesQ   = [];
+let _importRows = [];
+let _cats = null;
+
+function cid(){ return (_cliente||_user)?.clienteId || null; }
+
+function getCats(){
+  if(_cats) return _cats;
+  try{
+    const saved = localStorage.getItem('dv_cats');
+    _cats = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(CFG.DEFAULT_CATS));
+  }catch{ _cats = JSON.parse(JSON.stringify(CFG.DEFAULT_CATS)); }
+  return _cats;
+}
+function saveCatsStore(){
+  try{ localStorage.setItem('dv_cats', JSON.stringify(getCats())); }catch{}
+}
+
+/* ═══════════════════════════════════════════
+   UTILS — parsers/formatters de moeda
+   ⚠️  BUG FIX v3.5
+   O fBRL antigo destruía números decimais nativos do JS:
+   String(2034.36) → "2034.36"
+   .replace(/\./g,'') → "203436"  ← removia o ponto decimal!
+   Resultava em valores absurdos (R$ 2 quatrilhões).
+   Agora fBRL trata Number e string separadamente.
+═══════════════════════════════════════════ */
+function pMoney(s){
+  if(s===null||s===undefined||s==='')return 0;
+  if(typeof s==='number')return isFinite(s)?s:0;
+  let str=String(s).trim().replace(/[^\d,.\-]/g,'');
+  if(!str)return 0;
+  const lastComma=str.lastIndexOf(',');
+  const lastDot=str.lastIndexOf('.');
+  if(lastComma===-1&&lastDot===-1){
+    const n=parseFloat(str);return isFinite(n)?n:0;
+  }
+  if(lastComma>lastDot){
+    // BR: vírgula é decimal, pontos são milhares
+    str=str.replace(/\./g,'').replace(',','.');
+  } else {
+    // US: ponto é decimal, vírgulas são milhares
+    str=str.replace(/,/g,'');
+  }
+  const n=parseFloat(str);
+  return isFinite(n)?n:0;
+}
+
+function fBRL(v){
+  let n;
+  if(typeof v === 'number'){
+    n = isFinite(v) ? v : 0;
+  } else if(v === null || v === undefined || v === ''){
+    n = 0;
+  } else {
+    // Recebeu string: usa o mesmo parser do pMoney para evitar divergência
+    n = pMoney(v);
+  }
+  return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function mMask(el){
+  const r=el.value.replace(/\D/g,'');
+  el.value=r?(parseInt(r,10)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'';
+}
+function initMasks(root){
+  (root||document).querySelectorAll('[data-money]').forEach(el=>{
+    if(!el.dataset.maskInited){
+      el.addEventListener('input',()=>mMask(el));
+      el.dataset.maskInited='1';
+    }
+  });
+}
+function fDate(s){ if(!s)return'—'; const p=String(s).split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:s; }
+function nextMes(m){ const i=CFG.MESES.indexOf(String(m).toUpperCase()); return i<0?m:CFG.MESES[(i+1)%12]; }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function gel(id){ return document.getElementById(id); }
+function logo(h){ const t=gel('tplLogo'); const s=t.content.cloneNode(true).querySelector('svg'); s.style.height=h+'px'; s.style.width='auto'; return s; }
+
+function toast(msg,type='success'){
+  const cls={success:'t-ok',error:'t-err',info:'t-inf'};
+  const ico={success:'✓',error:'✕',info:'◈'};
+  const c=gel('toastWrap');
+  const t=document.createElement('div');
+  t.className=`toast ${cls[type]||'t-inf'}`;
+  t.innerHTML=`<span style="flex-shrink:0;font-weight:700">${ico[type]||'◈'}</span><span>${esc(msg)}</span>`;
+  c.appendChild(t);
+  setTimeout(()=>{ t.classList.add('removing'); t.addEventListener('animationend',()=>t.remove(),{once:true}); },CFG.TOAST_MS);
+}
+
+function goPanel(id, btnEl){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const p=gel(`panel-${id}`); if(p)p.classList.add('active');
+  const btn=btnEl||document.querySelector(`.nav-item[data-panel="${id}"]`);
+  if(btn)btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(window.innerWidth<769) gel('appSidebar').classList.remove('open');
+}
+
+function markNavDone(panelId){
+  const btn=document.querySelector(`.nav-item[data-panel="${panelId}"]`);
+  if(btn) btn.classList.add('done');
+}
+
+function openModal(id){ gel(id).classList.add('active'); }
+function closeModal(id){ gel(id).classList.remove('active'); }
+function toggleSidebar(){ gel('appSidebar').classList.toggle('open'); }
+
+/* ═══════════════════════════════════════════
+   API
+═══════════════════════════════════════════ */
+async function gPost(action,payload){
+  const body=JSON.stringify({action,clienteId:cid(),...payload});
+  const r=await fetch(CFG.GAS,{method:'POST',headers:{'Content-Type':'text/plain'},body,redirect:'follow'});
+  const txt=await r.text();
+  try{return JSON.parse(txt);}catch{throw new Error(txt||'Erro no servidor');}
+}
+async function gGet(action,params={}){
+  const qs=new URLSearchParams({action,...params}).toString();
+  const r=await fetch(`${CFG.GAS}?${qs}`,{redirect:'follow'});
+  const txt=await r.text();
+  try{return JSON.parse(txt);}catch{throw new Error(txt||'Erro no servidor');}
+}
+
+const apiLogin       = (e,s)=>gGet('login',{sheet:CFG.SH.USERS,email:e,senha:s});
+const apiGetClientes = ()=>gGet('getClientes',{sheet:CFG.SH.USERS});
+const apiCreateUser  = d=>gPost('createCliente',{sheet:CFG.SH.USERS,data:d});
+const apiDeleteUser  = cid=>gPost('deleteCliente',{clienteId:cid});
+const apiSavePerfil  = d=>gPost('savePerfil',{sheet:CFG.SH.PERFIL,data:d});
+const apiRows        = (sh,rows)=>gPost('appendRows',{sheet:sh,rows});
+const apiSaveRenda   = d=>gPost('saveRenda',{sheet:CFG.SH.RENDA,data:d});
+const apiGetSonhos   = ()=>gGet('getRows',{sheet:CFG.SH.SONHOS,clienteId:cid()});
+const apiGetPainel   = m=>gGet('getPainel',{sheet:CFG.SH.PAINEL,mes:m,clienteId:cid()});
+
+/* ═══════════════════════════════════════════
+   AUTH — sessionStorage (limpa ao fechar)
+═══════════════════════════════════════════ */
+async function doLogin(){
+  const email=gel('authEmail').value.trim();
+  const pwd  =gel('authPwd').value;
+  const errEl=gel('authErr'); errEl.classList.remove('show');
+  if(!email||!pwd){errEl.textContent='Preencha e-mail e senha.';errEl.classList.add('show');return;}
+  const btn=gel('authSubmit'); btn.textContent='Entrando...'; btn.disabled=true;
+  try{
+    const res=await apiLogin(email,pwd);
+    if(!res||res.error||!res.perfil){
+      errEl.textContent='E-mail ou senha incorretos.';errEl.classList.add('show');
+      btn.textContent='Entrar';btn.disabled=false;return;
+    }
+    _user=res;
+    try{sessionStorage.setItem('dv_s',JSON.stringify(res));}catch{}
+    hideAuth();
+    res.perfil==='consultor'?showConsultor():showCliente(res);
+  }catch(e){
+    errEl.textContent='Erro de conexão. Tente novamente.';errEl.classList.add('show');
+    btn.textContent='Entrar';btn.disabled=false;
+  }
+}
+
+function hideAuth(){
+  const sc=gel('authScreen');
+  sc.classList.add('hiding');
+  setTimeout(()=>sc.style.display='none',280);
+}
+
+function doLogout(){
+  _user=null;_cliente=null;
+  try{sessionStorage.removeItem('dv_s');}catch{}
+  gel('consultorScreen').classList.remove('active');
+  gel('topbar').style.display='none';
+  gel('appWrap').classList.remove('active');
+  const sc=gel('authScreen');
+  sc.style.display='flex';sc.classList.remove('hiding');
+  gel('authEmail').value='';gel('authPwd').value='';
+  gel('authSubmit').textContent='Entrar';gel('authSubmit').disabled=false;
+  gel('authErr').classList.remove('show');
+}
+
+function showConsultor(){
+  gel('consultorScreen').classList.add('active');
+  loadClientes();
+}
+
+function showCliente(user){
+  gel('topbar').style.display='flex';
+  gel('appWrap').classList.add('active');
+  gel('clientBadge').textContent=(user.nome||user.email||'').split(' ')[0];
+  gel('btnBack').style.display=_user?.perfil==='consultor'?'flex':'none';
+  const nEl=gel('nomeCliente'),eEl=gel('emailCliente');
+  if(nEl&&user.nome&&!nEl.value){nEl.value=user.nome;}
+  if(eEl&&user.email&&!eEl.value){eEl.value=user.email;}
+  if(_user?.perfil!=='consultor'){
+    [nEl,eEl].forEach(el=>{if(el){el.readOnly=true;el.style.opacity='.72';el.style.cursor='default';el.title='Preenchido automaticamente do seu cadastro';}});
+  }
+  buildCatSelect();
+  loadSonhosFromSheets();
+  goPanel('perfil');
+}
+
+function backToConsultor(){
+  _cliente=null;
+  gel('topbar').style.display='none';
+  gel('appWrap').classList.remove('active');
+  gel('consultorScreen').classList.add('active');
+  loadClientes();
+}
+
+/* ═══════════════════════════════════════════
+   CONSULTOR
+═══════════════════════════════════════════ */
+async function loadClientes(){
+  const g=gel('clientsGrid');
+  g.innerHTML='<div class="clients-empty">Carregando...</div>';
+  try{
+    const res=await apiGetClientes();
+    const list=(res?.clientes||[]).filter(c=>c.perfil!=='consultor');
+    if(!list.length){g.innerHTML='<div class="clients-empty">Nenhum cliente cadastrado.</div>';return;}
+    g.innerHTML=list.map(c=>`
+      <div class="client-card">
+        <div class="client-avatar">${(c.nome||c.email||'?')[0].toUpperCase()}</div>
+        <div class="client-name">${esc(c.nome||'—')}</div>
+        <div class="client-email">${esc(c.email||'')}</div>
+        <div class="client-footer">
+          <span class="client-status">Ativo</span>
+          <div class="client-actions-row">
+            <button class="client-del" onclick='confirmarExclusao(${JSON.stringify(c)})'>✕</button>
+            <button class="client-open" onclick='abrirCliente(${JSON.stringify(c)})'>Abrir →</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }catch(e){g.innerHTML=`<div class="clients-empty" style="color:var(--danger)">Erro: ${esc(e.message)}</div>`;}
+}
+
+function abrirCliente(c){
+  _cliente=c;
+  gel('consultorScreen').classList.remove('active');
+  showCliente(c);
+}
+
+let _delTarget=null;
+function confirmarExclusao(c){
+  _delTarget=c;
+  const m=gel('deleteClientMsg');
+  if(m)m.textContent=`Tem certeza que deseja excluir o cliente "${c.nome||c.email}"?`;
+  openModal('modalDeleteClient');
+}
+async function executarExclusao(){
+  if(!_delTarget)return;
+  const btn=gel('btnConfirmDel');btn.disabled=true;btn.textContent='Excluindo...';
+  try{
+    await apiDeleteUser(_delTarget.clienteId);
+    toast(`Cliente "${_delTarget.nome||_delTarget.email}" excluído.`,'success');
+    closeModal('modalDeleteClient');_delTarget=null;loadClientes();
+  }catch(e){toast('Erro: '+e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='Sim, excluir';}
+}
+
+async function createCliente(){
+  const nome=gel('ncNome').value.trim(),email=gel('ncEmail').value.trim(),senha=gel('ncSenha').value;
+  const errEl=gel('ncErr');errEl.style.display='none';
+  if(!nome||!email||!senha){errEl.textContent='Preencha todos os campos.';errEl.style.display='block';return;}
+  if(senha.length<6){errEl.textContent='Senha mínima de 6 caracteres.';errEl.style.display='block';return;}
+  const btn=document.querySelector('[onclick="createCliente()"]');btn.disabled=true;btn.textContent='Criando...';
+  try{
+    const res=await apiCreateUser({nome,email,senha,perfil:'cliente'});
+    if(res?.error){errEl.textContent=res.error;errEl.style.display='block';return;}
+    toast(`Cliente "${nome}" criado!`,'success');
+    closeModal('modalNewClient');
+    ['ncNome','ncEmail','ncSenha'].forEach(id=>{const el=gel(id);if(el)el.value='';});
+    loadClientes();
+  }catch(e){errEl.textContent='Erro: '+e.message;errEl.style.display='block';}
+  finally{btn.disabled=false;btn.textContent='Criar cliente';}
+}
+
+/* ═══════════════════════════════════════════
+   CATEGORIAS
+═══════════════════════════════════════════ */
+function buildCatSelect(){
+  const sel=gel('despCategoria');if(!sel)return;
+  const cats=getCats();sel.innerHTML='';
+  Object.entries(cats).forEach(([grp,items])=>{
+    const og=document.createElement('optgroup');og.label=grp;
+    items.forEach(item=>{
+      const o=document.createElement('option');
+      o.value=`${grp} · ${item}`;o.textContent=item;
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+}
+
+function buildCatEditor(){
+  const cats=getCats();
+  const el=gel('catEditor');if(!el)return;
+  el.innerHTML=Object.entries(cats).map(([grp,items],gi)=>`
+    <div class="cat-group">
+      <div class="cat-group-hd">
+        <span class="cat-group-name">${esc(grp)}</span>
+        <button class="btn btn-xs btn-s" onclick="addCatItem(${gi})">+ Adicionar</button>
+      </div>
+      <div class="cat-items" id="catItems_${gi}">
+        ${items.map((item,ii)=>`
+          <div class="cat-item-row" id="catRow_${gi}_${ii}">
+            <input class="cat-item-inp" type="text" value="${esc(item)}" data-gi="${gi}" data-ii="${ii}" oninput="updateCat(${gi},${ii},this.value)"/>
+            <button class="btn btn-xs btn-d" onclick="removeCatItem(${gi},${ii})">✕</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateCat(gi,ii,val){
+  const cats=getCats();
+  const grps=Object.keys(cats);
+  if(grps[gi]) cats[grps[gi]][ii]=val;
+}
+
+function addCatItem(gi){
+  const cats=getCats();
+  const grps=Object.keys(cats);
+  if(!grps[gi])return;
+  cats[grps[gi]].push('Nova categoria');
+  buildCatEditor();
+}
+
+function removeCatItem(gi,ii){
+  const cats=getCats();
+  const grps=Object.keys(cats);
+  if(!grps[gi])return;
+  cats[grps[gi]].splice(ii,1);
+  buildCatEditor();
+}
+
+function saveCats(){
+  saveCatsStore();
+  buildCatSelect();
+  toast('Categorias salvas!','success');
+  closeModal('modalCats');
+}
+
+/* ═══════════════════════════════════════════
+   RESERVA
+═══════════════════════════════════════════ */
+function calcLogic(clt,filhos,rede){ return Math.min((clt==='sim'?3:6)+(filhos==='sim'?1:0),rede==='sim'?6:12); }
+function calcReserve(){
+  const clt=document.querySelector('input[name="clt"]:checked')?.value||'nao';
+  const filhos=document.querySelector('input[name="filhos"]:checked')?.value||'nao';
+  const rede=document.querySelector('input[name="rede"]:checked')?.value||'sim';
+  const g=pMoney(gel('gastosMensais')?.value);
+  const m=calcLogic(clt,filhos,rede);
+  gel('reserveMonths').textContent=m;gel('reserveAmount').textContent=fBRL(m*g);
+  gel('reserveResult')?.classList.remove('hidden');
+}
+function calcReserveDash(){
+  const clt=document.querySelector('input[name="rClt"]:checked')?.value||'nao';
+  const filhos=document.querySelector('input[name="rFilhos"]:checked')?.value||'nao';
+  const rede=document.querySelector('input[name="rRede"]:checked')?.value||'sim';
+  const g=pMoney(gel('rGastos')?.value);
+  const m=calcLogic(clt,filhos,rede);
+  gel('drMonths').textContent=m;gel('drAmount').textContent=fBRL(m*g);
+}
+function syncReserve(clt,filhos,rede,g){
+  [['rClt',clt],['rFilhos',filhos],['rRede',rede]].forEach(([n,v])=>{
+    const el=document.querySelector(`input[name="${n}"][value="${v}"]`);if(el)el.checked=true;
+  });
+  if(g>0&&gel('rGastos'))gel('rGastos').value=g.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  calcReserveDash();
+}
+
+/* ═══════════════════════════════════════════
+   ONBOARDING
+═══════════════════════════════════════════ */
+async function submitPerfil(){
+  const nome=gel('nomeCliente');
+  if(!nome.value.trim()){toast('Informe o nome do cliente.','error');nome.focus();return;}
+  const clt=document.querySelector('input[name="clt"]:checked')?.value||'nao';
+  const filhos=document.querySelector('input[name="filhos"]:checked')?.value||'nao';
+  const rede=document.querySelector('input[name="rede"]:checked')?.value||'sim';
+  const g=pMoney(gel('gastosMensais')?.value);
+  const m=calcLogic(clt,filhos,rede);
+  const btn=document.querySelector('[onclick="submitPerfil()"]');if(btn)btn.disabled=true;
+  try{
+    await apiSavePerfil({nome:nome.value.trim(),email:gel('emailCliente')?.value.trim()||'',clt,filhos,rede,gastosMensais:g,reservaMeses:m,reservaValor:m*g,ano:CFG.ANO});
+    gel('clientBadge').textContent=nome.value.trim().split(' ')[0];
+    syncReserve(clt,filhos,rede,g);
+    toast('Perfil salvo!','success');
+    markNavDone('perfil');goPanel('sonhos');
+  }catch(e){toast('Erro: '+e.message,'error');}
+  finally{if(btn)btn.disabled=false;}
+}
+
+function addSonhoPreview(){
+  const quem=gel('sonhoQuem')?.value.trim(),obj=gel('sonhoObj')?.value.trim();
+  if(!quem||!obj){toast('Preencha "Quem" e "Objetivo".','error');return;}
+  const motivo=gel('sonhoMotivo')?.value.trim(),valor=pMoney(gel('sonhoValor')?.value);
+  const prazo=gel('sonhoPrazo')?.value,tipo=gel('sonhoTipo')?.value||'Curto';
+  _sonhosQ.push({quem,obj,motivo,valor,prazo,tipo});
+  const tbl=gel('sonhosTable');if(tbl)tbl.classList.remove('hidden');
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td>${esc(quem)}</td><td>${esc(obj)}</td><td>${esc(motivo)}</td><td class="mono">${fBRL(valor)}</td><td>${fDate(prazo)}</td><td>${tipo}</td><td><button class="btn btn-d btn-xs" onclick="this.closest('tr').remove()">✕</button></td>`;
+  gel('sonhosTbody').appendChild(tr);
+  ['sonhoQuem','sonhoObj','sonhoMotivo','sonhoValor','sonhoPrazo'].forEach(id=>{const el=gel(id);if(el)el.value='';});
+  toast(`"${obj}" adicionado.`,'info');
+}
+async function submitSonhos(){
+  if(!_sonhosQ.length){toast('Adicione ao menos um sonho.','error');return;}
+  const rows=_sonhosQ.map(s=>[s.quem,s.obj,s.motivo,s.valor,s.prazo,s.tipo,CFG.ANO]);
+  const btn=document.querySelector('[onclick="submitSonhos()"]');if(btn)btn.disabled=true;
+  try{
+    await apiRows(CFG.SH.SONHOS,rows);
+    renderDreams(_sonhosQ);
+    toast(`${rows.length} sonho(s) salvos!`,'success');
+    markNavDone('sonhos');goPanel('dividas');
+  }catch(e){toast('Erro: '+e.message,'error');}
+  finally{if(btn)btn.disabled=false;}
+}
+
+function addDividaPreview(){
+  const banco=gel('divBanco')?.value.trim(),desc=gel('divDesc')?.value.trim();
+  if(!banco||!desc){toast('Informe credor e descrição.','error');return;}
+  const vs=pMoney(gel('divValorSolic')?.value),pt=parseInt(gel('divParcTotais')?.value)||0;
+  const vp=pMoney(gel('divValorParc')?.value),sd=pMoney(gel('divSaldo')?.value);
+  const j=parseFloat(gel('divJuros')?.value)||0,up=pMoney(gel('divUltParc')?.value),tp=pMoney(gel('divTotalPago')?.value);
+  _dividasQ.push({banco,desc,vs,pt,vp,sd,j,up,tp});
+  const tbl=gel('dividasTable');if(tbl)tbl.classList.remove('hidden');
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td>${esc(banco)}</td><td>${esc(desc)}</td><td class="mono text-danger">${fBRL(sd)}</td><td class="mono">${fBRL(vp)}</td><td>${j}%</td><td><button class="btn btn-d btn-xs" onclick="this.closest('tr').remove()">✕</button></td>`;
+  gel('dividasTbody').appendChild(tr);
+  ['divBanco','divDesc','divValorSolic','divParcTotais','divValorParc','divSaldo','divJuros','divUltParc','divTotalPago'].forEach(id=>{const el=gel(id);if(el)el.value='';});
+  toast(`"${desc}" adicionada.`,'info');
+}
+async function submitDividas(){
+  if(!_dividasQ.length){toast('Sem dívidas — avançando.','info');markNavDone('dividas');goPanel('renda');return;}
+  const rows=_dividasQ.map(d=>[d.banco,d.desc,d.vs,d.pt,d.vp,d.sd,d.j,d.up,d.tp,CFG.ANO]);
+  const btn=document.querySelector('[onclick="submitDividas()"]');if(btn)btn.disabled=true;
+  try{
+    await apiRows(CFG.SH.DIVIDAS,rows);
+    renderQuitacao(_dividasQ);
+    toast(`${rows.length} dívida(s) salvas!`,'success');
+    markNavDone('dividas');goPanel('renda');
+  }catch(e){toast('Erro: '+e.message,'error');}
+  finally{if(btn)btn.disabled=false;}
+}
+
+function buildExtraOnboarding(){
+  const c=gel('extraOnboarding');if(!c)return;
+  c.innerHTML=CFG.MESES.map(mes=>`
+    <div style="background:var(--bg-muted);border-radius:10px;padding:10px">
+      <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--brand);margin-bottom:8px">${mes}</div>
+      ${CFG.CATS_EXTRA.map(cat=>`
+        <div style="font-size:.65rem;color:var(--text-muted);margin-bottom:2px">${cat.lbl}</div>
+        <input class="inp inp-money inp-sm" type="text" data-money id="exob_${mes}_${cat.key}" placeholder="0,00" style="margin-bottom:7px"/>
+      `).join('')}
+    </div>
+  `).join('');
+  initMasks(c);
+}
+
+async function submitRenda(){
+  const salario=pMoney(gel('rendaSalario')?.value),outras=pMoney(gel('rendaOutras')?.value);
+  const extra=[];
+  CFG.MESES.forEach(mes=>{
+    CFG.CATS_EXTRA.forEach(cat=>{
+      const v=pMoney(gel(`exob_${mes}_${cat.key}`)?.value);
+      if(v>0)extra.push({mes,cat:cat.lbl,valor:v});
+    });
+  });
+  const btn=document.querySelector('[onclick="submitRenda()"]');if(btn)btn.disabled=true;
+  try{
+    await apiSaveRenda({salario,outras,extra,ano:CFG.ANO});
+    if(extra.length)await apiRows(CFG.SH.EXTRA,extra.map(e=>[e.mes,e.cat,e.valor,CFG.ANO]));
+    toast('Cadastro finalizado! 🎉','success');
+    markNavDone('renda');
+    setTimeout(()=>goPanel('vidarica'),900);
+  }catch(e){toast('Erro: '+e.message,'error');}
+  finally{if(btn)btn.disabled=false;}
+}
+
+/* ═══════════════════════════════════════════
+   VIDA RICA
+═══════════════════════════════════════════ */
+function renderDreams(list){
+  const g=gel('dreamsGrid');if(!g)return;
+  if(!list?.length){g.innerHTML='<div style="grid-column:1/-1;padding:48px;text-align:center;color:var(--text-muted)"><span style="font-size:2.5rem;opacity:.25;display:block;margin-bottom:10px">◈</span>Nenhum sonho cadastrado ainda.</div>';return;}
+  g.innerHTML=list.map(s=>{
+    const tipo=(s.tipo||'Curto').toLowerCase();
+    const c=tipo.startsWith('m')?'tm':tipo.startsWith('l')?'tl':'tc';
+    return`<article class="dream-card ${c}">
+      <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)">${esc(s.quem||s[0]||'—')}</div>
+      <h3 style="font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--text-primary)">${esc(s.obj||s[1]||'—')}</h3>
+      <p style="font-size:.8rem;color:var(--text-secondary);line-height:1.5;flex:1">${esc(s.motivo||s[2]||'')}</p>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:7px;border-top:1px solid var(--border-subtle);padding-top:10px;flex-wrap:wrap">
+        <span class="mono" style="font-size:.93rem;font-weight:600;color:var(--brand)">${fBRL(s.valor||s[3]||0)}</span>
+        <span style="font-size:.72rem;color:var(--text-muted)">${fDate(s.prazo||s[4]||'')}</span>
+        <span style="display:inline-flex;padding:2px 9px;border-radius:99px;font-size:.66rem;font-weight:700;text-transform:uppercase;background:${c==='tc'?'var(--success-bg)':c==='tm'?'var(--warning-bg)':'var(--gold-light)'};color:${c==='tc'?'var(--success)':c==='tm'?'var(--warning)':'var(--brand)'}">${s.tipo||'Curto'}</span>
+      </div>
+    </article>`;
+  }).join('');
+}
+async function loadSonhosFromSheets(){
+  try{
+    const r=await apiGetSonhos();
+    if(r?.rows?.length)renderDreams(r.rows.map(row=>({quem:row[0],obj:row[1],motivo:row[2],valor:row[3],prazo:row[4],tipo:row[5]})));
+  }catch{}
+}
+
+/* ═══════════════════════════════════════════
+   PLANO DE AÇÃO
+═══════════════════════════════════════════ */
+function addAcaoRow(desc='',obs='',done=false){
+  const tb=gel('acaoTbody');if(!tb)return;
+  const idx=_acoesQ.length;_acoesQ.push({desc,obs,done});
+  const tr=document.createElement('tr');tr.dataset.idx=idx;
+  tr.innerHTML=`<td style="text-align:center"><input type="checkbox" style="accent-color:var(--brand);width:15px;height:15px;cursor:pointer" ${done?'checked':''} onchange="toggleAcao(${idx},this.checked)"/></td>
+  <td><input class="acao-inp" type="text" value="${esc(desc)}" placeholder="Descreva a ação..." oninput="_acoesQ[${idx}].desc=this.value"/></td>
+  <td><input class="acao-inp" type="text" value="${esc(obs)}" placeholder="Observações..." oninput="_acoesQ[${idx}].obs=this.value"/></td>
+  <td><span id="ast${idx}" style="display:inline-flex;align-items:center;gap:3px;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:uppercase;background:${done?'var(--success-bg)':'var(--warning-bg)'};color:${done?'var(--success)':'var(--warning)'}">${done?'✓ Feito':'⏳ Pendente'}</span></td>
+  <td><button class="btn btn-d btn-xs" onclick="this.closest('tr').remove()">✕</button></td>`;
+  tb.appendChild(tr);
+}
+function toggleAcao(idx,v){
+  _acoesQ[idx].done=v;
+  const s=gel(`ast${idx}`);
+  if(s){s.style.background=v?'var(--success-bg)':'var(--warning-bg)';s.style.color=v?'var(--success)':'var(--warning)';s.textContent=v?'✓ Feito':'⏳ Pendente';}
+}
+async function saveAcoes(){
+  const valid=_acoesQ.filter(Boolean).filter(a=>a.desc?.trim());
+  if(!valid.length){toast('Adicione ao menos uma ação.','error');return;}
+  try{await apiRows(CFG.SH.ACOES,valid.map(a=>[a.desc,a.obs,a.done?'Concluído':'Pendente',CFG.ANO]));toast(`${valid.length} ação(ões) salvas!`,'success');}
+  catch(e){toast('Erro: '+e.message,'error');}
+}
+
+/* ═══════════════════════════════════════════
+   QUITAÇÃO
+═══════════════════════════════════════════ */
+function renderQuitacao(list){
+  const tb=gel('quitacaoTbody');if(!tb)return;
+  list.forEach(d=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${esc(d.banco||d[0]||'—')}</td><td>${esc(d.desc||d[1]||'—')}</td>
+    <td class="mono">${fBRL(d.vs??d[2]??0)}</td><td style="text-align:center">${d.pt??d[3]??'—'}</td>
+    <td class="mono">${fBRL(d.vp??d[4]??0)}</td><td class="mono text-danger">${fBRL(d.sd??d[5]??0)}</td>
+    <td class="mono">${d.j??d[6]??0}%</td><td class="mono">${fBRL(d.up??d[7]??0)}</td>
+    <td class="mono">${fBRL(d.tp??d[8]??0)}</td>
+    <td><button class="btn btn-d btn-xs" onclick="this.closest('tr').remove()">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   DESPESAS — MANUAL
+═══════════════════════════════════════════ */
+function switchDespTab(id,btn){
+  document.querySelectorAll('.desp-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.desp-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');gel(`desp-${id}`)?.classList.add('active');
+}
+function toggleParcelado(v){gel('parcelFields')?.classList.toggle('hidden',!v);if(!v)clearPrev();}
+function buildDespRows(){
+  const fp=gel('despFormaPag')?.value,bco=gel('despBanco')?.value,dt=gel('despData')?.value;
+  const desc=gel('despDesc')?.value.trim(),vp=pMoney(gel('despValorParc')?.value);
+  const cat=gel('despCategoria')?.value,mes=gel('despMesComp')?.value;
+  const parc=gel('chkParcelado')?.checked,np=parseInt(gel('despNParcelas')?.value)||1;
+  if(!desc){toast('Informe a descrição.','error');return null;}
+  if(vp<=0){toast('Informe o valor da parcela.','error');return null;}
+  const total=parc?np:1;const rows=[];let m=mes;
+  for(let i=1;i<=total;i++){
+    rows.push({fp,bco,dt,desc:parc?`${desc} ${i}/${total}`:desc,vp,cat,mes:m,ano:CFG.ANO});
+    m=nextMes(m);
+  }
+  return rows;
+}
+function renderPrev(rows){
+  const t=gel('prevTitle'),tbl=gel('prevTable'),tb=gel('prevTbody');
+  if(!t||!tbl||!tb)return;
+  t.classList.remove('hidden');tbl.classList.remove('hidden');tb.innerHTML='';
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${r.fp}</td><td>${r.bco}</td><td>${fDate(r.dt)}</td><td>${esc(r.desc)}</td><td class="mono" style="text-align:right">${fBRL(r.vp)}</td><td>${r.cat}</td><td class="mono">${r.mes}</td>`;
+    tb.appendChild(tr);
+  });
+}
+function clearPrev(){gel('prevTitle')?.classList.add('hidden');gel('prevTable')?.classList.add('hidden');const t=gel('prevTbody');if(t)t.innerHTML='';}
+function genPreview(){const r=buildDespRows();if(r)renderPrev(r);}
+async function submitDespesas(){
+  const rows=buildDespRows();if(!rows)return;
+  if(!gel('prevTbody')?.hasChildNodes()){renderPrev(rows);toast('Confira a prévia antes de enviar.','info');return;}
+  const btn=document.querySelector('[onclick="submitDespesas()"]');if(btn)btn.disabled=true;
+  try{
+    await apiRows(CFG.SH.DESPESAS,rows.map(r=>[r.fp,r.bco,r.dt,r.desc,r.vp,r.cat,r.mes,r.ano]));
+    toast(`${rows.length} lançamento(s) enviado(s)!`,'success');
+    clearDespForm();clearPrev();
+  }catch(e){toast('Erro: '+e.message,'error');}
+  finally{if(btn)btn.disabled=false;}
+}
+function clearDespForm(){
+  ['despDesc','despValorParc','despData','despNParcelas'].forEach(id=>{const el=gel(id);if(el)el.value='';});
+  const c=gel('chkParcelado');if(c){c.checked=false;toggleParcelado(false);}
+  ['despFormaPag','despBanco','despCategoria','despMesComp'].forEach(id=>{const el=gel(id);if(el)el.selectedIndex=0;});
+}
+
+/* ═══════════════════════════════════════════
+   DESPESAS — IMPORTAR ARQUIVO
+═══════════════════════════════════════════ */
+function onDragOver(e){e.preventDefault();gel('importDrop').classList.add('drag');}
+function onDragLeave(){gel('importDrop').classList.remove('drag');}
+function onFileDrop(e){e.preventDefault();gel('importDrop').classList.remove('drag');const f=e.dataTransfer.files[0];if(f)handleFileSelect(f);}
+
+function handleFileSelect(file){
+  if(!file)return;
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(ext==='csv'){
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const result=Papa.parse(e.target.result,{header:true,skipEmptyLines:true});
+      processImportData(result.data,file.name);
+    };
+    reader.readAsText(file,'UTF-8');
+  } else if(ext==='xlsx'||ext==='xls'){
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const data=XLSX.utils.sheet_to_json(ws,{defval:''});
+      processImportData(data,file.name);
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    toast('Formato não suportado. Use CSV ou XLSX.','error');
+  }
+}
+
+function processImportData(data,fname){
+  if(!data||!data.length){toast('Arquivo vazio ou sem dados.','error');return;}
+  gel('importFileName').textContent=fname;
+  gel('importRowCount').textContent=`${data.length} registros encontrados`;
+  gel('importPreviewWrap').classList.remove('hidden');
+
+  const keys=Object.keys(data[0]);
+  const findCol=(patterns)=>{
+    for(const p of patterns){
+      const k=keys.find(k=>k.toLowerCase().includes(p.toLowerCase()));
+      if(k)return k;
+    }
+    return null;
+  };
+  const colData  =findCol(['data','date','dt','dia']);
+  const colDesc  =findCol(['desc','historico','memo','lancamento','nome','descrição']);
+  const colValor =findCol(['valor','value','amount','total','debito','credito','vl']);
+  const colMes   =findCol(['mes','mês','month','competencia','competência']);
+
+  const cats=getCats();
+  const allCats=Object.entries(cats).flatMap(([grp,items])=>items.map(i=>`${grp} · ${i}`));
+
+  _importRows=data.map((row,i)=>{
+    const rawDesc =String(row[colDesc]||row[keys[1]]||'').trim();
+    const rawValor=pMoney(String(row[colValor]||row[keys[2]]||'0'));
+    const rawData =String(row[colData]||row[keys[0]]||'').trim();
+    const rawMes  =colMes?String(row[colMes]||''):inferMes(rawData);
+    return {id:i,data:rawData,desc:rawDesc,valor:Math.abs(rawValor),cat:allCats[0]||'',mes:rawMes||CFG.MESES[new Date().getMonth()],selected:true};
+  });
+
+  renderImportTable();
+}
+
+function inferMes(dateStr){
+  if(!dateStr)return CFG.MESES[new Date().getMonth()];
+  const parts=dateStr.split(/[\/\-\.]/);
+  if(parts.length>=2){
+    const m=parseInt(parts[1])-1;
+    if(m>=0&&m<12)return CFG.MESES[m];
+  }
+  return CFG.MESES[new Date().getMonth()];
+}
+
+function renderImportTable(){
+  const tb=gel('importTbody');if(!tb)return;
+  const cats=getCats();
+  const allCats=Object.entries(cats).flatMap(([grp,items])=>items.map(i=>`${grp} · ${i}`));
+  const catOpts=allCats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  const mesOpts=CFG.MESES.map(m=>`<option value="${m}">${m.charAt(0)+m.slice(1).toLowerCase()}</option>`).join('');
+
+  tb.innerHTML=_importRows.map(r=>`
+    <tr id="irow_${r.id}" style="${r.selected?'':'opacity:.45'}">
+      <td>${r.data}</td>
+      <td>${esc(r.desc)}</td>
+      <td class="mono" style="text-align:right">${fBRL(r.valor)}</td>
+      <td><select class="sel sel-sm" style="min-width:180px" onchange="updateImportRow(${r.id},'cat',this.value)">${catOpts}</select></td>
+      <td><select class="sel sel-sm" onchange="updateImportRow(${r.id},'mes',this.value)">${mesOpts}</select></td>
+      <td style="text-align:center"><input type="checkbox" ${r.selected?'checked':''} style="accent-color:var(--brand);width:15px;height:15px;cursor:pointer" onchange="updateImportRow(${r.id},'selected',this.checked)"/></td>
+    </tr>
+  `).join('');
+
+  _importRows.forEach(r=>{
+    const row=gel(`irow_${r.id}`);if(!row)return;
+    const catSel=row.querySelectorAll('select')[0];
+    const mesSel=row.querySelectorAll('select')[1];
+    if(catSel){[...catSel.options].forEach(o=>{if(o.value===r.cat)o.selected=true;});}
+    if(mesSel){[...mesSel.options].forEach(o=>{if(o.value===r.mes)o.selected=true;});}
+  });
+}
+
+function updateImportRow(id,field,val){
+  const r=_importRows.find(r=>r.id===id);
+  if(!r)return;
+  if(field==='selected'){r.selected=val;const row=gel(`irow_${id}`);if(row)row.style.opacity=val?'1':'.45';}
+  else r[field]=val;
+}
+
+function selectAllImport(v){
+  _importRows.forEach(r=>r.selected=v);
+  renderImportTable();
+}
+
+async function submitImport(){
+  const selected=_importRows.filter(r=>r.selected&&r.desc&&r.valor>0);
+  if(!selected.length){toast('Nenhum item selecionado.','error');return;}
+  const btn=document.querySelector('[onclick="submitImport()"]');if(btn)btn.disabled=true;
+  try{
+    const rows=selected.map(r=>['Importação',r.data,r.desc,r.valor,r.cat,r.mes,CFG.ANO]);
+    await apiRows(CFG.SH.DESPESAS,rows);
+    toast(`${rows.length} despesa(s) importada(s)!`,'success');
+    clearImport();
+  }catch(e){toast('Erro: '+e.message,'error');}
+  finally{if(btn)btn.disabled=false;}
+}
+
+function clearImport(){
+  _importRows=[];
+  gel('importPreviewWrap').classList.add('hidden');
+  gel('fileInput').value='';
+  const tb=gel('importTbody');if(tb)tb.innerHTML='';
+}
+
+/* ═══════════════════════════════════════════
+   EXTRAORDINÁRIO
+═══════════════════════════════════════════ */
+function buildExtraGrid(){
+  const c=gel('extraGrid');if(!c)return;
+  c.innerHTML=CFG.MESES.map(mes=>`
+    <div class="extra-card">
+      <div class="extra-card-hd">${mes}</div>
+      <div style="padding:10px 12px;display:flex;flex-direction:column;gap:10px">
+        ${CFG.CATS_EXTRA.map(cat=>`
+          <div>
+            <div class="extra-cat-lbl">${cat.lbl}</div>
+            <div id="ei_${mes}_${cat.key}" style="display:flex;flex-direction:column;gap:3px">
+              <div class="extra-item"><input class="extra-desc" type="text" placeholder="Descrição..." data-mes="${mes}" data-cat="${cat.key}"/><input class="extra-val" type="text" data-money placeholder="0,00"/></div>
+            </div>
+            <button class="extra-add" onclick="addExtraItem('${mes}','${cat.key}')">+ item</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+  initMasks(c);
+}
+function addExtraItem(mes,catKey){
+  const c=gel(`ei_${mes}_${catKey}`);if(!c)return;
+  const d=document.createElement('div');d.className='extra-item';
+  d.innerHTML=`<input class="extra-desc" type="text" placeholder="Descrição..."/><input class="extra-val" type="text" data-money placeholder="0,00"/>`;
+  c.appendChild(d);
+  const m=d.querySelector('[data-money]');if(m)m.addEventListener('input',()=>mMask(m));
+}
+async function saveExtraordinario(){
+  const rows=[];
+  CFG.MESES.forEach(mes=>{
+    CFG.CATS_EXTRA.forEach(cat=>{
+      document.querySelectorAll(`#ei_${mes}_${cat.key} .extra-item`).forEach(item=>{
+        const desc=item.querySelector('.extra-desc')?.value.trim();
+        const val=pMoney(item.querySelector('.extra-val')?.value);
+        if(desc&&val>0)rows.push([mes,cat.lbl,desc,val,CFG.ANO]);
+      });
+    });
+  });
+  if(!rows.length){toast('Nenhum item para salvar.','info');return;}
+  try{await apiRows(CFG.SH.EXTRA,rows);toast(`${rows.length} item(ns) salvos!`,'success');}
+  catch(e){toast('Erro: '+e.message,'error');}
+}
+
+/* ═══════════════════════════════════════════
+   PAINEL — MENSAL
+═══════════════════════════════════════════ */
+function switchPainelView(view,btn){
+  document.querySelectorAll('.painel-toggle-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(view==='mensal'){
+    gel('viewMensal').classList.remove('hidden');gel('viewAnual').classList.add('hidden');
+    gel('painelMesWrap').style.display='flex';
+  } else {
+    gel('viewMensal').classList.add('hidden');gel('viewAnual').classList.remove('hidden');
+    gel('painelMesWrap').style.display='none';
+    loadPainelAnual();
+  }
+}
+
+async function loadPainelData(){
+  const mes=gel('painelMes')?.value;if(!mes)return;
+  ['pcRPlan','pcRReal','pcRDiff','pcOPlan','pcOReal','pcODiff','pcNPlan','pcNReal','pcNDiff','pcIPlan','pcIReal','pcIDiff','saldoPlan','saldoReal','saldoDiff'].forEach(id=>{
+    const el=gel(id);if(el){el.textContent='R$ —';el.className=el.className.replace(/\s*(pos|neg)/g,'');}
+  });
+  try{
+    const data=await apiGetPainel(mes);
+    if(!data||data.error){toast('Sem dados para '+mes+'.','info');return;}
+    const gs=[
+      {key:'receitas',pId:'pcRPlan',rId:'pcRReal',dId:'pcRDiff',rec:true},
+      {key:'obrigatorias',pId:'pcOPlan',rId:'pcOReal',dId:'pcODiff',rec:false},
+      {key:'naoobl',pId:'pcNPlan',rId:'pcNReal',dId:'pcNDiff',rec:false},
+      {key:'invest',pId:'pcIPlan',rId:'pcIReal',dId:'pcIDiff',rec:false},
+    ];
+    let pp=0,rp=0,pn=0,rn=0;
+    gs.forEach(g=>{
+      const gr=data[g.key]||{},p=Number(gr.planejado||0),r=Number(gr.realizado||0);
+      const diff=g.rec?(r-p):(p-r);
+      const st=(id,t)=>{const e=gel(id);if(e)e.textContent=t;};
+      st(g.pId,fBRL(p));st(g.rId,fBRL(r));
+      const de=gel(g.dId);
+      if(de){de.textContent=(diff>=0?'+':'')+fBRL(diff);de.className=de.className.replace(/\s*(pos|neg)/g,'');de.classList.add(diff>=0?'pos':'neg');}
+      if(g.rec){pp+=p;rp+=r;}else{pn+=p;rn+=r;}
+    });
+    const sp=pp-pn,sr=rp-rn,sd=sr-sp;
+    const st=(id,t)=>{const e=gel(id);if(e)e.textContent=t;};
+    st('saldoPlan',fBRL(sp));st('saldoReal',fBRL(sr));st('saldoDiff',fBRL(Math.abs(sd)));
+    const se=gel('saldoDiff');if(se)se.style.color=sd>=0?'var(--success)':'var(--danger)';
+  }catch(e){toast('Erro: '+e.message,'error');}
+}
+
+/* ═══════════════════════════════════════════
+   PAINEL — ANUAL
+═══════════════════════════════════════════ */
+async function loadPainelAnual(){
+  const tb=gel('annualTbody');if(!tb)return;
+  tb.innerHTML=`<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-muted)">Carregando dados anuais...</td></tr>`;
+
+  const results=[];
+  for(const mes of CFG.MESES){
+    try{
+      const data=await apiGetPainel(mes);
+      results.push({mes,data:data||{}});
+    }catch{
+      results.push({mes,data:{}});
+    }
+  }
+
+  let totalRP=0,totalRR=0,totalOP=0,totalOR=0,totalNP=0,totalNR=0,totalIP=0,totalIR=0;
+
+  tb.innerHTML=results.map(({mes,data})=>{
+    const rec=data.receitas||{},obl=data.obrigatorias||{},noo=data.naoobl||{},inv=data.invest||{};
+    const rp=Number(rec.planejado||0),rr=Number(rec.realizado||0);
+    const op=Number(obl.planejado||0),or=Number(obl.realizado||0);
+    const np=Number(noo.planejado||0),nr=Number(noo.realizado||0);
+    const ip=Number(inv.planejado||0),ir=Number(inv.realizado||0);
+    const sp=rp-op-np-ip,sr=rr-or-nr-ir;
+    totalRP+=rp;totalRR+=rr;totalOP+=op;totalOR+=or;totalNP+=np;totalNR+=nr;totalIP+=ip;totalIR+=ir;
+    return`<tr>
+      <td style="font-weight:600">${mes.charAt(0)+mes.slice(1).toLowerCase()}</td>
+      <td>${fBRL(rp)}</td><td>${fBRL(rr)}</td>
+      <td>${fBRL(op)}</td><td>${fBRL(or)}</td>
+      <td>${fBRL(np)}</td><td>${fBRL(nr)}</td>
+      <td>${fBRL(ip)}</td><td>${fBRL(ir)}</td>
+      <td style="color:${sp>=0?'var(--success)':'var(--danger)'}">${fBRL(sp)}</td>
+      <td style="color:${sr>=0?'var(--success)':'var(--danger)'}">${fBRL(sr)}</td>
+    </tr>`;
+  }).join('');
+
+  const sp=totalRP-totalOP-totalNP-totalIP,sr=totalRR-totalOR-totalNR-totalIR;
+  tb.innerHTML+=`<tr>
+    <td style="font-weight:700">TOTAL ANO</td>
+    <td>${fBRL(totalRP)}</td><td>${fBRL(totalRR)}</td>
+    <td>${fBRL(totalOP)}</td><td>${fBRL(totalOR)}</td>
+    <td>${fBRL(totalNP)}</td><td>${fBRL(totalNR)}</td>
+    <td>${fBRL(totalIP)}</td><td>${fBRL(totalIR)}</td>
+    <td style="color:${sp>=0?'var(--success)':'var(--danger)'};font-weight:700">${fBRL(sp)}</td>
+    <td style="color:${sr>=0?'var(--success)':'var(--danger)'};font-weight:700">${fBRL(sr)}</td>
+  </tr>`;
+}
+
+/* ═══════════════════════════════════════════
+   SIMULADOR — APOSENTADORIA
+═══════════════════════════════════════════ */
+let _aposTimer=null;
+function calcAposDebounced(){
+  clearTimeout(_aposTimer);
+  _aposTimer=setTimeout(calcApos,150);
+}
+function calcApos(){
+  const idadeAtual=parseInt(gel('aposIdadeAtual')?.value)||35;
+  const idadeMeta =parseInt(gel('aposIdadeMeta')?.value)||65;
+  const rendaMeta =pMoney(gel('aposRendaMeta')?.value);
+  const patrimonio=pMoney(gel('aposPatrimonio')?.value);
+  const taxaAno   =parseFloat(gel('aposTaxa')?.value)||8;
+  const expectat  =parseInt(gel('aposExpectativa')?.value)||85;
+
+  if(idadeMeta<=idadeAtual||rendaMeta<=0){
+    ['aposAporte','aposAnos','aposPatrNecessario','aposPatrProjetado','aposRendaProjetada','aposTotalInvestido','aposRendimento'].forEach(id=>{
+      const el=gel(id);if(el)el.textContent=id==='aposAporte'?'R$ —':'—';
+    });
+    return;
+  }
+
+  const anosAcumular=idadeMeta-idadeAtual;
+  const anosRetiro=Math.max(1,expectat-idadeMeta);
+  const mesesAcumular=anosAcumular*12;
+  const mesesRetiro=anosRetiro*12;
+  const i=taxaAno/100/12;
+
+  // FASE 1: Quanto preciso acumular? (PV da anuidade de saque)
+  const patriNecessario=i>0
+    ? rendaMeta*((1-Math.pow(1+i,-mesesRetiro))/i)
+    : rendaMeta*mesesRetiro;
+
+  // Quanto o patrimônio inicial cresce até a aposentadoria
+  const patriAtualFuturo=patrimonio*Math.pow(1+i,mesesAcumular);
+
+  // Quanto falta acumular
+  const faltaAcumular=Math.max(0,patriNecessario-patriAtualFuturo);
+
+  // FASE 2: Aporte mensal para atingir o objetivo
+  let aporte=0;
+  if(i>0&&mesesAcumular>0){
+    aporte=faltaAcumular*(i/(Math.pow(1+i,mesesAcumular)-1));
+  } else if(mesesAcumular>0){
+    aporte=faltaAcumular/mesesAcumular;
+  }
+
+  const totalInvest=patrimonio+(aporte*mesesAcumular);
+  const patriProj=patriAtualFuturo+(i>0?aporte*((Math.pow(1+i,mesesAcumular)-1)/i):aporte*mesesAcumular);
+  const rendaProj=i>0?patriProj*(i/(1-Math.pow(1+i,-mesesRetiro))):patriProj/mesesRetiro;
+  const rendimento=patriProj-totalInvest;
+
+  gel('aposAporte').textContent=fBRL(aporte);
+  gel('aposAnos').textContent=`${anosAcumular} anos`;
+  gel('aposPatrNecessario').textContent=fBRL(patriNecessario);
+  gel('aposPatrProjetado').textContent=fBRL(patriProj);
+  gel('aposRendaProjetada').textContent=fBRL(rendaProj)+'/mês';
+  gel('aposTotalInvestido').textContent=fBRL(totalInvest);
+  gel('aposRendimento').textContent=fBRL(rendimento);
+}
+
+/* ═══════════════════════════════════════════
+   SIMULADOR — INVESTIMENTOS
+═══════════════════════════════════════════ */
+const RATES={selic:10.5,cdi:10.4,poupanca:6.17,ipca:4.8};
+
+function setRate(key,btn){
+  document.querySelectorAll('.rate-pill').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  if(key!=='custom'){
+    const el=gel('investTaxa');if(el){el.value=RATES[key];el.readOnly=true;}
+  } else {
+    const el=gel('investTaxa');if(el){el.readOnly=false;el.focus();}
+  }
+  calcInvest();
+}
+
+let _investTimer=null;
+function calcInvestDebounced(){
+  clearTimeout(_investTimer);
+  _investTimer=setTimeout(calcInvest,150);
+}
+
+function calcInvest(){
+  const taxa    =parseFloat(gel('investTaxa')?.value)||10;
+  const inicial =pMoney(gel('investInicial')?.value);
+  const mensal  =pMoney(gel('investMensal')?.value);
+  const anos    =parseInt(gel('investAnos')?.value)||10;
+  const tipo    =gel('investTipo')?.value||'composto';
+  const n       =anos*12;
+  const taxaMes =(taxa/100)/12;
+
+  let montante=0;
+  if(tipo==='composto'){
+    const crescInicial=inicial*Math.pow(1+taxaMes,n);
+    const crescAportes=taxaMes>0?mensal*((Math.pow(1+taxaMes,n)-1)/taxaMes):mensal*n;
+    montante=crescInicial+crescAportes;
+  } else {
+    montante=inicial*(1+taxa/100*anos)+mensal*n*(1+taxa/100*anos/2);
+  }
+
+  const totalInv=inicial+(mensal*n);
+  const rendimentos=montante-totalInv;
+  const rentab=totalInv>0?((rendimentos/totalInv)*100):0;
+  const salMin=1412;
+
+  gel('investMontante').textContent=fBRL(montante);
+  gel('investTotalInv').textContent=fBRL(totalInv);
+  gel('investTotalRend').textContent=fBRL(rendimentos);
+  gel('investRentab').textContent=rentab.toFixed(1)+'%';
+  gel('investSalarios').textContent=Math.round(montante/salMin)+' salários mín.';
+
+  const tl=gel('investTimeline');if(!tl)return;
+  const marcos=[1,2,3,5,10,15,20,30].filter(a=>a<=anos);
+  tl.innerHTML=marcos.map(a=>{
+    const na=a*12;
+    let m=0;
+    if(tipo==='composto'){
+      m=inicial*Math.pow(1+taxaMes,na)+mensal*(taxaMes>0?((Math.pow(1+taxaMes,na)-1)/taxaMes):na);
+    } else {
+      m=inicial*(1+taxa/100*a)+mensal*na*(1+taxa/100*a/2);
+    }
+    return`<div style="display:flex;align-items:center;justify-content:space-between;font-size:.78rem;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.08)">
+      <span style="opacity:.7">${a} ano${a>1?'s':''}</span>
+      <span style="font-family:'DM Mono',monospace;font-weight:600;color:var(--gold-light)">${fBRL(m)}</span>
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded',()=>{
+
+  // Logos
+  ['authLogo','consultorLogo','topbarLogo'].forEach((id,i)=>{
+    const el=gel(id);if(!el)return;
+    el.appendChild(logo([42,34,34][i]));
+  });
+
+  // Ano
+  const ano=CFG.ANO;
+  gel('authYear').textContent='Planejamento Financeiro · '+ano;
+  gel('consultorYear').textContent=ano;
+  gel('yearBadge').textContent=ano;
+  gel('navYear').textContent='Planejamento '+ano;
+
+  gel('topbar').style.display='none';
+
+  initMasks();
+
+  gel('authPwd')?.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+  gel('authEmail')?.addEventListener('keydown',e=>{if(e.key==='Enter')gel('authPwd')?.focus();});
+
+  document.querySelectorAll('.modal-ov').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('active');}));
+
+  gel('toastWrap')?.addEventListener('click',e=>{const t=e.target.closest('.toast');if(t){t.classList.add('removing');t.addEventListener('animationend',()=>t.remove(),{once:true});}});
+
+  buildExtraOnboarding();
+  buildExtraGrid();
+
+  const pm=gel('painelMes');if(pm)pm.selectedIndex=new Date().getMonth();
+
+  const dd=gel('despData');if(dd&&!dd.value)dd.value=new Date().toISOString().split('T')[0];
+  const dm=gel('despMesComp');if(dm){const cur=CFG.MESES[new Date().getMonth()];[...dm.options].forEach(o=>{if(o.value===cur)o.selected=true;});}
+
+  calcInvest();
+
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.modal-ov.active').forEach(m=>m.classList.remove('active'));}});
+
+  try{
+    const saved=sessionStorage.getItem('dv_s');
+    if(saved){
+      const user=JSON.parse(saved);_user=user;
+      hideAuth();
+      user.perfil==='consultor'?showConsultor():showCliente(user);
+    }
+  }catch{}
+
+  gel('modalCats')?.addEventListener('transitionend',()=>{});
+  document.querySelector('[onclick="openModal(\'modalCats\')"]')?.addEventListener('click',()=>buildCatEditor());
+  document.querySelectorAll('.nav-item').forEach(ni=>{
+    if(ni.getAttribute('onclick')?.includes('modalCats')){
+      ni.addEventListener('click',()=>setTimeout(buildCatEditor,50));
+    }
+  });
+
+});
+</script>
+</body>
+</html>
