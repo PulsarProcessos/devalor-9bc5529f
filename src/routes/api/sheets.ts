@@ -28,12 +28,12 @@ async function handleAction(action: string, params: Record<string, any>) {
 
   if (action === "login") {
     const { email, senha } = params;
-    const { data: u } = await supabaseAdmin
-      .from("usuarios")
-      .select("*")
-      .ilike("email", String(email || ""))
-      .maybeSingle();
-    if (!u || u.senha !== String(senha || "")) {
+    const { data: rows } = await supabaseAdmin.rpc("verify_user_password", {
+      p_email: String(email || ""),
+      p_senha: String(senha || ""),
+    });
+    const u = Array.isArray(rows) ? rows[0] : rows;
+    if (!u) {
       return json({ error: "E-mail ou senha inválidos." });
     }
     return json({
