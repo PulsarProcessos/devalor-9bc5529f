@@ -38,13 +38,11 @@ async function handleAction(action: string, params: Record<string, any>) {
     }
     return json({
       ok: true,
-      user: {
-        nome: u.nome,
-        email: u.email,
-        role: u.role,
-        clienteId: u.cliente_id || u.id,
-        perfil: u.role,
-      },
+      nome: u.nome,
+      email: u.email,
+      role: u.role,
+      clienteId: u.cliente_id || u.id,
+      perfil: u.role,
     });
   }
 
