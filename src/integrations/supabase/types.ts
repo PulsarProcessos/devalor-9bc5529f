@@ -103,7 +103,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      hash_password: { Args: { senha: string }; Returns: string }
+      verify_user_password: {
+        Args: { p_email: string; p_senha: string }
+        Returns: {
+          cliente_id: string
+          email: string
+          id: string
+          nome: string
+          role: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
