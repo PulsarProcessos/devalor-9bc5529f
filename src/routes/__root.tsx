@@ -77,14 +77,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Dé Valor" },
+      { name: "description", content: "Cloud Data Builder creates and manages cloud-based data structures and schemas." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Dé Valor" },
+      { property: "og:description", content: "Cloud Data Builder creates and manages cloud-based data structures and schemas." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Dé Valor" },
+      { name: "twitter:description", content: "Cloud Data Builder creates and manages cloud-based data structures and schemas." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/268c3602-c2a6-46ca-a681-0b737040975b/id-preview-f0839b9b--ee10445f-9744-46e3-9368-7a70e822eaab.lovable.app-1780531743804.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/268c3602-c2a6-46ca-a681-0b737040975b/id-preview-f0839b9b--ee10445f-9744-46e3-9368-7a70e822eaab.lovable.app-1780531743804.png" },
     ],
     links: [
       {
