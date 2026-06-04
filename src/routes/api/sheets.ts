@@ -86,9 +86,10 @@ async function handleAction(action: string, params: Record<string, any>) {
       telefone: d.telefone || null,
       data: d,
     });
+    const { data: hashed } = await supabaseAdmin.rpc("hash_password", { senha });
     await supabaseAdmin.from("usuarios").insert({
       email,
-      senha,
+      senha: String(hashed || ""),
       nome,
       role: "cliente",
       cliente_id: cid,
