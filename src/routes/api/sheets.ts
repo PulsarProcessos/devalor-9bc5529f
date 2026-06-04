@@ -172,8 +172,8 @@ async function handleAction(action: string, params: Record<string, any>) {
       .eq("sheet", "Renda e Planejamento")
       .order("created_at", { ascending: false })
       .limit(1);
-    const renda = rendaRows?.[0]?.data || {};
-    const receitaPlan = Number(renda.salario || 0) + Number(renda.outras || 0);
+    const renda: any = rendaRows?.[0]?.data || {};
+    const receitaPlan = Number(renda?.salario || 0) + Number(renda?.outras || 0);
 
     // Planejado (extra) — sheet "Planejamento Extraordinário"
     const { data: extra } = await supabaseAdmin
