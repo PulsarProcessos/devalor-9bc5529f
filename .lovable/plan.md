@@ -1,79 +1,77 @@
-# Plano de implementação
+# Plano: corrigir login e migrar tudo para tabelas próprias
 
-## 1. Menu lateral colapsável (estilo da referência)
+## Problema 1 — "Sessão expirada" ao cadastrar cliente
 
-Hoje os 4 blocos (Cadastro, Acompanhamento, Simuladores, Configurações) já existem no `public/tool.html`, mas todos os itens ficam expostos o tempo todo. Vou transformar cada bloco em um item "pai" clicável (com seta `>` / `v`) que expande/colapsa os itens-filhos, exatamente como nas imagens enviadas.
+Causa: a sessão atual no navegador foi criada antes do novo sistema de token HMAC, então `localStorage.dv_tk` está vazio. Quando o frontend envia `createCliente` sem `Authorization: Bearer ...`, o backend responde 401 "Sessão expirada".
 
-- Renomear os blocos para: **Cadastros**, **Acompanhamento**, **Simuladores**, **Configurações**.
-- Cada bloco vira um botão com ícone + label + chevron (`›` colapsado, `⌄` aberto).
-- Apenas um bloco aberto por vez (acordeão). Ao abrir, mostra os sub-itens já existentes (Perfil, Sonhos, Dívidas, Renda, Vida Rica, Plano de Ação, Reserva Ideal, Quitação, Despesas, Extraordinário, Painel, Aposentadoria, Investimentos, Categorias).
-- O bloco que contém o painel ativo abre automaticamente.
-- Mantém visual atual (tipografia/cores Dê Valor) — só muda a estrutura de navegação.
+Correção:
+- No frontend, ao detectar que `_user` existe mas `dv_tk` não, forçar logout silencioso já no boot (em vez de só no 401), levando direto para a tela de login.
+- Tornar `gPost/gGet` mais claros: se receber 401, limpar sessão e mostrar a tela de login imediatamente (já faz parcialmente).
+- Após o usuário relogar com `alansilveira@pulsarprocessos.com.br` (ou outro consultor), o token é gerado e o cadastro funciona.
 
-## 2. Isolamento de dados entre clientes (urgente)
+## Problema 2 — Tudo passar pela base de dados própria (fim do "sheets")
 
-Hoje o backend (`src/routes/api/sheets.ts`) confia no `clienteId` que vem no body. Um cliente logado pode trocar o `clienteId` no `fetch` e ler dados de outro. Vou corrigir:
+Hoje várias telas ainda usam a tabela genérica `entries` (jsonb), herdada da época em que o backend era Google Sheets. Vamos mover cada fluxo para uma tabela dedicada e renomear o endpoint.
 
-- Após login, o backend emite um **token de sessão** (assinado, HMAC com `SUPABASE_SERVICE_ROLE_KEY` como segredo) contendo `{ userId, role, clienteId, exp }`.
-- Frontend guarda em `localStorage` e envia em todo request (`Authorization: Bearer ...`).
-- Toda ação que recebe `clienteId` valida no servidor:
-  - **role `cliente`** → ignora o `clienteId` do body e usa **o do token**. Não consegue ler/escrever dados de outro cliente, ponto.
-  - **role `consultor`** → pode passar `clienteId` (acesso a todos os clientes — comportamento atual do painel do consultor).
-- Sem token válido → 401.
-
-Isso fecha a brecha sem mudar o fluxo de UI.
-
-## 3. Novas tabelas no banco (uma linha por cliente, isoladas)
-
-Hoje quase tudo é gravado de forma genérica em `entries (cliente_id, sheet, data jsonb)`. Funciona, mas o usuário pediu bases dedicadas para Acompanhamento. Vou criar tabelas tipadas, todas com `cliente_id` + políticas RLS de negação para `anon`/`authenticated` (acesso só via service role nas rotas server, como já é o padrão):
-
-- `plano_acao` — id, cliente_id, titulo, descricao, prazo, status, prioridade, created_at
-- `reserva_ideal` — cliente_id (PK), valor_alvo, meses_cobertura, valor_atual, observacoes, updated_at
-- `despesas` — id, cliente_id, data, descricao, categoria, grupo (obrigatórias/não-obrigatórias/investimentos), valor, forma_pagamento, banco, mes, ano, origem (manual/import)
-- `dividas` — id, cliente_id, credor, tipo, saldo_devedor, taxa_juros, parcelas_restantes, valor_parcela, status, created_at
-- `extraordinario` — id, cliente_id, mes, ano, categoria, grupo, valor_planejado, descricao
-
-Todas com `cliente_id` indexado e GRANTs corretos (`service_role` ALL, deny `anon`/`authenticated`). As telas existentes passam a ler/gravar nessas tabelas via `/api/sheets` (sempre filtrando pelo `clienteId` do token — ver item 2).
-
-## 4. Importação de extratos bancários — só saídas
-
-Adicionar um botão **"Importar extrato"** na tela de Despesas, aceitando `.csv`, `.xlsx`, `.xls` e `.pdf`. Regras:
-
-- **Apenas linhas com valor de saída/débito** entram. Entradas/créditos são ignoradas.
-- Detecção automática do layout pelo header:
-  - **C6 Bank (XLSX)**: header na linha que contém `Data Lançamento | Data Contábil | Título | Descrição | Entrada(R$) | Saída(R$) | Saldo do Dia(R$)`. Importa quando `Saída(R$) > 0`.
-  - **Bradesco (XLS)**: header `Data | Lançamento | Dcto. | Crédito (R$) | Débito (R$) | Saldo (R$)`. Importa quando `Débito` está preenchido (valores vêm negativos no arquivo — uso o módulo).
-  - **Genérico CSV/XLSX**: tenta achar colunas chamadas `Saída`, `Débito`, `Debit`, `Valor` (com sinal negativo). Mostra preview antes de confirmar.
-- **PDF**: faço o parse no servidor com `pdf-parse` (texto). Para extratos comuns (C6, Bradesco, Itaú, Nubank), uso regex por linha (`dd/mm/aaaa  descrição  -1.234,56`) e mantenho só valores negativos. Se o PDF for imagem escaneada (sem texto), aviso o usuário que não é suportado.
-- Cada linha importada vira um registro em `despesas` com `origem='import'`, `mes`/`ano` derivados da data, descrição vinda do extrato, categoria/grupo em branco (usuário classifica depois). Deduplicação por `(cliente_id, data, valor, descricao)` para não duplicar reimportações.
-- Preview na tela antes de salvar: o usuário vê a lista, pode desmarcar linhas e confirmar.
-
-## 5. Detalhes técnicos
-
-- Frontend: `public/tool.html` (HTML/JS standalone). Sidebar acordeão com `data-section`/`data-panel`, CSS para chevron rotacionar.
-- Importação: SheetJS (já carregado) lê XLSX/XLS; PapaParse (já carregado) lê CSV; PDF é enviado para `/api/sheets` action `importPdf` (servidor usa `pdf-parse`).
-- Backend: novo helper `getAuthContext(request)` que valida o Bearer token e retorna `{ userId, role, clienteId }`; todas as actions passam por ele.
-- Migração SQL única criando as 5 tabelas + GRANTs + RLS deny + índices.
-- Sem mudança nos demais fluxos visuais; o sistema continua exatamente como está nas outras telas.
+### Novas tabelas
 
 ```text
-sidebar
-├─ Cadastros           ▸ (click) ⌄
-│   ├─ Perfil & Reserva
-│   ├─ Sonhos & Objetivos
-│   ├─ Inventário de Dívidas
-│   └─ Renda & Planejamento
-├─ Acompanhamento      ▸
-│   ├─ Vida Rica
-│   ├─ Plano de Ação
-│   ├─ Reserva Ideal
-│   ├─ Quitação de Dívidas
-│   ├─ Despesas         ← botão "Importar extrato"
-│   ├─ Extraordinário
-│   └─ Painel Comparativo
-├─ Simuladores         ▸
-│   ├─ Aposentadoria
-│   └─ Investimentos
-└─ Configurações       ▸
-    └─ Categorias
+perfil_cliente   (1 linha por cliente)
+  cliente_id PK, nome, email, telefone, clt, filhos, rede,
+  gastos_mensais, reserva_meses, reserva_valor, ano, updated_at
+
+renda_planejamento (1 linha por cliente/ano)
+  cliente_id, ano, salario, outras, updated_at  (PK: cliente_id+ano)
+
+sonhos (Vida Rica) — N linhas
+  id, cliente_id, descricao, prazo, valor, prioridade, created_at
+
+painel_mensal (cache opcional — não criar agora; calcular on-the-fly via despesas + extraordinario + renda_planejamento)
 ```
+
+As tabelas dedicadas já existentes (`despesas`, `dividas`, `extraordinario`, `plano_acao`, `reserva_ideal`) continuam.
+
+Todas com GRANT só para `service_role`, RLS deny `anon`/`authenticated` (mesmo padrão atual). Acesso somente via `/api/data` com token HMAC.
+
+### Backend (`src/routes/api/sheets.ts` → renomear para `src/routes/api/data.ts`)
+
+Remover ações legadas baseadas em `entries`/`sheet`:
+- `savePerfil`, `saveRenda`, `appendRows`, `getRows`, `getPainel` (versão entries)
+
+Adicionar ações dedicadas:
+- `getPerfil` / `savePerfil` → tabela `perfil_cliente`
+- `getRenda` / `saveRenda` → tabela `renda_planejamento`
+- `getSonhos` / `addSonhos` / `deleteSonho` → tabela `sonhos`
+- `getPainel` reescrito para somar de `despesas` + `extraordinario` + `renda_planejamento`
+- `getDividas` / `saveDivida` / `deleteDivida` (já existem) — passar a ser o único caminho
+- `addDespesas` / `getDespesas` (já existem) — único caminho para Despesas
+- `saveExtraordinario` / `getExtraordinario` (já existem) — único caminho
+- `savePlanoAcao` / `getPlanoAcao` / `deletePlanoAcao` (já existem)
+
+Apagar dados antigos: opcionalmente migrar `entries` → tabelas dedicadas em uma migration única (best-effort). Depois `DROP TABLE entries`.
+
+### Frontend (`public/tool.html`)
+
+- Trocar `CFG.GAS = '/api/sheets'` por `'/api/data'`.
+- Remover `CFG.SH` (nomes de planilhas).
+- Reescrever as chamadas:
+  - `apiSavePerfil(d)` → `gPost('savePerfil',{data:d})`
+  - `apiSaveRenda(d)` → `gPost('saveRenda',{data:d})`
+  - Sonhos: `gPost('addSonhos',{rows})` e `gGet('getSonhos')`
+  - Dívidas (form atual envia rows via `apiRows`): trocar por `gPost('saveDivida',{data:r})` em loop ou um único `saveDividas` que recebe array
+  - Plano de Ação (form atual envia via `apiRows`): trocar por `saveAcoes` (array) → grava em `plano_acao`
+  - Despesas (manual e importação): `gPost('addDespesas',{rows:[{data,descricao,valor,categoria,grupo,mes,ano,banco,forma_pagamento,origem}]})` — já existe, mapear os campos corretos
+  - Extraordinário: `gPost('saveExtraordinario',{rows:[{mes,categoria,valor_planejado,ano}]})`
+  - `getPainel(mes)` continua igual (mesma assinatura), mas backend lê das tabelas novas
+
+### Migrations
+1 migration criando `perfil_cliente`, `renda_planejamento`, `sonhos` com GRANTs e RLS deny.
+1 migration opcional copiando `entries` antigas para as novas tabelas.
+
+### Compatibilidade
+- Manter rota `/api/sheets` por enquanto redirecionando para `/api/data` para não quebrar abas abertas — remover em passo seguinte.
+
+## Resultado
+- O erro "Sessão expirada" desaparece após relogin (e o app já manda relogar quando o token está faltando).
+- Nenhum fluxo passa mais pelo conceito de "sheet"; cada entidade tem sua tabela própria no banco.
+- A tabela `entries` pode ser removida com segurança.
