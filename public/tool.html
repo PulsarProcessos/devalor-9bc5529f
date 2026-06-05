@@ -1075,6 +1075,7 @@ async function doLogin(){
       btn.textContent='Entrar';btn.disabled=false;return;
     }
     _user=res;
+    try{if(res.token)localStorage.setItem('dv_tk',res.token);}catch{}
     try{sessionStorage.setItem('dv_s',JSON.stringify(res));}catch{}
     hideAuth();
     res.perfil==='consultor'?showConsultor():showCliente(res);
@@ -1092,7 +1093,7 @@ function hideAuth(){
 
 function doLogout(){
   _user=null;_cliente=null;
-  try{sessionStorage.removeItem('dv_s');}catch{}
+  try{sessionStorage.removeItem('dv_s');localStorage.removeItem('dv_tk');}catch{}
   gel('consultorScreen').classList.remove('active');
   gel('topbar').style.display='none';
   gel('appWrap').classList.remove('active');
