@@ -79,6 +79,9 @@ function normalizeDate(s: any): string | null {
     return `${y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
   }
   return null;
+}
+
+
 
 /* ──────────────────────────────────────────────
    ACTION HANDLER
