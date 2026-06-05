@@ -1542,8 +1542,12 @@ function handleFileSelect(file){
   if(ext==='csv'){
     const reader=new FileReader();
     reader.onload=e=>{
-      const result=Papa.parse(e.target.result,{header:true,skipEmptyLines:true});
-      processImportData(result.data,file.name);
+      // Tenta header — depois cai para AOA se necessário
+      const txt=e.target.result;
+      const hr=Papa.parse(txt,{header:true,skipEmptyLines:true});
+      if(hr.data&&hr.data.length){processImportData(hr.data,file.name);return;}
+      const ar=Papa.parse(txt,{header:false,skipEmptyLines:true});
+      processImportSheet(ar.data||[],file.name);
     };
     reader.readAsText(file,'UTF-8');
   } else if(ext==='xlsx'||ext==='xls'){
@@ -1551,46 +1555,126 @@ function handleFileSelect(file){
     reader.onload=e=>{
       const wb=XLSX.read(e.target.result,{type:'array'});
       const ws=wb.Sheets[wb.SheetNames[0]];
-      const data=XLSX.utils.sheet_to_json(ws,{defval:''});
-      processImportData(data,file.name);
+      const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      processImportSheet(aoa,file.name);
+    };
+    reader.readAsArrayBuffer(file);
+  } else if(ext==='pdf'){
+    if(!window['pdfjsLib']){toast('Leitor de PDF indisponível. Recarregue a página.','error');return;}
+    const reader=new FileReader();
+    reader.onload=async e=>{
+      try{
+        const pdf=await pdfjsLib.getDocument({data:e.target.result}).promise;
+        const lines=[];
+        for(let p=1;p<=pdf.numPages;p++){
+          const page=await pdf.getPage(p);
+          const tc=await page.getTextContent();
+          // Agrupa por linha (mesma y, com tolerância)
+          const items=tc.items.map(it=>({s:it.str,x:it.transform[4],y:Math.round(it.transform[5])}));
+          const byY={};
+          items.forEach(it=>{const k=it.y;(byY[k]=byY[k]||[]).push(it);});
+          Object.keys(byY).sort((a,b)=>b-a).forEach(k=>{
+            const row=byY[k].sort((a,b)=>a.x-b.x).map(i=>i.s).join(' ').replace(/\s+/g,' ').trim();
+            if(row)lines.push(row);
+          });
+        }
+        processImportPdfLines(lines,file.name);
+      }catch(err){toast('Erro ao ler PDF: '+err.message,'error');}
     };
     reader.readAsArrayBuffer(file);
   } else {
-    toast('Formato não suportado. Use CSV ou XLSX.','error');
+    toast('Formato não suportado. Use CSV, XLSX, XLS ou PDF.','error');
   }
 }
 
-function processImportData(data,fname){
-  if(!data||!data.length){toast('Arquivo vazio ou sem dados.','error');return;}
+/* Detecta layouts conhecidos (C6, Bradesco, etc.) trabalhando em AOA.
+   Importa SOMENTE saídas/débitos. */
+function processImportSheet(aoa,fname){
+  if(!aoa||!aoa.length){toast('Arquivo vazio.','error');return;}
+  // Acha linha do cabeçalho (a que contém pelo menos "data" + "valor|saída|débito")
+  let hdrIdx=-1, hdr=null;
+  for(let i=0;i<Math.min(aoa.length,40);i++){
+    const cells=(aoa[i]||[]).map(c=>String(c||'').toLowerCase().trim());
+    const hasData=cells.some(c=>/^data/.test(c));
+    const hasMov =cells.some(c=>/sa[íi]da|d[ée]bito|debit|valor|amount/.test(c));
+    if(hasData&&hasMov){hdrIdx=i;hdr=cells;break;}
+  }
+  if(hdrIdx<0){toast('Não foi possível identificar o cabeçalho do extrato.','error');return;}
+
+  const idxOf=(re)=>hdr.findIndex(c=>re.test(c));
+  const iData =idxOf(/^data/);
+  const iDesc =(()=>{let i=idxOf(/descri|hist[óo]rico|lan[çc]amento|t[íi]tulo|memo/);return i<0?(iData+1):i;})();
+  const iSaida=idxOf(/sa[íi]da/);
+  const iDeb  =idxOf(/d[ée]bito|debit/);
+  const iEnt  =idxOf(/entrada|cr[ée]dito|credit/);
+  const iVal  =idxOf(/^valor|amount|^vl/);
+
+  const rows=[];
+  for(let i=hdrIdx+1;i<aoa.length;i++){
+    const r=aoa[i]||[];
+    const dt=String(r[iData]||'').trim();
+    if(!dt||!/\d/.test(dt))continue;
+    const desc=String(r[iDesc]||'').trim();
+    let valor=0;
+    if(iSaida>=0){
+      const s=pMoney(r[iSaida]);
+      if(s>0)valor=s;
+      else continue; // ignora se não houver saída
+    } else if(iDeb>=0){
+      const d=pMoney(r[iDeb]);
+      // Bradesco: débitos vêm negativos; outros vêm positivos
+      if(d!==0)valor=Math.abs(d);
+      else continue;
+    } else if(iVal>=0){
+      const v=pMoney(r[iVal]);
+      // entrada se positivo & col entrada não existe → preserva comportamento antigo? Não: usuário quer só saídas.
+      if(v<0)valor=Math.abs(v);
+      else if(iEnt<0)valor=Math.abs(v); // genérico sem coluna entrada — assume tudo é despesa
+      else continue;
+    } else continue;
+    if(valor<=0||!desc)continue;
+    rows.push({data:dt,desc,valor});
+  }
+  finishImportRows(rows,fname);
+}
+
+/* PDF: regex por linha — formato típico "dd/mm/aaaa  descrição ...  -1.234,56" */
+function processImportPdfLines(lines,fname){
+  const rows=[];
+  const dateRe=/^(\d{2}\/\d{2}\/\d{2,4})\s+(.+?)\s+(-?[\d\.]+,\d{2})(?:\s+(-?[\d\.]+,\d{2}))?\s*$/;
+  for(const ln of lines){
+    const m=ln.match(dateRe);
+    if(!m)continue;
+    const dt=m[1], desc=m[2].trim();
+    // Se há 2 valores: o último é saldo, o primeiro é o lançamento; se 1, é o lançamento.
+    const v1=pMoney(m[3]);
+    const lanc=m[4]?v1:v1;
+    // Só saídas: valor negativo OU descrição contém palavra-chave de débito
+    const isDebito=lanc<0||/pagamento|d[ée]bito|saque|pix enviado|compra|tarifa|envi[ao]/i.test(desc);
+    if(!isDebito)continue;
+    rows.push({data:dt,desc,valor:Math.abs(lanc)});
+  }
+  finishImportRows(rows,fname);
+}
+
+function finishImportRows(rows,fname){
+  if(!rows.length){toast('Nenhuma saída/débito encontrada no arquivo.','error');return;}
   gel('importFileName').textContent=fname;
-  gel('importRowCount').textContent=`${data.length} registros encontrados`;
+  gel('importRowCount').textContent=`${rows.length} saída(s) encontrada(s)`;
   gel('importPreviewWrap').classList.remove('hidden');
-
-  const keys=Object.keys(data[0]);
-  const findCol=(patterns)=>{
-    for(const p of patterns){
-      const k=keys.find(k=>k.toLowerCase().includes(p.toLowerCase()));
-      if(k)return k;
-    }
-    return null;
-  };
-  const colData  =findCol(['data','date','dt','dia']);
-  const colDesc  =findCol(['desc','historico','memo','lancamento','nome','descrição']);
-  const colValor =findCol(['valor','value','amount','total','debito','credito','vl']);
-  const colMes   =findCol(['mes','mês','month','competencia','competência']);
-
   const cats=getCats();
   const allCats=Object.entries(cats).flatMap(([grp,items])=>items.map(i=>`${grp} · ${i}`));
-
-  _importRows=data.map((row,i)=>{
-    const rawDesc =String(row[colDesc]||row[keys[1]]||'').trim();
-    const rawValor=pMoney(String(row[colValor]||row[keys[2]]||'0'));
-    const rawData =String(row[colData]||row[keys[0]]||'').trim();
-    const rawMes  =colMes?String(row[colMes]||''):inferMes(rawData);
-    return {id:i,data:rawData,desc:rawDesc,valor:Math.abs(rawValor),cat:allCats[0]||'',mes:rawMes||CFG.MESES[new Date().getMonth()],selected:true};
-  });
-
+  _importRows=rows.map((r,i)=>({id:i,data:r.data,desc:r.desc,valor:r.valor,cat:allCats[0]||'',mes:inferMes(r.data)||CFG.MESES[new Date().getMonth()],selected:true}));
   renderImportTable();
+}
+
+/* Mantém compatibilidade com CSV com header (uso antigo) */
+function processImportData(data,fname){
+  if(!data||!data.length){toast('Arquivo vazio ou sem dados.','error');return;}
+  const keys=Object.keys(data[0]);
+  // Converte para AOA e delega ao processador novo
+  const aoa=[keys, ...data.map(r=>keys.map(k=>r[k]))];
+  processImportSheet(aoa,fname);
 }
 
 function inferMes(dateStr){
