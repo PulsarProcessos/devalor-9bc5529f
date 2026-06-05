@@ -993,9 +993,25 @@ function goPanel(id, btnEl){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const p=gel(`panel-${id}`); if(p)p.classList.add('active');
   const btn=btnEl||document.querySelector(`.nav-item[data-panel="${id}"]`);
-  if(btn)btn.classList.add('active');
+  if(btn){
+    btn.classList.add('active');
+    // Abre o grupo pai se estiver fechado
+    const grp=btn.closest('.nav-group');
+    if(grp&&!grp.classList.contains('open')){
+      document.querySelectorAll('.nav-group').forEach(g=>g.classList.remove('open'));
+      grp.classList.add('open');
+    }
+  }
   window.scrollTo({top:0,behavior:'smooth'});
   if(window.innerWidth<769) gel('appSidebar').classList.remove('open');
+}
+
+function toggleNavGroup(name){
+  const grp=document.querySelector(`.nav-group[data-group="${name}"]`);
+  if(!grp)return;
+  const wasOpen=grp.classList.contains('open');
+  document.querySelectorAll('.nav-group').forEach(g=>g.classList.remove('open'));
+  if(!wasOpen)grp.classList.add('open');
 }
 
 function markNavDone(panelId){
@@ -1010,21 +1026,31 @@ function toggleSidebar(){ gel('appSidebar').classList.toggle('open'); }
 /* ═══════════════════════════════════════════
    API
 ═══════════════════════════════════════════ */
+function _authHeaders(){
+  const h={'Content-Type':'application/json'};
+  const t=localStorage.getItem('dv_tk');
+  if(t)h['Authorization']='Bearer '+t;
+  return h;
+}
 async function gPost(action,payload){
   const body=JSON.stringify({action,clienteId:cid(),...payload});
-  const r=await fetch(CFG.GAS,{method:'POST',headers:{'Content-Type':'text/plain'},body,redirect:'follow'});
+  const r=await fetch(CFG.GAS,{method:'POST',headers:_authHeaders(),body,redirect:'follow'});
   const txt=await r.text();
-  try{return JSON.parse(txt);}catch{throw new Error(txt||'Erro no servidor');}
+  let res; try{res=JSON.parse(txt);}catch{throw new Error(txt||'Erro no servidor');}
+  if(r.status===401){try{localStorage.removeItem('dv_tk');sessionStorage.removeItem('dv_s');}catch{};doLogout&&doLogout();}
+  return res;
 }
 async function gGet(action,params={}){
   const qs=new URLSearchParams({action,...params}).toString();
-  const r=await fetch(`${CFG.GAS}?${qs}`,{redirect:'follow'});
+  const r=await fetch(`${CFG.GAS}?${qs}`,{redirect:'follow',headers:_authHeaders()});
   const txt=await r.text();
-  try{return JSON.parse(txt);}catch{throw new Error(txt||'Erro no servidor');}
+  let res; try{res=JSON.parse(txt);}catch{throw new Error(txt||'Erro no servidor');}
+  if(r.status===401){try{localStorage.removeItem('dv_tk');sessionStorage.removeItem('dv_s');}catch{};doLogout&&doLogout();}
+  return res;
 }
 
-const apiLogin       = (e,s)=>gGet('login',{sheet:CFG.SH.USERS,email:e,senha:s});
-const apiGetClientes = ()=>gGet('getClientes',{sheet:CFG.SH.USERS});
+const apiLogin       = (e,s)=>gPost('login',{email:e,senha:s});
+const apiGetClientes = ()=>gGet('getClientes',{});
 const apiCreateUser  = d=>gPost('createCliente',{sheet:CFG.SH.USERS,data:d});
 const apiDeleteUser  = cid=>gPost('deleteCliente',{clienteId:cid});
 const apiSavePerfil  = d=>gPost('savePerfil',{sheet:CFG.SH.PERFIL,data:d});
