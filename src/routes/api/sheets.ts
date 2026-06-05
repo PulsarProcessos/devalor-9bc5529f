@@ -172,48 +172,204 @@ async function handleAction(action: string, params: Record<string, any>, request
   const clienteId = effectiveClienteId(auth, params.clienteId);
   if (!clienteId) return json({ error: "Cliente não selecionado." });
 
-  /* ── LEGACY entries-based actions (kept for compatibility) ── */
+  /* ── PERFIL DO CLIENTE → tabela perfil_cliente ── */
   if (action === "savePerfil") {
-    await supabaseAdmin.from("entries").delete().eq("cliente_id", clienteId).eq("sheet", "Perfil");
-    await supabaseAdmin.from("entries").insert({ cliente_id: clienteId, sheet: "Perfil", data: params.data || {} });
+    const d = params.data || {};
+    const payload = {
+      cliente_id: clienteId,
+      nome: d.nome || null,
+      email: d.email || null,
+      telefone: d.telefone || null,
+      clt: d.clt === "sim" ? true : d.clt === "nao" ? false : null,
+      filhos: d.filhos === "sim" ? 1 : d.filhos === "nao" ? 0 : (Number.isFinite(+d.filhos) ? Number(d.filhos) : null),
+      rede: d.rede || null,
+      gastos_mensais: Number(d.gastosMensais || 0),
+      reserva_meses: Number(d.reservaMeses || 0),
+      reserva_valor: Number(d.reservaValor || 0),
+      ano: String(d.ano || new Date().getFullYear()),
+      data: d,
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabaseAdmin.from("perfil_cliente").upsert(payload, { onConflict: "cliente_id" });
+    if (error) return json({ error: error.message });
     return json({ ok: true });
+  }
+  if (action === "getPerfil") {
+    const { data } = await supabaseAdmin.from("perfil_cliente").select("*").eq("cliente_id", clienteId).maybeSingle();
+    return json({ ok: true, perfil: data || null });
   }
 
+  /* ── RENDA E PLANEJAMENTO → tabela renda_planejamento ── */
   if (action === "saveRenda") {
-    await supabaseAdmin.from("entries").delete().eq("cliente_id", clienteId).eq("sheet", "Renda e Planejamento");
-    await supabaseAdmin.from("entries").insert({ cliente_id: clienteId, sheet: "Renda e Planejamento", data: params.data || {} });
+    const d = params.data || {};
+    const ano = String(d.ano || new Date().getFullYear());
+    const payload = {
+      cliente_id: clienteId,
+      ano,
+      salario: Number(d.salario || 0),
+      outras: Number(d.outras || 0),
+      data: d,
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabaseAdmin.from("renda_planejamento").upsert(payload, { onConflict: "cliente_id,ano" });
+    if (error) return json({ error: error.message });
     return json({ ok: true });
   }
+  if (action === "getRenda") {
+    const ano = String(params.ano || new Date().getFullYear());
+    const { data } = await supabaseAdmin
+      .from("renda_planejamento").select("*")
+      .eq("cliente_id", clienteId).eq("ano", ano).maybeSingle();
+    return json({ ok: true, renda: data || null });
+  }
+
+  /* ── appendRows / getRows: roteado para a tabela correta por sheet name ── */
+  const SHEET_MAP: Record<string, string> = {
+    "Vida Rica": "sonhos",
+    "Quitação de Dívidas": "dividas",
+    "Detalhamento DESPESAS": "despesas",
+    "Planejamento Extraordinário": "extraordinario",
+    "Plano de Ação": "plano_acao",
+  };
 
   if (action === "appendRows") {
     const sheet = String(params.sheet || "");
     const rows = Array.isArray(params.rows) ? params.rows : [];
     if (!sheet || !rows.length) return json({ error: "sheet/rows obrigatórios." });
-    const records = rows.map((r: any) => ({ cliente_id: clienteId, sheet, data: { row: r } }));
-    const { error } = await supabaseAdmin.from("entries").insert(records);
-    if (error) return json({ error: error.message });
-    return json({ ok: true, count: rows.length });
+    const target = SHEET_MAP[sheet];
+    if (!target) return json({ error: "Sheet não suportada: " + sheet });
+    const ano = String(new Date().getFullYear());
+
+    if (target === "sonhos") {
+      // row: [quem, obj, motivo, valor, prazo, tipo, ano]
+      const recs = rows.map((r: any) => ({
+        cliente_id: clienteId,
+        descricao: `${r[0] || ""} — ${r[1] || ""}${r[2] ? ": " + r[2] : ""}`.trim(),
+        prazo: r[4] || null,
+        valor: Number(r[3] || 0),
+        prioridade: r[5] || null,
+        ano: String(r[6] || ano),
+      }));
+      const { error } = await supabaseAdmin.from("sonhos").insert(recs);
+      if (error) return json({ error: error.message });
+      return json({ ok: true, count: recs.length });
+    }
+
+    if (target === "dividas") {
+      // row: [banco, desc, vs, pt, vp, sd, juros, up, tp, ano]
+      const recs = rows.map((r: any) => ({
+        cliente_id: clienteId,
+        credor: String(r[0] || ""),
+        tipo: String(r[1] || "") || null,
+        saldo_devedor: Number(r[5] || 0),
+        taxa_juros: r[6] != null ? Number(r[6]) : null,
+        parcelas_restantes: r[3] != null ? Number(r[3]) : null,
+        valor_parcela: r[4] != null ? Number(r[4]) : null,
+        status: "ativa",
+      }));
+      const { error } = await supabaseAdmin.from("dividas").insert(recs);
+      if (error) return json({ error: error.message });
+      return json({ ok: true, count: recs.length });
+    }
+
+    if (target === "despesas") {
+      // Suporta duas formas:
+      //  manual:    [fp, bco, dt, desc, vp, cat, mes, ano]
+      //  importação:['Importação', dt, desc, valor, cat, mes, ano]
+      const recs = rows.map((r: any) => {
+        const isImport = r.length === 7 && String(r[0] || "").toLowerCase().startsWith("import");
+        const dt = isImport ? r[1] : r[2];
+        const desc = isImport ? r[2] : r[3];
+        const valor = Number(isImport ? r[3] : r[4]);
+        const catFull = String(isImport ? r[4] : r[5] || "");
+        const mes = String(isImport ? r[5] : r[6] || "");
+        const a = String(isImport ? r[6] : r[7] || ano);
+        const fp = isImport ? "Importação" : r[0];
+        const bco = isImport ? null : r[1];
+        const [grupo, categoria] = catFull.split("·").map((s) => s.trim());
+        return {
+          cliente_id: clienteId,
+          data: normalizeDate(dt),
+          descricao: String(desc || "").slice(0, 500),
+          categoria: categoria || catFull || null,
+          grupo: grupo || null,
+          valor: Math.abs(valor || 0),
+          forma_pagamento: fp || null,
+          banco: bco || null,
+          mes: mes || null,
+          ano: a,
+          origem: isImport ? "import" : "manual",
+        };
+      }).filter((r) => r.descricao && r.valor > 0 && r.data);
+      if (!recs.length) return json({ error: "Nenhuma linha válida." });
+      const { error, count } = await supabaseAdmin
+        .from("despesas")
+        .upsert(recs, { onConflict: "cliente_id,data,valor,descricao", ignoreDuplicates: true, count: "exact" });
+      if (error) return json({ error: error.message });
+      return json({ ok: true, count: count ?? recs.length });
+    }
+
+    if (target === "extraordinario") {
+      // Aceita: [mes, cat, valor, ano]  OU  [mes, cat, desc, valor, ano]
+      const recs = rows.map((r: any) => {
+        const hasDesc = r.length >= 5;
+        return {
+          cliente_id: clienteId,
+          mes: String(r[0] || "").toUpperCase(),
+          categoria: r[1] || null,
+          grupo: r[1] || null,
+          descricao: hasDesc ? (r[2] || null) : null,
+          valor_planejado: Number(hasDesc ? r[3] : r[2] || 0),
+          ano: String(hasDesc ? r[4] : r[3] || ano),
+        };
+      });
+      const { error } = await supabaseAdmin.from("extraordinario").insert(recs);
+      if (error) return json({ error: error.message });
+      return json({ ok: true, count: recs.length });
+    }
+
+    if (target === "plano_acao") {
+      // row: [desc, obs, status, ano]
+      const recs = rows.map((r: any) => ({
+        cliente_id: clienteId,
+        titulo: String(r[0] || "").slice(0, 300) || "(sem título)",
+        descricao: r[1] || null,
+        status: r[2] === "Concluído" ? "concluida" : "pendente",
+        prioridade: "media",
+      }));
+      const { error } = await supabaseAdmin.from("plano_acao").insert(recs);
+      if (error) return json({ error: error.message });
+      return json({ ok: true, count: recs.length });
+    }
+
+    return json({ error: "Destino não mapeado." });
   }
 
   if (action === "getRows") {
     const sheet = String(params.sheet || "");
-    const { data } = await supabaseAdmin
-      .from("entries")
-      .select("data")
-      .eq("cliente_id", clienteId)
-      .eq("sheet", sheet)
-      .order("created_at", { ascending: true });
-    const rows = (data || []).map((e: any) => (Array.isArray(e.data?.row) ? e.data.row : e.data?.row || e.data));
-    return json({ ok: true, rows });
+    if (sheet === "Vida Rica") {
+      const { data } = await supabaseAdmin.from("sonhos").select("*")
+        .eq("cliente_id", clienteId).order("created_at", { ascending: true });
+      // formato esperado pelo frontend: row[0..5] = quem,obj,motivo,valor,prazo,tipo
+      const rows = (data || []).map((s: any) => {
+        const parts = String(s.descricao || "").split(" — ");
+        const quem = parts[0] || "";
+        const rest = parts.slice(1).join(" — ");
+        const [obj, motivo] = rest.split(": ");
+        return [quem, obj || rest, motivo || "", s.valor, s.prazo, s.prioridade];
+      });
+      return json({ ok: true, rows });
+    }
+    return json({ ok: true, rows: [] });
   }
 
   if (action === "getPainel") {
     const mes = String(params.mes || "").toUpperCase();
-    const { data: rendaRows } = await supabaseAdmin
-      .from("entries").select("data")
-      .eq("cliente_id", clienteId).eq("sheet", "Renda e Planejamento")
-      .order("created_at", { ascending: false }).limit(1);
-    const renda: any = rendaRows?.[0]?.data || {};
+    const ano = String(params.ano || new Date().getFullYear());
+
+    const { data: renda } = await supabaseAdmin
+      .from("renda_planejamento").select("salario,outras")
+      .eq("cliente_id", clienteId).eq("ano", ano).maybeSingle();
     const receitaPlan = Number(renda?.salario || 0) + Number(renda?.outras || 0);
 
     const groupOf = (label: string): "obrigatorias" | "naoobl" | "invest" | null => {
@@ -224,26 +380,22 @@ async function handleAction(action: string, params: Record<string, any>, request
       return null;
     };
 
-    const { data: extra } = await supabaseAdmin.from("entries").select("data")
-      .eq("cliente_id", clienteId).eq("sheet", "Planejamento Extraordinário");
+    const { data: extra } = await supabaseAdmin.from("extraordinario").select("mes,grupo,categoria,valor_planejado")
+      .eq("cliente_id", clienteId).eq("ano", ano);
     const plan = { obrigatorias: 0, naoobl: 0, invest: 0 };
     (extra || []).forEach((e: any) => {
-      const row = e.data?.row || [];
-      if (String(row[0] || "").toUpperCase() !== mes) return;
-      const g = groupOf(String(row[1] || ""));
-      if (g) (plan as any)[g] += Number(row[2] || 0);
+      if (String(e.mes || "").toUpperCase() !== mes) return;
+      const g = groupOf(String(e.grupo || e.categoria || ""));
+      if (g) (plan as any)[g] += Number(e.valor_planejado || 0);
     });
 
-    const { data: desp } = await supabaseAdmin.from("entries").select("data")
-      .eq("cliente_id", clienteId).eq("sheet", "Detalhamento DESPESAS");
+    const { data: desp } = await supabaseAdmin.from("despesas")
+      .select("mes,grupo,categoria,valor").eq("cliente_id", clienteId);
     const real = { obrigatorias: 0, naoobl: 0, invest: 0 };
-    (desp || []).forEach((e: any) => {
-      const row = e.data?.row || [];
-      if (String(row[6] || "").toUpperCase() !== mes) return;
-      const catFull = String(row[5] || "");
-      const grpLabel = catFull.split("·")[0]?.trim() || catFull;
-      const g = groupOf(grpLabel);
-      if (g) (real as any)[g] += Number(row[4] || 0);
+    (desp || []).forEach((d: any) => {
+      if (String(d.mes || "").toUpperCase() !== mes) return;
+      const g = groupOf(String(d.grupo || d.categoria || ""));
+      if (g) (real as any)[g] += Number(d.valor || 0);
     });
 
     return json({
