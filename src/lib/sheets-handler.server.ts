@@ -47,7 +47,7 @@ function bearerFrom(request: Request): string | null {
   return m ? m[1] : null;
 }
 
-function json(data: unknown, status = 200) {
+export function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
@@ -87,7 +87,7 @@ function normalizeDate(s: any): string | null {
 /* ──────────────────────────────────────────────
    ACTION HANDLER
 ─────────────────────────────────────────────── */
-async function handleAction(action: string, params: Record<string, any>, request: Request) {
+export async function handleAction(action: string, params: Record<string, any>, request: Request) {
 
   /* PUBLIC: login */
   if (action === "login") {
