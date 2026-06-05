@@ -194,6 +194,57 @@ export type Database = {
         }
         Relationships: []
       }
+      perfil_cliente: {
+        Row: {
+          ano: string | null
+          cliente_id: string
+          clt: boolean | null
+          created_at: string
+          data: Json
+          email: string | null
+          filhos: number | null
+          gastos_mensais: number | null
+          nome: string | null
+          rede: string | null
+          reserva_meses: number | null
+          reserva_valor: number | null
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          ano?: string | null
+          cliente_id: string
+          clt?: boolean | null
+          created_at?: string
+          data?: Json
+          email?: string | null
+          filhos?: number | null
+          gastos_mensais?: number | null
+          nome?: string | null
+          rede?: string | null
+          reserva_meses?: number | null
+          reserva_valor?: number | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ano?: string | null
+          cliente_id?: string
+          clt?: boolean | null
+          created_at?: string
+          data?: Json
+          email?: string | null
+          filhos?: number | null
+          gastos_mensais?: number | null
+          nome?: string | null
+          rede?: string | null
+          reserva_meses?: number | null
+          reserva_valor?: number | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       plano_acao: {
         Row: {
           cliente_id: string
@@ -230,6 +281,36 @@ export type Database = {
         }
         Relationships: []
       }
+      renda_planejamento: {
+        Row: {
+          ano: string
+          cliente_id: string
+          created_at: string
+          data: Json
+          outras: number
+          salario: number
+          updated_at: string
+        }
+        Insert: {
+          ano: string
+          cliente_id: string
+          created_at?: string
+          data?: Json
+          outras?: number
+          salario?: number
+          updated_at?: string
+        }
+        Update: {
+          ano?: string
+          cliente_id?: string
+          created_at?: string
+          data?: Json
+          outras?: number
+          salario?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reserva_ideal: {
         Row: {
           cliente_id: string
@@ -254,6 +335,39 @@ export type Database = {
           updated_at?: string
           valor_alvo?: number
           valor_atual?: number
+        }
+        Relationships: []
+      }
+      sonhos: {
+        Row: {
+          ano: string | null
+          cliente_id: string
+          created_at: string
+          descricao: string
+          id: string
+          prazo: string | null
+          prioridade: string | null
+          valor: number | null
+        }
+        Insert: {
+          ano?: string | null
+          cliente_id: string
+          created_at?: string
+          descricao: string
+          id?: string
+          prazo?: string | null
+          prioridade?: string | null
+          valor?: number | null
+        }
+        Update: {
+          ano?: string | null
+          cliente_id?: string
+          created_at?: string
+          descricao?: string
+          id?: string
+          prazo?: string | null
+          prioridade?: string | null
+          valor?: number | null
         }
         Relationships: []
       }
