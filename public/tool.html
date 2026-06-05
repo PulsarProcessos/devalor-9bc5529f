@@ -13,6 +13,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <!-- SheetJS para XLSX -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- pdf.js para PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>if(window['pdfjsLib'])pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 <style>
 /* ══ RESET ══════════════════════════════════════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -122,17 +125,23 @@ img,svg{display:block;max-width:100%}
 .app-content{flex:1;margin-left:var(--sidebar-w);min-height:calc(100dvh - var(--topbar-h));overflow-x:hidden}
 
 /* Sidebar nav */
-.nav-section{padding:16px 12px 4px}
-.nav-section-label{font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);padding:0 8px;margin-bottom:4px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r);cursor:pointer;transition:all var(--t);color:var(--text-muted);font-size:.82rem;font-weight:500;user-select:none;border:none;background:transparent;width:100%;text-align:left;font-family:'DM Sans',sans-serif}
+.nav-section{padding:6px 10px}
+.nav-group-hd{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;border:none;background:transparent;cursor:pointer;border-radius:var(--r);color:var(--text-secondary);font-family:'DM Sans',sans-serif;font-size:.86rem;font-weight:600;text-align:left;transition:all var(--t);user-select:none}
+.nav-group-hd:hover{background:var(--gold-pale);color:var(--brand)}
+.nav-group.open .nav-group-hd{background:var(--gold-light);color:var(--brand)}
+.nav-group-chev{margin-left:auto;font-size:.85rem;transition:transform var(--tm);opacity:.7;line-height:1}
+.nav-group.open .nav-group-chev{transform:rotate(90deg);opacity:1}
+.nav-group-items{display:none;flex-direction:column;gap:2px;padding:4px 0 8px 8px;margin-left:10px;border-left:1px solid var(--border-subtle)}
+.nav-group.open .nav-group-items{display:flex}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:8px;cursor:pointer;transition:all var(--t);color:var(--text-muted);font-size:.8rem;font-weight:500;user-select:none;border:none;background:transparent;width:100%;text-align:left;font-family:'DM Sans',sans-serif}
 .nav-item:hover{background:var(--gold-pale);color:var(--text-secondary)}
 .nav-item.active{background:var(--gold-light);color:var(--brand);font-weight:600}
 .nav-item.done{color:var(--success)}
 .nav-item.done .nav-dot{background:var(--success);border-color:var(--success)}
-.nav-dot{width:7px;height:7px;border-radius:50%;border:1.5px solid var(--border-default);background:transparent;flex-shrink:0;transition:all var(--t)}
+.nav-dot{width:6px;height:6px;border-radius:50%;border:1.5px solid var(--border-default);background:transparent;flex-shrink:0;transition:all var(--t)}
 .nav-item.active .nav-dot{background:var(--brand);border-color:var(--brand)}
-.nav-icon{font-size:.9rem;width:18px;text-align:center;flex-shrink:0}
-.nav-divider{height:1px;background:var(--border-subtle);margin:8px 12px}
+.nav-icon{font-size:.95rem;width:20px;text-align:center;flex-shrink:0}
+.nav-divider{height:1px;background:var(--border-subtle);margin:4px 14px}
 .nav-year-tag{margin:8px 12px;font-family:'DM Mono',monospace;font-size:.66rem;color:var(--gold2);text-align:center;letter-spacing:.1em;text-transform:uppercase}
 
 /* ══ CONTENT PANELS ══════════════════════════════ */
@@ -457,44 +466,54 @@ img,svg{display:block;max-width:100%}
     <div class="nav-year-tag" id="navYear"></div>
     <div style="margin:0 12px 8px;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--success);text-align:center;letter-spacing:.05em;padding:3px;background:var(--success-bg);border-radius:5px">v3.5 · fBRL fix</div>
 
-    <!-- CADASTRO -->
+    <!-- CADASTROS -->
     <div class="nav-section">
-      <div class="nav-section-label">Cadastro</div>
-      <button class="nav-item active" data-panel="perfil" onclick="goPanel('perfil',this)"><span class="nav-dot"></span><span class="nav-icon">👤</span>Perfil & Reserva</button>
-      <button class="nav-item" data-panel="sonhos" onclick="goPanel('sonhos',this)"><span class="nav-dot"></span><span class="nav-icon">✨</span>Sonhos & Objetivos</button>
-      <button class="nav-item" data-panel="dividas" onclick="goPanel('dividas',this)"><span class="nav-dot"></span><span class="nav-icon">📋</span>Inventário de Dívidas</button>
-      <button class="nav-item" data-panel="renda" onclick="goPanel('renda',this)"><span class="nav-dot"></span><span class="nav-icon">💰</span>Renda & Planejamento</button>
+      <div class="nav-group open" data-group="cadastros">
+        <button class="nav-group-hd" onclick="toggleNavGroup('cadastros')"><span class="nav-icon">📋</span>Cadastros<span class="nav-group-chev">›</span></button>
+        <div class="nav-group-items">
+          <button class="nav-item active" data-panel="perfil" onclick="goPanel('perfil',this)"><span class="nav-dot"></span><span class="nav-icon">👤</span>Perfil & Reserva</button>
+          <button class="nav-item" data-panel="sonhos" onclick="goPanel('sonhos',this)"><span class="nav-dot"></span><span class="nav-icon">✨</span>Sonhos & Objetivos</button>
+          <button class="nav-item" data-panel="dividas" onclick="goPanel('dividas',this)"><span class="nav-dot"></span><span class="nav-icon">📋</span>Inventário de Dívidas</button>
+          <button class="nav-item" data-panel="renda" onclick="goPanel('renda',this)"><span class="nav-dot"></span><span class="nav-icon">💰</span>Renda & Planejamento</button>
+        </div>
+      </div>
     </div>
-
-    <div class="nav-divider"></div>
 
     <!-- ACOMPANHAMENTO -->
     <div class="nav-section">
-      <div class="nav-section-label">Acompanhamento</div>
-      <button class="nav-item" data-panel="vidarica" onclick="goPanel('vidarica',this)"><span class="nav-dot"></span><span class="nav-icon">🌟</span>Vida Rica</button>
-      <button class="nav-item" data-panel="planoacao" onclick="goPanel('planoacao',this)"><span class="nav-dot"></span><span class="nav-icon">✅</span>Plano de Ação</button>
-      <button class="nav-item" data-panel="reserva" onclick="goPanel('reserva',this)"><span class="nav-dot"></span><span class="nav-icon">🛡️</span>Reserva Ideal</button>
-      <button class="nav-item" data-panel="quitacao" onclick="goPanel('quitacao',this)"><span class="nav-dot"></span><span class="nav-icon">🏦</span>Quitação de Dívidas</button>
-      <button class="nav-item" data-panel="despesas" onclick="goPanel('despesas',this)"><span class="nav-dot"></span><span class="nav-icon">💳</span>Despesas</button>
-      <button class="nav-item" data-panel="extraordinario" onclick="goPanel('extraordinario',this)"><span class="nav-dot"></span><span class="nav-icon">📅</span>Extraordinário</button>
-      <button class="nav-item" data-panel="painel" onclick="goPanel('painel',this)"><span class="nav-dot"></span><span class="nav-icon">📊</span>Painel Comparativo</button>
+      <div class="nav-group" data-group="acompanhamento">
+        <button class="nav-group-hd" onclick="toggleNavGroup('acompanhamento')"><span class="nav-icon">📈</span>Acompanhamento<span class="nav-group-chev">›</span></button>
+        <div class="nav-group-items">
+          <button class="nav-item" data-panel="vidarica" onclick="goPanel('vidarica',this)"><span class="nav-dot"></span><span class="nav-icon">🌟</span>Vida Rica</button>
+          <button class="nav-item" data-panel="planoacao" onclick="goPanel('planoacao',this)"><span class="nav-dot"></span><span class="nav-icon">✅</span>Plano de Ação</button>
+          <button class="nav-item" data-panel="reserva" onclick="goPanel('reserva',this)"><span class="nav-dot"></span><span class="nav-icon">🛡️</span>Reserva Ideal</button>
+          <button class="nav-item" data-panel="quitacao" onclick="goPanel('quitacao',this)"><span class="nav-dot"></span><span class="nav-icon">🏦</span>Quitação de Dívidas</button>
+          <button class="nav-item" data-panel="despesas" onclick="goPanel('despesas',this)"><span class="nav-dot"></span><span class="nav-icon">💳</span>Despesas</button>
+          <button class="nav-item" data-panel="extraordinario" onclick="goPanel('extraordinario',this)"><span class="nav-dot"></span><span class="nav-icon">📅</span>Extraordinário</button>
+          <button class="nav-item" data-panel="painel" onclick="goPanel('painel',this)"><span class="nav-dot"></span><span class="nav-icon">📊</span>Painel Comparativo</button>
+        </div>
+      </div>
     </div>
-
-    <div class="nav-divider"></div>
 
     <!-- SIMULADORES -->
     <div class="nav-section">
-      <div class="nav-section-label">Simuladores</div>
-      <button class="nav-item" data-panel="simApos" onclick="goPanel('simApos',this)"><span class="nav-dot"></span><span class="nav-icon">🏖️</span>Aposentadoria</button>
-      <button class="nav-item" data-panel="simInvest" onclick="goPanel('simInvest',this)"><span class="nav-dot"></span><span class="nav-icon">📈</span>Investimentos</button>
+      <div class="nav-group" data-group="simuladores">
+        <button class="nav-group-hd" onclick="toggleNavGroup('simuladores')"><span class="nav-icon">🧮</span>Simuladores<span class="nav-group-chev">›</span></button>
+        <div class="nav-group-items">
+          <button class="nav-item" data-panel="simApos" onclick="goPanel('simApos',this)"><span class="nav-dot"></span><span class="nav-icon">🏖️</span>Aposentadoria</button>
+          <button class="nav-item" data-panel="simInvest" onclick="goPanel('simInvest',this)"><span class="nav-dot"></span><span class="nav-icon">📈</span>Investimentos</button>
+        </div>
+      </div>
     </div>
-
-    <div class="nav-divider"></div>
 
     <!-- CONFIGURAÇÕES -->
     <div class="nav-section">
-      <div class="nav-section-label">Configurações</div>
-      <button class="nav-item" onclick="openModal('modalCats')"><span class="nav-dot"></span><span class="nav-icon">🏷️</span>Categorias</button>
+      <div class="nav-group" data-group="configuracoes">
+        <button class="nav-group-hd" onclick="toggleNavGroup('configuracoes')"><span class="nav-icon">⚙️</span>Configurações<span class="nav-group-chev">›</span></button>
+        <div class="nav-group-items">
+          <button class="nav-item" data-panel="__cats" onclick="openModal('modalCats');buildCatEditor()"><span class="nav-dot"></span><span class="nav-icon">🏷️</span>Categorias</button>
+        </div>
+      </div>
     </div>
   </aside>
 
@@ -684,9 +703,9 @@ img,svg{display:block;max-width:100%}
         <div class="import-drop" id="importDrop" onclick="document.getElementById('fileInput').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onFileDrop(event)">
           <div class="import-drop__icon">📂</div>
           <div class="import-drop__title">Arraste ou clique para selecionar o arquivo</div>
-          <div class="import-drop__sub">Suporta <strong>.CSV</strong>, <strong>.XLSX</strong> e <strong>.XLS</strong></div>
+          <div class="import-drop__sub">Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong> — apenas <strong>saídas/débitos</strong> são importadas</div>
         </div>
-        <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFileSelect(this.files[0])"/>
+        <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.pdf" style="display:none" onchange="handleFileSelect(this.files[0])"/>
         <div id="importPreviewWrap" class="hidden mt16">
           <div class="import-preview">
             <div class="import-preview-hd">
