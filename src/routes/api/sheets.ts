@@ -67,6 +67,19 @@ function effectiveClienteId(auth: TokenPayload, bodyClienteId: any): string | nu
   return auth.cid || null;
 }
 
+/* Converte dd/mm/yyyy, dd-mm-yyyy, dd.mm.yyyy ou yyyy-mm-dd → yyyy-mm-dd. */
+function normalizeDate(s: any): string | null {
+  if (!s) return null;
+  const str = String(s).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0, 10);
+  const m = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+  if (m) {
+    let [, d, mo, y] = m;
+    if (y.length === 2) y = (Number(y) > 50 ? "19" : "20") + y;
+    return `${y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+  return null;
+
 /* ──────────────────────────────────────────────
    ACTION HANDLER
 ─────────────────────────────────────────────── */
