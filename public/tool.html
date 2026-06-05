@@ -13,6 +13,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <!-- SheetJS para XLSX -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- pdf.js para PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>if(window['pdfjsLib'])pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 <style>
 /* ══ RESET ══════════════════════════════════════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -122,17 +125,23 @@ img,svg{display:block;max-width:100%}
 .app-content{flex:1;margin-left:var(--sidebar-w);min-height:calc(100dvh - var(--topbar-h));overflow-x:hidden}
 
 /* Sidebar nav */
-.nav-section{padding:16px 12px 4px}
-.nav-section-label{font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);padding:0 8px;margin-bottom:4px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r);cursor:pointer;transition:all var(--t);color:var(--text-muted);font-size:.82rem;font-weight:500;user-select:none;border:none;background:transparent;width:100%;text-align:left;font-family:'DM Sans',sans-serif}
+.nav-section{padding:6px 10px}
+.nav-group-hd{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;border:none;background:transparent;cursor:pointer;border-radius:var(--r);color:var(--text-secondary);font-family:'DM Sans',sans-serif;font-size:.86rem;font-weight:600;text-align:left;transition:all var(--t);user-select:none}
+.nav-group-hd:hover{background:var(--gold-pale);color:var(--brand)}
+.nav-group.open .nav-group-hd{background:var(--gold-light);color:var(--brand)}
+.nav-group-chev{margin-left:auto;font-size:.85rem;transition:transform var(--tm);opacity:.7;line-height:1}
+.nav-group.open .nav-group-chev{transform:rotate(90deg);opacity:1}
+.nav-group-items{display:none;flex-direction:column;gap:2px;padding:4px 0 8px 8px;margin-left:10px;border-left:1px solid var(--border-subtle)}
+.nav-group.open .nav-group-items{display:flex}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:8px;cursor:pointer;transition:all var(--t);color:var(--text-muted);font-size:.8rem;font-weight:500;user-select:none;border:none;background:transparent;width:100%;text-align:left;font-family:'DM Sans',sans-serif}
 .nav-item:hover{background:var(--gold-pale);color:var(--text-secondary)}
 .nav-item.active{background:var(--gold-light);color:var(--brand);font-weight:600}
 .nav-item.done{color:var(--success)}
 .nav-item.done .nav-dot{background:var(--success);border-color:var(--success)}
-.nav-dot{width:7px;height:7px;border-radius:50%;border:1.5px solid var(--border-default);background:transparent;flex-shrink:0;transition:all var(--t)}
+.nav-dot{width:6px;height:6px;border-radius:50%;border:1.5px solid var(--border-default);background:transparent;flex-shrink:0;transition:all var(--t)}
 .nav-item.active .nav-dot{background:var(--brand);border-color:var(--brand)}
-.nav-icon{font-size:.9rem;width:18px;text-align:center;flex-shrink:0}
-.nav-divider{height:1px;background:var(--border-subtle);margin:8px 12px}
+.nav-icon{font-size:.95rem;width:20px;text-align:center;flex-shrink:0}
+.nav-divider{height:1px;background:var(--border-subtle);margin:4px 14px}
 .nav-year-tag{margin:8px 12px;font-family:'DM Mono',monospace;font-size:.66rem;color:var(--gold2);text-align:center;letter-spacing:.1em;text-transform:uppercase}
 
 /* ══ CONTENT PANELS ══════════════════════════════ */
@@ -457,44 +466,54 @@ img,svg{display:block;max-width:100%}
     <div class="nav-year-tag" id="navYear"></div>
     <div style="margin:0 12px 8px;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--success);text-align:center;letter-spacing:.05em;padding:3px;background:var(--success-bg);border-radius:5px">v3.5 · fBRL fix</div>
 
-    <!-- CADASTRO -->
+    <!-- CADASTROS -->
     <div class="nav-section">
-      <div class="nav-section-label">Cadastro</div>
-      <button class="nav-item active" data-panel="perfil" onclick="goPanel('perfil',this)"><span class="nav-dot"></span><span class="nav-icon">👤</span>Perfil & Reserva</button>
-      <button class="nav-item" data-panel="sonhos" onclick="goPanel('sonhos',this)"><span class="nav-dot"></span><span class="nav-icon">✨</span>Sonhos & Objetivos</button>
-      <button class="nav-item" data-panel="dividas" onclick="goPanel('dividas',this)"><span class="nav-dot"></span><span class="nav-icon">📋</span>Inventário de Dívidas</button>
-      <button class="nav-item" data-panel="renda" onclick="goPanel('renda',this)"><span class="nav-dot"></span><span class="nav-icon">💰</span>Renda & Planejamento</button>
+      <div class="nav-group open" data-group="cadastros">
+        <button class="nav-group-hd" onclick="toggleNavGroup('cadastros')"><span class="nav-icon">📋</span>Cadastros<span class="nav-group-chev">›</span></button>
+        <div class="nav-group-items">
+          <button class="nav-item active" data-panel="perfil" onclick="goPanel('perfil',this)"><span class="nav-dot"></span><span class="nav-icon">👤</span>Perfil & Reserva</button>
+          <button class="nav-item" data-panel="sonhos" onclick="goPanel('sonhos',this)"><span class="nav-dot"></span><span class="nav-icon">✨</span>Sonhos & Objetivos</button>
+          <button class="nav-item" data-panel="dividas" onclick="goPanel('dividas',this)"><span class="nav-dot"></span><span class="nav-icon">📋</span>Inventário de Dívidas</button>
+          <button class="nav-item" data-panel="renda" onclick="goPanel('renda',this)"><span class="nav-dot"></span><span class="nav-icon">💰</span>Renda & Planejamento</button>
+        </div>
+      </div>
     </div>
-
-    <div class="nav-divider"></div>
 
     <!-- ACOMPANHAMENTO -->
     <div class="nav-section">
-      <div class="nav-section-label">Acompanhamento</div>
-      <button class="nav-item" data-panel="vidarica" onclick="goPanel('vidarica',this)"><span class="nav-dot"></span><span class="nav-icon">🌟</span>Vida Rica</button>
-      <button class="nav-item" data-panel="planoacao" onclick="goPanel('planoacao',this)"><span class="nav-dot"></span><span class="nav-icon">✅</span>Plano de Ação</button>
-      <button class="nav-item" data-panel="reserva" onclick="goPanel('reserva',this)"><span class="nav-dot"></span><span class="nav-icon">🛡️</span>Reserva Ideal</button>
-      <button class="nav-item" data-panel="quitacao" onclick="goPanel('quitacao',this)"><span class="nav-dot"></span><span class="nav-icon">🏦</span>Quitação de Dívidas</button>
-      <button class="nav-item" data-panel="despesas" onclick="goPanel('despesas',this)"><span class="nav-dot"></span><span class="nav-icon">💳</span>Despesas</button>
-      <button class="nav-item" data-panel="extraordinario" onclick="goPanel('extraordinario',this)"><span class="nav-dot"></span><span class="nav-icon">📅</span>Extraordinário</button>
-      <button class="nav-item" data-panel="painel" onclick="goPanel('painel',this)"><span class="nav-dot"></span><span class="nav-icon">📊</span>Painel Comparativo</button>
+      <div class="nav-group" data-group="acompanhamento">
+        <button class="nav-group-hd" onclick="toggleNavGroup('acompanhamento')"><span class="nav-icon">📈</span>Acompanhamento<span class="nav-group-chev">›</span></button>
+        <div class="nav-group-items">
+          <button class="nav-item" data-panel="vidarica" onclick="goPanel('vidarica',this)"><span class="nav-dot"></span><span class="nav-icon">🌟</span>Vida Rica</button>
+          <button class="nav-item" data-panel="planoacao" onclick="goPanel('planoacao',this)"><span class="nav-dot"></span><span class="nav-icon">✅</span>Plano de Ação</button>
+          <button class="nav-item" data-panel="reserva" onclick="goPanel('reserva',this)"><span class="nav-dot"></span><span class="nav-icon">🛡️</span>Reserva Ideal</button>
+          <button class="nav-item" data-panel="quitacao" onclick="goPanel('quitacao',this)"><span class="nav-dot"></span><span class="nav-icon">🏦</span>Quitação de Dívidas</button>
+          <button class="nav-item" data-panel="despesas" onclick="goPanel('despesas',this)"><span class="nav-dot"></span><span class="nav-icon">💳</span>Despesas</button>
+          <button class="nav-item" data-panel="extraordinario" onclick="goPanel('extraordinario',this)"><span class="nav-dot"></span><span class="nav-icon">📅</span>Extraordinário</button>
+          <button class="nav-item" data-panel="painel" onclick="goPanel('painel',this)"><span class="nav-dot"></span><span class="nav-icon">📊</span>Painel Comparativo</button>
+        </div>
+      </div>
     </div>
-
-    <div class="nav-divider"></div>
 
     <!-- SIMULADORES -->
     <div class="nav-section">
-      <div class="nav-section-label">Simuladores</div>
-      <button class="nav-item" data-panel="simApos" onclick="goPanel('simApos',this)"><span class="nav-dot"></span><span class="nav-icon">🏖️</span>Aposentadoria</button>
-      <button class="nav-item" data-panel="simInvest" onclick="goPanel('simInvest',this)"><span class="nav-dot"></span><span class="nav-icon">📈</span>Investimentos</button>
+      <div class="nav-group" data-group="simuladores">
+        <button class="nav-group-hd" onclick="toggleNavGroup('simuladores')"><span class="nav-icon">🧮</span>Simuladores<span class="nav-group-chev">›</span></button>
+        <div class="nav-group-items">
+          <button class="nav-item" data-panel="simApos" onclick="goPanel('simApos',this)"><span class="nav-dot"></span><span class="nav-icon">🏖️</span>Aposentadoria</button>
+          <button class="nav-item" data-panel="simInvest" onclick="goPanel('simInvest',this)"><span class="nav-dot"></span><span class="nav-icon">📈</span>Investimentos</button>
+        </div>
+      </div>
     </div>
-
-    <div class="nav-divider"></div>
 
     <!-- CONFIGURAÇÕES -->
     <div class="nav-section">
-      <div class="nav-section-label">Configurações</div>
-      <button class="nav-item" onclick="openModal('modalCats')"><span class="nav-dot"></span><span class="nav-icon">🏷️</span>Categorias</button>
+      <div class="nav-group" data-group="configuracoes">
+        <button class="nav-group-hd" onclick="toggleNavGroup('configuracoes')"><span class="nav-icon">⚙️</span>Configurações<span class="nav-group-chev">›</span></button>
+        <div class="nav-group-items">
+          <button class="nav-item" data-panel="__cats" onclick="openModal('modalCats');buildCatEditor()"><span class="nav-dot"></span><span class="nav-icon">🏷️</span>Categorias</button>
+        </div>
+      </div>
     </div>
   </aside>
 
@@ -684,9 +703,9 @@ img,svg{display:block;max-width:100%}
         <div class="import-drop" id="importDrop" onclick="document.getElementById('fileInput').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onFileDrop(event)">
           <div class="import-drop__icon">📂</div>
           <div class="import-drop__title">Arraste ou clique para selecionar o arquivo</div>
-          <div class="import-drop__sub">Suporta <strong>.CSV</strong>, <strong>.XLSX</strong> e <strong>.XLS</strong></div>
+          <div class="import-drop__sub">Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong> — apenas <strong>saídas/débitos</strong> são importadas</div>
         </div>
-        <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFileSelect(this.files[0])"/>
+        <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.pdf" style="display:none" onchange="handleFileSelect(this.files[0])"/>
         <div id="importPreviewWrap" class="hidden mt16">
           <div class="import-preview">
             <div class="import-preview-hd">
@@ -974,9 +993,25 @@ function goPanel(id, btnEl){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const p=gel(`panel-${id}`); if(p)p.classList.add('active');
   const btn=btnEl||document.querySelector(`.nav-item[data-panel="${id}"]`);
-  if(btn)btn.classList.add('active');
+  if(btn){
+    btn.classList.add('active');
+    // Abre o grupo pai se estiver fechado
+    const grp=btn.closest('.nav-group');
+    if(grp&&!grp.classList.contains('open')){
+      document.querySelectorAll('.nav-group').forEach(g=>g.classList.remove('open'));
+      grp.classList.add('open');
+    }
+  }
   window.scrollTo({top:0,behavior:'smooth'});
   if(window.innerWidth<769) gel('appSidebar').classList.remove('open');
+}
+
+function toggleNavGroup(name){
+  const grp=document.querySelector(`.nav-group[data-group="${name}"]`);
+  if(!grp)return;
+  const wasOpen=grp.classList.contains('open');
+  document.querySelectorAll('.nav-group').forEach(g=>g.classList.remove('open'));
+  if(!wasOpen)grp.classList.add('open');
 }
 
 function markNavDone(panelId){
@@ -991,21 +1026,31 @@ function toggleSidebar(){ gel('appSidebar').classList.toggle('open'); }
 /* ═══════════════════════════════════════════
    API
 ═══════════════════════════════════════════ */
+function _authHeaders(){
+  const h={'Content-Type':'application/json'};
+  const t=localStorage.getItem('dv_tk');
+  if(t)h['Authorization']='Bearer '+t;
+  return h;
+}
 async function gPost(action,payload){
   const body=JSON.stringify({action,clienteId:cid(),...payload});
-  const r=await fetch(CFG.GAS,{method:'POST',headers:{'Content-Type':'text/plain'},body,redirect:'follow'});
+  const r=await fetch(CFG.GAS,{method:'POST',headers:_authHeaders(),body,redirect:'follow'});
   const txt=await r.text();
-  try{return JSON.parse(txt);}catch{throw new Error(txt||'Erro no servidor');}
+  let res; try{res=JSON.parse(txt);}catch{throw new Error(txt||'Erro no servidor');}
+  if(r.status===401){try{localStorage.removeItem('dv_tk');sessionStorage.removeItem('dv_s');}catch{};doLogout&&doLogout();}
+  return res;
 }
 async function gGet(action,params={}){
   const qs=new URLSearchParams({action,...params}).toString();
-  const r=await fetch(`${CFG.GAS}?${qs}`,{redirect:'follow'});
+  const r=await fetch(`${CFG.GAS}?${qs}`,{redirect:'follow',headers:_authHeaders()});
   const txt=await r.text();
-  try{return JSON.parse(txt);}catch{throw new Error(txt||'Erro no servidor');}
+  let res; try{res=JSON.parse(txt);}catch{throw new Error(txt||'Erro no servidor');}
+  if(r.status===401){try{localStorage.removeItem('dv_tk');sessionStorage.removeItem('dv_s');}catch{};doLogout&&doLogout();}
+  return res;
 }
 
-const apiLogin       = (e,s)=>gGet('login',{sheet:CFG.SH.USERS,email:e,senha:s});
-const apiGetClientes = ()=>gGet('getClientes',{sheet:CFG.SH.USERS});
+const apiLogin       = (e,s)=>gPost('login',{email:e,senha:s});
+const apiGetClientes = ()=>gGet('getClientes',{});
 const apiCreateUser  = d=>gPost('createCliente',{sheet:CFG.SH.USERS,data:d});
 const apiDeleteUser  = cid=>gPost('deleteCliente',{clienteId:cid});
 const apiSavePerfil  = d=>gPost('savePerfil',{sheet:CFG.SH.PERFIL,data:d});
@@ -1030,6 +1075,7 @@ async function doLogin(){
       btn.textContent='Entrar';btn.disabled=false;return;
     }
     _user=res;
+    try{if(res.token)localStorage.setItem('dv_tk',res.token);}catch{}
     try{sessionStorage.setItem('dv_s',JSON.stringify(res));}catch{}
     hideAuth();
     res.perfil==='consultor'?showConsultor():showCliente(res);
@@ -1047,7 +1093,7 @@ function hideAuth(){
 
 function doLogout(){
   _user=null;_cliente=null;
-  try{sessionStorage.removeItem('dv_s');}catch{}
+  try{sessionStorage.removeItem('dv_s');localStorage.removeItem('dv_tk');}catch{}
   gel('consultorScreen').classList.remove('active');
   gel('topbar').style.display='none';
   gel('appWrap').classList.remove('active');
@@ -1496,8 +1542,12 @@ function handleFileSelect(file){
   if(ext==='csv'){
     const reader=new FileReader();
     reader.onload=e=>{
-      const result=Papa.parse(e.target.result,{header:true,skipEmptyLines:true});
-      processImportData(result.data,file.name);
+      // Tenta header — depois cai para AOA se necessário
+      const txt=e.target.result;
+      const hr=Papa.parse(txt,{header:true,skipEmptyLines:true});
+      if(hr.data&&hr.data.length){processImportData(hr.data,file.name);return;}
+      const ar=Papa.parse(txt,{header:false,skipEmptyLines:true});
+      processImportSheet(ar.data||[],file.name);
     };
     reader.readAsText(file,'UTF-8');
   } else if(ext==='xlsx'||ext==='xls'){
@@ -1505,46 +1555,126 @@ function handleFileSelect(file){
     reader.onload=e=>{
       const wb=XLSX.read(e.target.result,{type:'array'});
       const ws=wb.Sheets[wb.SheetNames[0]];
-      const data=XLSX.utils.sheet_to_json(ws,{defval:''});
-      processImportData(data,file.name);
+      const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      processImportSheet(aoa,file.name);
+    };
+    reader.readAsArrayBuffer(file);
+  } else if(ext==='pdf'){
+    if(!window['pdfjsLib']){toast('Leitor de PDF indisponível. Recarregue a página.','error');return;}
+    const reader=new FileReader();
+    reader.onload=async e=>{
+      try{
+        const pdf=await pdfjsLib.getDocument({data:e.target.result}).promise;
+        const lines=[];
+        for(let p=1;p<=pdf.numPages;p++){
+          const page=await pdf.getPage(p);
+          const tc=await page.getTextContent();
+          // Agrupa por linha (mesma y, com tolerância)
+          const items=tc.items.map(it=>({s:it.str,x:it.transform[4],y:Math.round(it.transform[5])}));
+          const byY={};
+          items.forEach(it=>{const k=it.y;(byY[k]=byY[k]||[]).push(it);});
+          Object.keys(byY).sort((a,b)=>b-a).forEach(k=>{
+            const row=byY[k].sort((a,b)=>a.x-b.x).map(i=>i.s).join(' ').replace(/\s+/g,' ').trim();
+            if(row)lines.push(row);
+          });
+        }
+        processImportPdfLines(lines,file.name);
+      }catch(err){toast('Erro ao ler PDF: '+err.message,'error');}
     };
     reader.readAsArrayBuffer(file);
   } else {
-    toast('Formato não suportado. Use CSV ou XLSX.','error');
+    toast('Formato não suportado. Use CSV, XLSX, XLS ou PDF.','error');
   }
 }
 
-function processImportData(data,fname){
-  if(!data||!data.length){toast('Arquivo vazio ou sem dados.','error');return;}
+/* Detecta layouts conhecidos (C6, Bradesco, etc.) trabalhando em AOA.
+   Importa SOMENTE saídas/débitos. */
+function processImportSheet(aoa,fname){
+  if(!aoa||!aoa.length){toast('Arquivo vazio.','error');return;}
+  // Acha linha do cabeçalho (a que contém pelo menos "data" + "valor|saída|débito")
+  let hdrIdx=-1, hdr=null;
+  for(let i=0;i<Math.min(aoa.length,40);i++){
+    const cells=(aoa[i]||[]).map(c=>String(c||'').toLowerCase().trim());
+    const hasData=cells.some(c=>/^data/.test(c));
+    const hasMov =cells.some(c=>/sa[íi]da|d[ée]bito|debit|valor|amount/.test(c));
+    if(hasData&&hasMov){hdrIdx=i;hdr=cells;break;}
+  }
+  if(hdrIdx<0){toast('Não foi possível identificar o cabeçalho do extrato.','error');return;}
+
+  const idxOf=(re)=>hdr.findIndex(c=>re.test(c));
+  const iData =idxOf(/^data/);
+  const iDesc =(()=>{let i=idxOf(/descri|hist[óo]rico|lan[çc]amento|t[íi]tulo|memo/);return i<0?(iData+1):i;})();
+  const iSaida=idxOf(/sa[íi]da/);
+  const iDeb  =idxOf(/d[ée]bito|debit/);
+  const iEnt  =idxOf(/entrada|cr[ée]dito|credit/);
+  const iVal  =idxOf(/^valor|amount|^vl/);
+
+  const rows=[];
+  for(let i=hdrIdx+1;i<aoa.length;i++){
+    const r=aoa[i]||[];
+    const dt=String(r[iData]||'').trim();
+    if(!dt||!/\d/.test(dt))continue;
+    const desc=String(r[iDesc]||'').trim();
+    let valor=0;
+    if(iSaida>=0){
+      const s=pMoney(r[iSaida]);
+      if(s>0)valor=s;
+      else continue; // ignora se não houver saída
+    } else if(iDeb>=0){
+      const d=pMoney(r[iDeb]);
+      // Bradesco: débitos vêm negativos; outros vêm positivos
+      if(d!==0)valor=Math.abs(d);
+      else continue;
+    } else if(iVal>=0){
+      const v=pMoney(r[iVal]);
+      // entrada se positivo & col entrada não existe → preserva comportamento antigo? Não: usuário quer só saídas.
+      if(v<0)valor=Math.abs(v);
+      else if(iEnt<0)valor=Math.abs(v); // genérico sem coluna entrada — assume tudo é despesa
+      else continue;
+    } else continue;
+    if(valor<=0||!desc)continue;
+    rows.push({data:dt,desc,valor});
+  }
+  finishImportRows(rows,fname);
+}
+
+/* PDF: regex por linha — formato típico "dd/mm/aaaa  descrição ...  -1.234,56" */
+function processImportPdfLines(lines,fname){
+  const rows=[];
+  const dateRe=/^(\d{2}\/\d{2}\/\d{2,4})\s+(.+?)\s+(-?[\d\.]+,\d{2})(?:\s+(-?[\d\.]+,\d{2}))?\s*$/;
+  for(const ln of lines){
+    const m=ln.match(dateRe);
+    if(!m)continue;
+    const dt=m[1], desc=m[2].trim();
+    // Se há 2 valores: o último é saldo, o primeiro é o lançamento; se 1, é o lançamento.
+    const v1=pMoney(m[3]);
+    const lanc=m[4]?v1:v1;
+    // Só saídas: valor negativo OU descrição contém palavra-chave de débito
+    const isDebito=lanc<0||/pagamento|d[ée]bito|saque|pix enviado|compra|tarifa|envi[ao]/i.test(desc);
+    if(!isDebito)continue;
+    rows.push({data:dt,desc,valor:Math.abs(lanc)});
+  }
+  finishImportRows(rows,fname);
+}
+
+function finishImportRows(rows,fname){
+  if(!rows.length){toast('Nenhuma saída/débito encontrada no arquivo.','error');return;}
   gel('importFileName').textContent=fname;
-  gel('importRowCount').textContent=`${data.length} registros encontrados`;
+  gel('importRowCount').textContent=`${rows.length} saída(s) encontrada(s)`;
   gel('importPreviewWrap').classList.remove('hidden');
-
-  const keys=Object.keys(data[0]);
-  const findCol=(patterns)=>{
-    for(const p of patterns){
-      const k=keys.find(k=>k.toLowerCase().includes(p.toLowerCase()));
-      if(k)return k;
-    }
-    return null;
-  };
-  const colData  =findCol(['data','date','dt','dia']);
-  const colDesc  =findCol(['desc','historico','memo','lancamento','nome','descrição']);
-  const colValor =findCol(['valor','value','amount','total','debito','credito','vl']);
-  const colMes   =findCol(['mes','mês','month','competencia','competência']);
-
   const cats=getCats();
   const allCats=Object.entries(cats).flatMap(([grp,items])=>items.map(i=>`${grp} · ${i}`));
-
-  _importRows=data.map((row,i)=>{
-    const rawDesc =String(row[colDesc]||row[keys[1]]||'').trim();
-    const rawValor=pMoney(String(row[colValor]||row[keys[2]]||'0'));
-    const rawData =String(row[colData]||row[keys[0]]||'').trim();
-    const rawMes  =colMes?String(row[colMes]||''):inferMes(rawData);
-    return {id:i,data:rawData,desc:rawDesc,valor:Math.abs(rawValor),cat:allCats[0]||'',mes:rawMes||CFG.MESES[new Date().getMonth()],selected:true};
-  });
-
+  _importRows=rows.map((r,i)=>({id:i,data:r.data,desc:r.desc,valor:r.valor,cat:allCats[0]||'',mes:inferMes(r.data)||CFG.MESES[new Date().getMonth()],selected:true}));
   renderImportTable();
+}
+
+/* Mantém compatibilidade com CSV com header (uso antigo) */
+function processImportData(data,fname){
+  if(!data||!data.length){toast('Arquivo vazio ou sem dados.','error');return;}
+  const keys=Object.keys(data[0]);
+  // Converte para AOA e delega ao processador novo
+  const aoa=[keys, ...data.map(r=>keys.map(k=>r[k]))];
+  processImportSheet(aoa,fname);
 }
 
 function inferMes(dateStr){
@@ -1932,10 +2062,13 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   try{
     const saved=sessionStorage.getItem('dv_s');
-    if(saved){
+    const tok=localStorage.getItem('dv_tk');
+    if(saved&&tok){
       const user=JSON.parse(saved);_user=user;
       hideAuth();
       user.perfil==='consultor'?showConsultor():showCliente(user);
+    } else {
+      try{sessionStorage.removeItem('dv_s');localStorage.removeItem('dv_tk');}catch{}
     }
   }catch{}
 
