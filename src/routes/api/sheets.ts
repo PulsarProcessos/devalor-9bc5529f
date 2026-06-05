@@ -316,7 +316,7 @@ async function handleAction(action: string, params: Record<string, any>, request
           ano: a,
           origem: isImport ? "import" : "manual",
         };
-      }).filter((r) => r.descricao && r.valor > 0 && r.data);
+      }).filter((r) => r.descricao && r.valor > 0 && r.data) as Array<{ cliente_id: string; data: string; descricao: string; categoria: string | null; grupo: string | null; valor: number; forma_pagamento: string | null; banco: string | null; mes: string | null; ano: string; origem: string }>;
       if (!recs.length) return json({ error: "Nenhuma linha válida." });
       const { error, count } = await supabaseAdmin
         .from("despesas")
