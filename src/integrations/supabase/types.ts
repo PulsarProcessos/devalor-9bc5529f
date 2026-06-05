@@ -44,6 +44,96 @@ export type Database = {
         }
         Relationships: []
       }
+      despesas: {
+        Row: {
+          ano: string | null
+          banco: string | null
+          categoria: string | null
+          cliente_id: string
+          created_at: string
+          data: string
+          descricao: string
+          forma_pagamento: string | null
+          grupo: string | null
+          id: string
+          mes: string | null
+          origem: string
+          valor: number
+        }
+        Insert: {
+          ano?: string | null
+          banco?: string | null
+          categoria?: string | null
+          cliente_id: string
+          created_at?: string
+          data: string
+          descricao: string
+          forma_pagamento?: string | null
+          grupo?: string | null
+          id?: string
+          mes?: string | null
+          origem?: string
+          valor: number
+        }
+        Update: {
+          ano?: string | null
+          banco?: string | null
+          categoria?: string | null
+          cliente_id?: string
+          created_at?: string
+          data?: string
+          descricao?: string
+          forma_pagamento?: string | null
+          grupo?: string | null
+          id?: string
+          mes?: string | null
+          origem?: string
+          valor?: number
+        }
+        Relationships: []
+      }
+      dividas: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          credor: string
+          id: string
+          parcelas_restantes: number | null
+          saldo_devedor: number
+          status: string
+          taxa_juros: number | null
+          tipo: string | null
+          updated_at: string
+          valor_parcela: number | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          credor: string
+          id?: string
+          parcelas_restantes?: number | null
+          saldo_devedor?: number
+          status?: string
+          taxa_juros?: number | null
+          tipo?: string | null
+          updated_at?: string
+          valor_parcela?: number | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          credor?: string
+          id?: string
+          parcelas_restantes?: number | null
+          saldo_devedor?: number
+          status?: string
+          taxa_juros?: number | null
+          tipo?: string | null
+          updated_at?: string
+          valor_parcela?: number | null
+        }
+        Relationships: []
+      }
       entries: {
         Row: {
           cliente_id: string
@@ -65,6 +155,105 @@ export type Database = {
           data?: Json
           id?: string
           sheet?: string
+        }
+        Relationships: []
+      }
+      extraordinario: {
+        Row: {
+          ano: string
+          categoria: string | null
+          cliente_id: string
+          created_at: string
+          descricao: string | null
+          grupo: string | null
+          id: string
+          mes: string
+          valor_planejado: number
+        }
+        Insert: {
+          ano: string
+          categoria?: string | null
+          cliente_id: string
+          created_at?: string
+          descricao?: string | null
+          grupo?: string | null
+          id?: string
+          mes: string
+          valor_planejado?: number
+        }
+        Update: {
+          ano?: string
+          categoria?: string | null
+          cliente_id?: string
+          created_at?: string
+          descricao?: string | null
+          grupo?: string | null
+          id?: string
+          mes?: string
+          valor_planejado?: number
+        }
+        Relationships: []
+      }
+      plano_acao: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          descricao: string | null
+          id: string
+          prazo: string | null
+          prioridade: string
+          status: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          prazo?: string | null
+          prioridade?: string
+          status?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          prazo?: string | null
+          prioridade?: string
+          status?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      reserva_ideal: {
+        Row: {
+          cliente_id: string
+          meses_cobertura: number
+          observacoes: string | null
+          updated_at: string
+          valor_alvo: number
+          valor_atual: number
+        }
+        Insert: {
+          cliente_id: string
+          meses_cobertura?: number
+          observacoes?: string | null
+          updated_at?: string
+          valor_alvo?: number
+          valor_atual?: number
+        }
+        Update: {
+          cliente_id?: string
+          meses_cobertura?: number
+          observacoes?: string | null
+          updated_at?: string
+          valor_alvo?: number
+          valor_atual?: number
         }
         Relationships: []
       }
