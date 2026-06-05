@@ -2062,10 +2062,13 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   try{
     const saved=sessionStorage.getItem('dv_s');
-    if(saved){
+    const tok=localStorage.getItem('dv_tk');
+    if(saved&&tok){
       const user=JSON.parse(saved);_user=user;
       hideAuth();
       user.perfil==='consultor'?showConsultor():showCliente(user);
+    } else {
+      try{sessionStorage.removeItem('dv_s');localStorage.removeItem('dv_tk');}catch{}
     }
   }catch{}
 
