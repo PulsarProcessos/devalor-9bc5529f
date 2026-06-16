@@ -1821,15 +1821,23 @@ async function submitImport(){
     const isCartao = _importSource==='cartao';
     const origem = isCartao ? 'import_cartao' : 'import';
     const fp = isCartao ? 'Cartão de Crédito' : 'Extrato Bancário';
+    const normDate=(s)=>{
+      if(!s)return null;
+      const str=String(s).trim();
+      if(/^\d{4}-\d{2}-\d{2}/.test(str))return str.slice(0,10);
+      const m=str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+      if(m){let[,d,mo,y]=m;if(y.length===2)y=(+y>50?'19':'20')+y;return `${y}-${mo.padStart(2,'0')}-${d.padStart(2,'0')}`;}
+      return null;
+    };
     const recs = selected.map(r=>{
       const [grupo,categoria] = String(r.cat||'').split('·').map(s=>s.trim());
       return {
-        data:r.data,descricao:r.desc,valor:r.valor,
+        data:normDate(r.data), descricao:r.desc, valor:r.valor,
         categoria:categoria||r.cat||null, grupo:grupo||null,
         forma_pagamento:fp, banco:null, mes:r.mes, ano:String(CFG.ANO),
         origem
       };
-    });
+    }).filter(r=>r.data);
     await gPost('addDespesas',{rows:recs,clienteId:cid()});
     toast(`${recs.length} despesa(s) importada(s)!`,'success');
     clearImport();
