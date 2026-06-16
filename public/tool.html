@@ -1818,9 +1818,20 @@ async function submitImport(){
   if(!selected.length){toast('Nenhum item selecionado.','error');return;}
   const btn=document.querySelector('[onclick="submitImport()"]');if(btn)btn.disabled=true;
   try{
-    const rows=selected.map(r=>['Importação',r.data,r.desc,r.valor,r.cat,r.mes,CFG.ANO]);
-    await apiRows(CFG.SH.DESPESAS,rows);
-    toast(`${rows.length} despesa(s) importada(s)!`,'success');
+    const isCartao = _importSource==='cartao';
+    const origem = isCartao ? 'import_cartao' : 'import';
+    const fp = isCartao ? 'Cartão de Crédito' : 'Extrato Bancário';
+    const recs = selected.map(r=>{
+      const [grupo,categoria] = String(r.cat||'').split('·').map(s=>s.trim());
+      return {
+        data:r.data,descricao:r.desc,valor:r.valor,
+        categoria:categoria||r.cat||null, grupo:grupo||null,
+        forma_pagamento:fp, banco:null, mes:r.mes, ano:String(CFG.ANO),
+        origem
+      };
+    });
+    await gPost('addDespesas',{rows:recs,clienteId:cid()});
+    toast(`${recs.length} despesa(s) importada(s)!`,'success');
     clearImport();
   }catch(e){toast('Erro: '+e.message,'error');}
   finally{if(btn)btn.disabled=false;}
@@ -1828,9 +1839,77 @@ async function submitImport(){
 
 function clearImport(){
   _importRows=[];
-  gel('importPreviewWrap').classList.add('hidden');
-  gel('fileInput').value='';
+  gel('importPreviewWrap')?.classList.add('hidden');
+  const fi=gel('fileInput');if(fi)fi.value='';
   const tb=gel('importTbody');if(tb)tb.innerHTML='';
+}
+
+/* ═══════════════════════════════════════════
+   DESPESAS LANÇADAS (listagem)
+═══════════════════════════════════════════ */
+let _lancRows = [];
+async function loadDespesasLancadas(){
+  const tb=gel('lancTbody');if(!tb)return;
+  tb.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:20px">Carregando...</td></tr>';
+  try{
+    const r=await gGet('getDespesas',{clienteId:cid()});
+    _lancRows = r.rows||[];
+    renderDespesasLancadas();
+  }catch(e){
+    tb.innerHTML=`<tr><td colspan="9" style="text-align:center;color:var(--danger);padding:20px">Erro: ${esc(e.message)}</td></tr>`;
+  }
+}
+function origemLbl(o){
+  if(o==='manual')return '✏️ Manual';
+  if(o==='import_cartao')return '💳 Cartão';
+  if(o==='import'||o==='import_extrato')return '🏦 Extrato';
+  return o||'—';
+}
+function renderDespesasLancadas(){
+  const tb=gel('lancTbody');if(!tb)return;
+  const fMes=gel('lancFiltroMes')?.value||'';
+  const fOri=gel('lancFiltroOrigem')?.value||'';
+  const fDesc=(gel('lancFiltroDesc')?.value||'').toLowerCase().trim();
+  const filtered=_lancRows.filter(r=>{
+    if(fMes && String(r.mes||'').toUpperCase()!==fMes)return false;
+    if(fOri){
+      if(fOri==='import' && !(r.origem==='import'||r.origem==='import_extrato'))return false;
+      if(fOri!=='import' && r.origem!==fOri)return false;
+    }
+    if(fDesc && !String(r.descricao||'').toLowerCase().includes(fDesc))return false;
+    return true;
+  });
+  if(!filtered.length){
+    tb.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:20px">Nenhuma despesa encontrada.</td></tr>';
+    gel('lancTotal').textContent='Total: '+fBRL(0);
+    return;
+  }
+  let total=0;
+  tb.innerHTML=filtered.map(r=>{
+    const v=Number(r.valor||0);total+=v;
+    const cat=r.grupo?`${r.grupo} · ${r.categoria||''}`:(r.categoria||'—');
+    return `<tr>
+      <td>${fDate(r.data)}</td>
+      <td>${esc(r.descricao||'')}</td>
+      <td>${esc(cat)}</td>
+      <td class="mono" style="text-align:right">${fBRL(v)}</td>
+      <td>${esc(r.forma_pagamento||'—')}</td>
+      <td>${esc(r.banco||'—')}</td>
+      <td>${esc(r.mes||'—')}</td>
+      <td>${origemLbl(r.origem)}</td>
+      <td><button class="btn btn-d btn-xs" onclick="deleteDespesaLanc('${r.id}')">✕</button></td>
+    </tr>`;
+  }).join('');
+  gel('lancTotal').textContent='Total: '+fBRL(total);
+}
+async function deleteDespesaLanc(id){
+  if(!confirm('Excluir esta despesa?'))return;
+  try{
+    await gPost('deleteDespesa',{id,clienteId:cid()});
+    _lancRows=_lancRows.filter(r=>r.id!==id);
+    renderDespesasLancadas();
+    toast('Despesa excluída.','success');
+  }catch(e){toast('Erro: '+e.message,'error');}
 }
 
 /* ═══════════════════════════════════════════
