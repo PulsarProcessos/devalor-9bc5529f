@@ -464,7 +464,6 @@ img,svg{display:block;max-width:100%}
   <!-- SIDEBAR NAV -->
   <aside class="app-sidebar" id="appSidebar">
     <div class="nav-year-tag" id="navYear"></div>
-    <div style="margin:0 12px 8px;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--success);text-align:center;letter-spacing:.05em;padding:3px;background:var(--success-bg);border-radius:5px">v3.5 · fBRL fix</div>
 
     <!-- CADASTROS -->
     <div class="nav-section">
@@ -666,6 +665,7 @@ img,svg{display:block;max-width:100%}
       <div class="desp-tabs">
         <button class="desp-tab active" onclick="switchDespTab('manual',this)">✏️ Lançamento manual</button>
         <button class="desp-tab" onclick="switchDespTab('importar',this)">📂 Importar arquivo</button>
+        <button class="desp-tab" onclick="switchDespTab('lancadas',this)">📊 Lançadas</button>
       </div>
 
       <!-- Manual -->
@@ -700,33 +700,87 @@ img,svg{display:block;max-width:100%}
 
       <!-- Importar -->
       <div class="desp-panel" id="desp-importar">
-        <div class="import-drop" id="importDrop" onclick="document.getElementById('fileInput').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onFileDrop(event)">
-          <div class="import-drop__icon">📂</div>
-          <div class="import-drop__title">Arraste ou clique para selecionar o arquivo</div>
-          <div class="import-drop__sub">Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong> — apenas <strong>saídas/débitos</strong> são importadas</div>
+        <!-- Escolha da fonte -->
+        <div id="importSourcePicker" style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;padding:24px 12px">
+          <button class="btn btn-g" style="min-width:240px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportSource('cartao')">
+            <span style="font-size:2rem">💳</span>
+            <span style="font-weight:600">Cartão de crédito</span>
+            <span style="font-size:.75rem;color:var(--text-muted)">Fatura: todos os lançamentos viram despesa</span>
+          </button>
+          <button class="btn btn-g" style="min-width:240px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportSource('extrato')">
+            <span style="font-size:2rem">🏦</span>
+            <span style="font-weight:600">Extrato bancário</span>
+            <span style="font-size:.75rem;color:var(--text-muted)">Apenas saídas / débitos são importados</span>
+          </button>
         </div>
-        <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.pdf" style="display:none" onchange="handleFileSelect(this.files[0])"/>
-        <div id="importPreviewWrap" class="hidden mt16">
-          <div class="import-preview">
-            <div class="import-preview-hd">
-              <span class="import-preview-title" id="importFileName">Arquivo carregado</span>
-              <span style="font-size:.76rem;color:var(--text-muted)" id="importRowCount"></span>
-            </div>
-            <div style="padding:14px 16px">
-              <div class="info-box mb-12" style="margin-bottom:12px">Clique na célula da coluna <strong>Categoria</strong> para alterar. Revise os dados antes de enviar.</div>
-              <div class="tbl-wrap">
-                <table class="tbl" id="importTable">
-                  <thead><tr><th>Data</th><th>Descrição</th><th>Valor (R$)</th><th>Categoria</th><th>Mês Comp.</th><th>✓</th></tr></thead>
-                  <tbody id="importTbody"></tbody>
-                </table>
+
+        <!-- Drop-zone (oculto até escolher fonte) -->
+        <div id="importDropWrap" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap">
+            <div style="font-size:.85rem;color:var(--text-secondary)">Fonte: <strong id="importSourceLbl">—</strong></div>
+            <button class="btn btn-g btn-xs" onclick="resetImportSource()">↺ Trocar fonte</button>
+          </div>
+          <div class="import-drop" id="importDrop" onclick="document.getElementById('fileInput').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onFileDrop(event)">
+            <div class="import-drop__icon">📂</div>
+            <div class="import-drop__title">Arraste ou clique para selecionar o arquivo</div>
+            <div class="import-drop__sub" id="importDropSub">Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong></div>
+          </div>
+          <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.pdf" style="display:none" onchange="handleFileSelect(this.files[0])"/>
+          <div id="importPreviewWrap" class="hidden mt16">
+            <div class="import-preview">
+              <div class="import-preview-hd">
+                <span class="import-preview-title" id="importFileName">Arquivo carregado</span>
+                <span style="font-size:.76rem;color:var(--text-muted)" id="importRowCount"></span>
               </div>
-              <div class="form-footer mt16">
-                <button class="btn btn-g" onclick="clearImport()">Limpar</button>
-                <button class="btn btn-s" onclick="selectAllImport(true)">Selecionar todos</button>
-                <button class="btn btn-p" onclick="submitImport()">Enviar selecionados ↗</button>
+              <div style="padding:14px 16px">
+                <div class="info-box mb-12" style="margin-bottom:12px">Clique na célula da coluna <strong>Categoria</strong> para alterar. Revise os dados antes de enviar.</div>
+                <div class="tbl-wrap">
+                  <table class="tbl" id="importTable">
+                    <thead><tr><th>Data</th><th>Descrição</th><th>Valor (R$)</th><th>Categoria</th><th>Mês Comp.</th><th>✓</th></tr></thead>
+                    <tbody id="importTbody"></tbody>
+                  </table>
+                </div>
+                <div class="form-footer mt16">
+                  <button class="btn btn-g" onclick="clearImport()">Limpar</button>
+                  <button class="btn btn-s" onclick="selectAllImport(true)">Selecionar todos</button>
+                  <button class="btn btn-p" onclick="submitImport()">Enviar selecionados ↗</button>
+                </div>
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Lançadas -->
+      <div class="desp-panel" id="desp-lancadas">
+        <div class="card-form" style="margin-bottom:14px">
+          <div class="grid3">
+            <div class="field"><label class="lbl">Mês</label>
+              <select class="sel" id="lancFiltroMes" onchange="renderDespesasLancadas()">
+                <option value="">Todos</option>
+                <option value="JANEIRO">Janeiro</option><option value="FEVEREIRO">Fevereiro</option><option value="MARÇO">Março</option><option value="ABRIL">Abril</option><option value="MAIO">Maio</option><option value="JUNHO">Junho</option><option value="JULHO">Julho</option><option value="AGOSTO">Agosto</option><option value="SETEMBRO">Setembro</option><option value="OUTUBRO">Outubro</option><option value="NOVEMBRO">Novembro</option><option value="DEZEMBRO">Dezembro</option>
+              </select>
+            </div>
+            <div class="field"><label class="lbl">Origem</label>
+              <select class="sel" id="lancFiltroOrigem" onchange="renderDespesasLancadas()">
+                <option value="">Todas</option>
+                <option value="manual">Manual</option>
+                <option value="import">Importação (extrato)</option>
+                <option value="import_cartao">Importação (cartão)</option>
+              </select>
+            </div>
+            <div class="field"><label class="lbl">Buscar descrição</label><input class="inp" type="text" id="lancFiltroDesc" oninput="renderDespesasLancadas()" placeholder="Ex: Mercado..."/></div>
+          </div>
+          <div class="form-footer">
+            <button class="btn btn-g" onclick="loadDespesasLancadas()">↻ Atualizar</button>
+            <span id="lancTotal" style="margin-left:auto;font-weight:600;color:var(--brand)">Total: R$ 0,00</span>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl" id="lancTable">
+            <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Forma Pag.</th><th>Banco</th><th>Mês</th><th>Origem</th><th></th></tr></thead>
+            <tbody id="lancTbody"><tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:20px">Carregando...</td></tr></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -1484,6 +1538,26 @@ function switchDespTab(id,btn){
   document.querySelectorAll('.desp-tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.desp-panel').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');gel(`desp-${id}`)?.classList.add('active');
+  if(id==='lancadas')loadDespesasLancadas();
+}
+
+/* Fonte da importação (cartão | extrato) */
+let _importSource = null;
+function chooseImportSource(src){
+  _importSource = src;
+  gel('importSourcePicker').style.display='none';
+  gel('importDropWrap').style.display='block';
+  const isCartao = src==='cartao';
+  gel('importSourceLbl').textContent = isCartao?'💳 Cartão de crédito':'🏦 Extrato bancário';
+  gel('importDropSub').innerHTML = isCartao
+    ? 'Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong> — fatura do cartão'
+    : 'Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong> — apenas <strong>saídas/débitos</strong> são importadas';
+}
+function resetImportSource(){
+  _importSource = null;
+  clearImport();
+  gel('importDropWrap').style.display='none';
+  gel('importSourcePicker').style.display='flex';
 }
 function toggleParcelado(v){gel('parcelFields')?.classList.toggle('hidden',!v);if(!v)clearPrev();}
 function buildDespRows(){
@@ -1610,26 +1684,34 @@ function processImportSheet(aoa,fname){
   const iVal  =idxOf(/^valor|amount|^vl/);
 
   const rows=[];
+  const isCartao = _importSource==='cartao';
   for(let i=hdrIdx+1;i<aoa.length;i++){
     const r=aoa[i]||[];
     const dt=String(r[iData]||'').trim();
     if(!dt||!/\d/.test(dt))continue;
     const desc=String(r[iDesc]||'').trim();
     let valor=0;
-    if(iSaida>=0){
+    if(isCartao){
+      // Cartão: todos lançamentos positivos são despesa
+      const v = iVal>=0 ? pMoney(r[iVal])
+             : iDeb>=0 ? pMoney(r[iDeb])
+             : iSaida>=0 ? pMoney(r[iSaida]) : 0;
+      if(v===0)continue;
+      // Ignora pagamento/estorno (valores negativos na fatura)
+      if(v<0)continue;
+      valor=Math.abs(v);
+    } else if(iSaida>=0){
       const s=pMoney(r[iSaida]);
       if(s>0)valor=s;
       else continue; // ignora se não houver saída
     } else if(iDeb>=0){
       const d=pMoney(r[iDeb]);
-      // Bradesco: débitos vêm negativos; outros vêm positivos
       if(d!==0)valor=Math.abs(d);
       else continue;
     } else if(iVal>=0){
       const v=pMoney(r[iVal]);
-      // entrada se positivo & col entrada não existe → preserva comportamento antigo? Não: usuário quer só saídas.
       if(v<0)valor=Math.abs(v);
-      else if(iEnt<0)valor=Math.abs(v); // genérico sem coluna entrada — assume tudo é despesa
+      else if(iEnt<0)valor=Math.abs(v);
       else continue;
     } else continue;
     if(valor<=0||!desc)continue;
@@ -1649,10 +1731,15 @@ function processImportPdfLines(lines,fname){
     // Se há 2 valores: o último é saldo, o primeiro é o lançamento; se 1, é o lançamento.
     const v1=pMoney(m[3]);
     const lanc=m[4]?v1:v1;
-    // Só saídas: valor negativo OU descrição contém palavra-chave de débito
-    const isDebito=lanc<0||/pagamento|d[ée]bito|saque|pix enviado|compra|tarifa|envi[ao]/i.test(desc);
-    if(!isDebito)continue;
-    rows.push({data:dt,desc,valor:Math.abs(lanc)});
+    if(_importSource==='cartao'){
+      // Fatura: pega lançamentos positivos, ignora pagamentos (negativos)
+      if(lanc<=0)continue;
+      rows.push({data:dt,desc,valor:Math.abs(lanc)});
+    } else {
+      const isDebito=lanc<0||/pagamento|d[ée]bito|saque|pix enviado|compra|tarifa|envi[ao]/i.test(desc);
+      if(!isDebito)continue;
+      rows.push({data:dt,desc,valor:Math.abs(lanc)});
+    }
   }
   finishImportRows(rows,fname);
 }
@@ -1731,9 +1818,28 @@ async function submitImport(){
   if(!selected.length){toast('Nenhum item selecionado.','error');return;}
   const btn=document.querySelector('[onclick="submitImport()"]');if(btn)btn.disabled=true;
   try{
-    const rows=selected.map(r=>['Importação',r.data,r.desc,r.valor,r.cat,r.mes,CFG.ANO]);
-    await apiRows(CFG.SH.DESPESAS,rows);
-    toast(`${rows.length} despesa(s) importada(s)!`,'success');
+    const isCartao = _importSource==='cartao';
+    const origem = isCartao ? 'import_cartao' : 'import';
+    const fp = isCartao ? 'Cartão de Crédito' : 'Extrato Bancário';
+    const normDate=(s)=>{
+      if(!s)return null;
+      const str=String(s).trim();
+      if(/^\d{4}-\d{2}-\d{2}/.test(str))return str.slice(0,10);
+      const m=str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+      if(m){let[,d,mo,y]=m;if(y.length===2)y=(+y>50?'19':'20')+y;return `${y}-${mo.padStart(2,'0')}-${d.padStart(2,'0')}`;}
+      return null;
+    };
+    const recs = selected.map(r=>{
+      const [grupo,categoria] = String(r.cat||'').split('·').map(s=>s.trim());
+      return {
+        data:normDate(r.data), descricao:r.desc, valor:r.valor,
+        categoria:categoria||r.cat||null, grupo:grupo||null,
+        forma_pagamento:fp, banco:null, mes:r.mes, ano:String(CFG.ANO),
+        origem
+      };
+    }).filter(r=>r.data);
+    await gPost('addDespesas',{rows:recs,clienteId:cid()});
+    toast(`${recs.length} despesa(s) importada(s)!`,'success');
     clearImport();
   }catch(e){toast('Erro: '+e.message,'error');}
   finally{if(btn)btn.disabled=false;}
@@ -1741,9 +1847,77 @@ async function submitImport(){
 
 function clearImport(){
   _importRows=[];
-  gel('importPreviewWrap').classList.add('hidden');
-  gel('fileInput').value='';
+  gel('importPreviewWrap')?.classList.add('hidden');
+  const fi=gel('fileInput');if(fi)fi.value='';
   const tb=gel('importTbody');if(tb)tb.innerHTML='';
+}
+
+/* ═══════════════════════════════════════════
+   DESPESAS LANÇADAS (listagem)
+═══════════════════════════════════════════ */
+let _lancRows = [];
+async function loadDespesasLancadas(){
+  const tb=gel('lancTbody');if(!tb)return;
+  tb.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:20px">Carregando...</td></tr>';
+  try{
+    const r=await gGet('getDespesas',{clienteId:cid()});
+    _lancRows = r.rows||[];
+    renderDespesasLancadas();
+  }catch(e){
+    tb.innerHTML=`<tr><td colspan="9" style="text-align:center;color:var(--danger);padding:20px">Erro: ${esc(e.message)}</td></tr>`;
+  }
+}
+function origemLbl(o){
+  if(o==='manual')return '✏️ Manual';
+  if(o==='import_cartao')return '💳 Cartão';
+  if(o==='import'||o==='import_extrato')return '🏦 Extrato';
+  return o||'—';
+}
+function renderDespesasLancadas(){
+  const tb=gel('lancTbody');if(!tb)return;
+  const fMes=gel('lancFiltroMes')?.value||'';
+  const fOri=gel('lancFiltroOrigem')?.value||'';
+  const fDesc=(gel('lancFiltroDesc')?.value||'').toLowerCase().trim();
+  const filtered=_lancRows.filter(r=>{
+    if(fMes && String(r.mes||'').toUpperCase()!==fMes)return false;
+    if(fOri){
+      if(fOri==='import' && !(r.origem==='import'||r.origem==='import_extrato'))return false;
+      if(fOri!=='import' && r.origem!==fOri)return false;
+    }
+    if(fDesc && !String(r.descricao||'').toLowerCase().includes(fDesc))return false;
+    return true;
+  });
+  if(!filtered.length){
+    tb.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:20px">Nenhuma despesa encontrada.</td></tr>';
+    gel('lancTotal').textContent='Total: '+fBRL(0);
+    return;
+  }
+  let total=0;
+  tb.innerHTML=filtered.map(r=>{
+    const v=Number(r.valor||0);total+=v;
+    const cat=r.grupo?`${r.grupo} · ${r.categoria||''}`:(r.categoria||'—');
+    return `<tr>
+      <td>${fDate(r.data)}</td>
+      <td>${esc(r.descricao||'')}</td>
+      <td>${esc(cat)}</td>
+      <td class="mono" style="text-align:right">${fBRL(v)}</td>
+      <td>${esc(r.forma_pagamento||'—')}</td>
+      <td>${esc(r.banco||'—')}</td>
+      <td>${esc(r.mes||'—')}</td>
+      <td>${origemLbl(r.origem)}</td>
+      <td><button class="btn btn-d btn-xs" onclick="deleteDespesaLanc('${r.id}')">✕</button></td>
+    </tr>`;
+  }).join('');
+  gel('lancTotal').textContent='Total: '+fBRL(total);
+}
+async function deleteDespesaLanc(id){
+  if(!confirm('Excluir esta despesa?'))return;
+  try{
+    await gPost('deleteDespesa',{id,clienteId:cid()});
+    _lancRows=_lancRows.filter(r=>r.id!==id);
+    renderDespesasLancadas();
+    toast('Despesa excluída.','success');
+  }catch(e){toast('Erro: '+e.message,'error');}
 }
 
 /* ═══════════════════════════════════════════
