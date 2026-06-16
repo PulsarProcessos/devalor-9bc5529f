@@ -1538,6 +1538,26 @@ function switchDespTab(id,btn){
   document.querySelectorAll('.desp-tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.desp-panel').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');gel(`desp-${id}`)?.classList.add('active');
+  if(id==='lancadas')loadDespesasLancadas();
+}
+
+/* Fonte da importação (cartão | extrato) */
+let _importSource = null;
+function chooseImportSource(src){
+  _importSource = src;
+  gel('importSourcePicker').style.display='none';
+  gel('importDropWrap').style.display='block';
+  const isCartao = src==='cartao';
+  gel('importSourceLbl').textContent = isCartao?'💳 Cartão de crédito':'🏦 Extrato bancário';
+  gel('importDropSub').innerHTML = isCartao
+    ? 'Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong> — fatura do cartão'
+    : 'Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong> — apenas <strong>saídas/débitos</strong> são importadas';
+}
+function resetImportSource(){
+  _importSource = null;
+  clearImport();
+  gel('importDropWrap').style.display='none';
+  gel('importSourcePicker').style.display='flex';
 }
 function toggleParcelado(v){gel('parcelFields')?.classList.toggle('hidden',!v);if(!v)clearPrev();}
 function buildDespRows(){
