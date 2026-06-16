@@ -1731,10 +1731,15 @@ function processImportPdfLines(lines,fname){
     // Se há 2 valores: o último é saldo, o primeiro é o lançamento; se 1, é o lançamento.
     const v1=pMoney(m[3]);
     const lanc=m[4]?v1:v1;
-    // Só saídas: valor negativo OU descrição contém palavra-chave de débito
-    const isDebito=lanc<0||/pagamento|d[ée]bito|saque|pix enviado|compra|tarifa|envi[ao]/i.test(desc);
-    if(!isDebito)continue;
-    rows.push({data:dt,desc,valor:Math.abs(lanc)});
+    if(_importSource==='cartao'){
+      // Fatura: pega lançamentos positivos, ignora pagamentos (negativos)
+      if(lanc<=0)continue;
+      rows.push({data:dt,desc,valor:Math.abs(lanc)});
+    } else {
+      const isDebito=lanc<0||/pagamento|d[ée]bito|saque|pix enviado|compra|tarifa|envi[ao]/i.test(desc);
+      if(!isDebito)continue;
+      rows.push({data:dt,desc,valor:Math.abs(lanc)});
+    }
   }
   finishImportRows(rows,fname);
 }
