@@ -700,33 +700,87 @@ img,svg{display:block;max-width:100%}
 
       <!-- Importar -->
       <div class="desp-panel" id="desp-importar">
-        <div class="import-drop" id="importDrop" onclick="document.getElementById('fileInput').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onFileDrop(event)">
-          <div class="import-drop__icon">📂</div>
-          <div class="import-drop__title">Arraste ou clique para selecionar o arquivo</div>
-          <div class="import-drop__sub">Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong> — apenas <strong>saídas/débitos</strong> são importadas</div>
+        <!-- Escolha da fonte -->
+        <div id="importSourcePicker" style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;padding:24px 12px">
+          <button class="btn btn-g" style="min-width:240px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportSource('cartao')">
+            <span style="font-size:2rem">💳</span>
+            <span style="font-weight:600">Cartão de crédito</span>
+            <span style="font-size:.75rem;color:var(--text-muted)">Fatura: todos os lançamentos viram despesa</span>
+          </button>
+          <button class="btn btn-g" style="min-width:240px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportSource('extrato')">
+            <span style="font-size:2rem">🏦</span>
+            <span style="font-weight:600">Extrato bancário</span>
+            <span style="font-size:.75rem;color:var(--text-muted)">Apenas saídas / débitos são importados</span>
+          </button>
         </div>
-        <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.pdf" style="display:none" onchange="handleFileSelect(this.files[0])"/>
-        <div id="importPreviewWrap" class="hidden mt16">
-          <div class="import-preview">
-            <div class="import-preview-hd">
-              <span class="import-preview-title" id="importFileName">Arquivo carregado</span>
-              <span style="font-size:.76rem;color:var(--text-muted)" id="importRowCount"></span>
-            </div>
-            <div style="padding:14px 16px">
-              <div class="info-box mb-12" style="margin-bottom:12px">Clique na célula da coluna <strong>Categoria</strong> para alterar. Revise os dados antes de enviar.</div>
-              <div class="tbl-wrap">
-                <table class="tbl" id="importTable">
-                  <thead><tr><th>Data</th><th>Descrição</th><th>Valor (R$)</th><th>Categoria</th><th>Mês Comp.</th><th>✓</th></tr></thead>
-                  <tbody id="importTbody"></tbody>
-                </table>
+
+        <!-- Drop-zone (oculto até escolher fonte) -->
+        <div id="importDropWrap" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap">
+            <div style="font-size:.85rem;color:var(--text-secondary)">Fonte: <strong id="importSourceLbl">—</strong></div>
+            <button class="btn btn-g btn-xs" onclick="resetImportSource()">↺ Trocar fonte</button>
+          </div>
+          <div class="import-drop" id="importDrop" onclick="document.getElementById('fileInput').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onFileDrop(event)">
+            <div class="import-drop__icon">📂</div>
+            <div class="import-drop__title">Arraste ou clique para selecionar o arquivo</div>
+            <div class="import-drop__sub" id="importDropSub">Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong></div>
+          </div>
+          <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.pdf" style="display:none" onchange="handleFileSelect(this.files[0])"/>
+          <div id="importPreviewWrap" class="hidden mt16">
+            <div class="import-preview">
+              <div class="import-preview-hd">
+                <span class="import-preview-title" id="importFileName">Arquivo carregado</span>
+                <span style="font-size:.76rem;color:var(--text-muted)" id="importRowCount"></span>
               </div>
-              <div class="form-footer mt16">
-                <button class="btn btn-g" onclick="clearImport()">Limpar</button>
-                <button class="btn btn-s" onclick="selectAllImport(true)">Selecionar todos</button>
-                <button class="btn btn-p" onclick="submitImport()">Enviar selecionados ↗</button>
+              <div style="padding:14px 16px">
+                <div class="info-box mb-12" style="margin-bottom:12px">Clique na célula da coluna <strong>Categoria</strong> para alterar. Revise os dados antes de enviar.</div>
+                <div class="tbl-wrap">
+                  <table class="tbl" id="importTable">
+                    <thead><tr><th>Data</th><th>Descrição</th><th>Valor (R$)</th><th>Categoria</th><th>Mês Comp.</th><th>✓</th></tr></thead>
+                    <tbody id="importTbody"></tbody>
+                  </table>
+                </div>
+                <div class="form-footer mt16">
+                  <button class="btn btn-g" onclick="clearImport()">Limpar</button>
+                  <button class="btn btn-s" onclick="selectAllImport(true)">Selecionar todos</button>
+                  <button class="btn btn-p" onclick="submitImport()">Enviar selecionados ↗</button>
+                </div>
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Lançadas -->
+      <div class="desp-panel" id="desp-lancadas">
+        <div class="card-form" style="margin-bottom:14px">
+          <div class="grid3">
+            <div class="field"><label class="lbl">Mês</label>
+              <select class="sel" id="lancFiltroMes" onchange="renderDespesasLancadas()">
+                <option value="">Todos</option>
+                <option value="JANEIRO">Janeiro</option><option value="FEVEREIRO">Fevereiro</option><option value="MARÇO">Março</option><option value="ABRIL">Abril</option><option value="MAIO">Maio</option><option value="JUNHO">Junho</option><option value="JULHO">Julho</option><option value="AGOSTO">Agosto</option><option value="SETEMBRO">Setembro</option><option value="OUTUBRO">Outubro</option><option value="NOVEMBRO">Novembro</option><option value="DEZEMBRO">Dezembro</option>
+              </select>
+            </div>
+            <div class="field"><label class="lbl">Origem</label>
+              <select class="sel" id="lancFiltroOrigem" onchange="renderDespesasLancadas()">
+                <option value="">Todas</option>
+                <option value="manual">Manual</option>
+                <option value="import">Importação (extrato)</option>
+                <option value="import_cartao">Importação (cartão)</option>
+              </select>
+            </div>
+            <div class="field"><label class="lbl">Buscar descrição</label><input class="inp" type="text" id="lancFiltroDesc" oninput="renderDespesasLancadas()" placeholder="Ex: Mercado..."/></div>
+          </div>
+          <div class="form-footer">
+            <button class="btn btn-g" onclick="loadDespesasLancadas()">↻ Atualizar</button>
+            <span id="lancTotal" style="margin-left:auto;font-weight:600;color:var(--brand)">Total: R$ 0,00</span>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl" id="lancTable">
+            <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Forma Pag.</th><th>Banco</th><th>Mês</th><th>Origem</th><th></th></tr></thead>
+            <tbody id="lancTbody"><tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:20px">Carregando...</td></tr></tbody>
+          </table>
         </div>
       </div>
     </div>
