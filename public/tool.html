@@ -1684,26 +1684,34 @@ function processImportSheet(aoa,fname){
   const iVal  =idxOf(/^valor|amount|^vl/);
 
   const rows=[];
+  const isCartao = _importSource==='cartao';
   for(let i=hdrIdx+1;i<aoa.length;i++){
     const r=aoa[i]||[];
     const dt=String(r[iData]||'').trim();
     if(!dt||!/\d/.test(dt))continue;
     const desc=String(r[iDesc]||'').trim();
     let valor=0;
-    if(iSaida>=0){
+    if(isCartao){
+      // Cartão: todos lançamentos positivos são despesa
+      const v = iVal>=0 ? pMoney(r[iVal])
+             : iDeb>=0 ? pMoney(r[iDeb])
+             : iSaida>=0 ? pMoney(r[iSaida]) : 0;
+      if(v===0)continue;
+      // Ignora pagamento/estorno (valores negativos na fatura)
+      if(v<0)continue;
+      valor=Math.abs(v);
+    } else if(iSaida>=0){
       const s=pMoney(r[iSaida]);
       if(s>0)valor=s;
       else continue; // ignora se não houver saída
     } else if(iDeb>=0){
       const d=pMoney(r[iDeb]);
-      // Bradesco: débitos vêm negativos; outros vêm positivos
       if(d!==0)valor=Math.abs(d);
       else continue;
     } else if(iVal>=0){
       const v=pMoney(r[iVal]);
-      // entrada se positivo & col entrada não existe → preserva comportamento antigo? Não: usuário quer só saídas.
       if(v<0)valor=Math.abs(v);
-      else if(iEnt<0)valor=Math.abs(v); // genérico sem coluna entrada — assume tudo é despesa
+      else if(iEnt<0)valor=Math.abs(v);
       else continue;
     } else continue;
     if(valor<=0||!desc)continue;
