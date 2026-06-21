@@ -865,10 +865,12 @@ img,svg{display:block;max-width:100%}
             </div>
           </div>
           <div class="form-footer">
+            <label class="toggle-lbl" style="margin-right:auto"><input type="checkbox" id="lancHideProj" onchange="renderDespesasLancadas()"/><span class="toggle-sl"></span>Ocultar parcelas futuras (projetadas)</label>
             <button class="btn btn-g" onclick="loadDespesasLancadas()">↻ Atualizar</button>
-            <span id="lancTotal" style="margin-left:auto;font-weight:600;color:var(--brand)">Total: R$ 0,00</span>
+            <span id="lancTotal" style="margin-left:12px;font-weight:600;color:var(--brand)">Total: R$ 0,00</span>
           </div>
         </div>
+
         <div class="tbl-wrap">
           <table class="tbl" id="lancTable" style="font-size:.92rem">
             <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Forma Pag.</th><th>Banco/Cartão</th><th>Mês</th><th>Parc.</th><th>Pago</th><th>Origem</th><th></th></tr></thead>
@@ -2232,7 +2234,26 @@ async function submitDespesas(){
   if(!gel('prevTbody')?.hasChildNodes()){renderPrev(rows);toast('Confira a prévia antes de enviar.','info');return;}
   const btn=document.querySelector('[onclick="submitDespesas()"]');if(btn)btn.disabled=true;
   try{
-    await apiRows(CFG.SH.DESPESAS,rows.map(r=>[r.fp,r.bco,r.dt,r.desc,r.vp,r.cat,r.mes,r.ano]));
+    const isoBase = rows[0].dt ? normDate(rows[0].dt) : null;
+    const parcN = rows.length;
+    const grp = parcN>1 ? uuid() : null;
+    const recs = rows.map((r,i)=>{
+      const [grupo,categoria] = String(r.cat||'').split('·').map(s=>s.trim());
+      const isCartao = r.fp==='Cartão de Crédito';
+      return {
+        data: isoBase || r.dt || null,
+        descricao: r.desc, valor: r.vp,
+        categoria: categoria||r.cat||null, grupo: grupo||null,
+        forma_pagamento: r.fp, banco: r.bco, cartao: null,
+        mes: r.mes, mes_pagamento: isCartao ? r.mes : null,
+        ano: String(r.ano||CFG.ANO), origem: 'manual',
+        parcela_n: parcN>1 ? i+1 : null,
+        parcela_total: parcN>1 ? parcN : null,
+        parcela_grupo_id: grp,
+        pago: false
+      };
+    });
+    await gPost('addDespesas',{rows:recs,clienteId:cid()});
     toast(`${rows.length} lançamento(s) enviado(s)!`,'success');
     clearDespForm();clearPrev();
   }catch(e){toast('Erro: '+e.message,'error');}
@@ -2244,6 +2265,7 @@ function clearDespForm(){
   ['despFormaPag','despBanco','despCategoria','despMesComp'].forEach(id=>{const el=gel(id);if(el)el.selectedIndex=0;});
   onDespFormaPagChange();
 }
+
 
 /* ═══════════════════════════════════════════
    DESPESAS — IMPORTAR ARQUIVO
@@ -2537,6 +2559,13 @@ async function submitImport(){
     const banco  = isCartao ? null : (_importMeta?.banco||null);
     const mesPag = isCartao ? (_importMeta?.mesPag||null) : null;
 
+    // âncora p/ parcelas no cartão: usar o mês da fatura (mesPag) como mês da 1ª parcela
+    const mesPagIdx = isCartao && mesPag ? CFG.MESES.indexOf(mesPag) : -1;
+    const anoBaseCartao = isCartao ? parseInt(CFG.ANO||new Date().getFullYear(),10) : null;
+    const cartaoAnchorIso = (isCartao && mesPagIdx>=0)
+      ? `${anoBaseCartao}-${String(mesPagIdx+1).padStart(2,'0')}-01`
+      : null;
+
     const recs=[];
     for(const r of selected){
       const isoBase = normDate(r.data);
@@ -2547,13 +2576,16 @@ async function submitImport(){
         const total = r.parcN;
         const per = +(r.valor/total).toFixed(2);
         for(let i=0;i<total;i++){
-          const iso=addMonthsISO(isoBase,i);
+          // Cartão: parcela i cai no mês da fatura + i. Extrato: segue data da compra.
+          const isoMes = (isCartao && cartaoAnchorIso) ? addMonthsISO(cartaoAnchorIso,i) : addMonthsISO(isoBase,i);
+          const mesParc = mesFromISO(isoMes);
+          const anoParc = String((isoMes.split('-')[0])||CFG.ANO);
           recs.push({
-            data:iso, descricao:`${r.desc} ${i+1}/${total}`, valor:per,
+            data:isoBase, descricao:`${r.desc} ${i+1}/${total}`, valor:per,
             categoria:categoria||r.cat||null, grupo:grupo||null,
-            forma_pagamento:fp, banco, cartao, mes:mesFromISO(iso),
-            mes_pagamento: isCartao ? mesFromISO(addMonthsISO(isoBase,i)) : null,
-            ano:String((iso.split('-')[0])||CFG.ANO), origem,
+            forma_pagamento:fp, banco, cartao, mes:mesParc,
+            mes_pagamento: isCartao ? mesParc : null,
+            ano: anoParc, origem,
             parcela_n:i+1, parcela_total:total, parcela_grupo_id:grp, pago:false
           });
         }
@@ -2561,11 +2593,12 @@ async function submitImport(){
         recs.push({
           data:isoBase, descricao:r.desc, valor:r.valor,
           categoria:categoria||r.cat||null, grupo:grupo||null,
-          forma_pagamento:fp, banco, cartao, mes:r.mes,
+          forma_pagamento:fp, banco, cartao, mes: isCartao ? (mesPag||r.mes) : r.mes,
           mes_pagamento: mesPag, ano:String(CFG.ANO), origem, pago:false
         });
       }
     }
+
     if(!recs.length){toast('Não foi possível normalizar as datas dos lançamentos.','error');return;}
     const resp = await gPost('addDespesas',{rows:recs,clienteId:cid()});
     const ins = resp.count||0;
@@ -2640,6 +2673,8 @@ function renderDespesasLancadas(){
   const fCat=gel('lancFiltroCategoria')?.value||'';
   const fBanco=gel('lancFiltroBanco')?.value||'';
   const fFormaPag=gel('lancFiltroFormaPag')?.value||'';
+  const hideProj=gel('lancHideProj')?.checked||false;
+  const now=new Date(); const curMesIdx0=now.getMonth(); const curAno0=now.getFullYear();
   const filtered=_lancRows.filter(r=>{
     if(fMes && String(r.mes||'').toUpperCase()!==fMes)return false;
     if(fCat){
@@ -2648,23 +2683,36 @@ function renderDespesasLancadas(){
     }
     if(fBanco && !(r.banco===fBanco || r.cartao===fBanco))return false;
     if(fFormaPag && String(r.forma_pagamento||'')!==fFormaPag)return false;
+    if(hideProj){
+      const mi=CFG.MESES.indexOf(String(r.mes||'').toUpperCase());
+      const ay=parseInt(r.ano||curAno0,10);
+      const isFut = !(r.pago===true) && mi>=0 && (ay>curAno0 || (ay===curAno0 && mi>curMesIdx0));
+      if(isFut)return false;
+    }
     return true;
   });
+
   if(!filtered.length){
     tb.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:20px">Nenhuma despesa encontrada.</td></tr>';
     gel('lancTotal').textContent='Total: '+fBRL(0);
     return;
   }
   let total=0;
+  const now=new Date(); const curMesIdx=now.getMonth(); const curAno=now.getFullYear();
   tb.innerHTML=filtered.map(r=>{
     const v=Number(r.valor||0);total+=v;
     const cat=r.grupo?`${r.grupo} · ${r.categoria||''}`:(r.categoria||'—');
     const bcoCar = r.cartao ? `💳 ${esc(r.cartao)}` : esc(r.banco||'—');
     const parc = (r.parcela_n && r.parcela_total) ? `${r.parcela_n}/${r.parcela_total}` : '—';
     const pago = r.pago===true;
-    return `<tr style="${pago?'opacity:.75':''}">
+    const mesIdx = CFG.MESES.indexOf(String(r.mes||'').toUpperCase());
+    const anoR = parseInt(r.ano||curAno,10);
+    const isFuture = !pago && mesIdx>=0 && (anoR>curAno || (anoR===curAno && mesIdx>curMesIdx));
+    const rowStyle = pago ? 'opacity:.65' : (isFuture ? 'background:rgba(99,102,241,.06)' : '');
+    const projBadge = isFuture ? ` <span title="Parcela futura — ainda não paga" style="font-size:.65rem;padding:1px 6px;border-radius:6px;background:rgba(99,102,241,.15);color:#4f46e5;font-weight:600;margin-left:4px">PROJETADO</span>` : '';
+    return `<tr style="${rowStyle}">
       <td>${fDate(r.data)}</td>
-      <td>${esc(r.descricao||'')}</td>
+      <td>${esc(r.descricao||'')}${projBadge}</td>
       <td>${esc(cat)}</td>
       <td class="mono" style="text-align:right">${fBRL(v)}</td>
       <td>${esc(r.forma_pagamento||'—')}</td>
@@ -2678,6 +2726,7 @@ function renderDespesasLancadas(){
   }).join('');
   gel('lancTotal').textContent='Total: '+fBRL(total);
 }
+
 async function toggleLancPago(id,pago){
   try{
     await gPost('toggleDespesaPaga',{id,pago,clienteId:cid()});
