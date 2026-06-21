@@ -2375,7 +2375,16 @@ function updateImportRow(id,field,val){
   const r=_importRows.find(r=>r.id===id);
   if(!r)return;
   if(field==='selected'){r.selected=val;const row=gel(`irow_${id}`);if(row)row.style.opacity=val?'1':'.45';}
-  else if(field==='parc'){r.parc=val;if(val&&(!r.parcN||r.parcN<2))r.parcN=2;renderImportTable();}
+  else if(field==='parc'){
+    r.parc=val;
+    if(val&&(!r.parcN||r.parcN<2))r.parcN=2;
+    // Toggle in-place (sem rebuild da tabela inteira) para preservar foco/digitação
+    const row=gel(`irow_${id}`);
+    if(row){
+      const np=row.querySelector('input[type="number"]');
+      if(np){ np.disabled=!val; if(val) np.value=r.parcN; }
+    }
+  }
   else r[field]=val;
 }
 
