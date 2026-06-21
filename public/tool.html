@@ -700,12 +700,12 @@ img,svg{display:block;max-width:100%}
 
       <!-- Importar -->
       <div class="desp-panel" id="desp-importar">
-        <!-- Escolha da fonte -->
+        <!-- Passo 1: Fonte -->
         <div id="importSourcePicker" style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;padding:24px 12px">
           <button class="btn btn-g" style="min-width:240px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportSource('cartao')">
             <span style="font-size:2rem">💳</span>
-            <span style="font-weight:600">Cartão de crédito</span>
-            <span style="font-size:.75rem;color:var(--text-muted)">Fatura: todos os lançamentos viram despesa</span>
+            <span style="font-weight:600">Fatura de cartão de crédito</span>
+            <span style="font-size:.75rem;color:var(--text-muted)">Todos os lançamentos da fatura viram despesa</span>
           </button>
           <button class="btn btn-g" style="min-width:240px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportSource('extrato')">
             <span style="font-size:2rem">🏦</span>
@@ -714,10 +714,45 @@ img,svg{display:block;max-width:100%}
           </button>
         </div>
 
-        <!-- Drop-zone (oculto até escolher fonte) -->
+        <!-- Passo 2: Metadados -->
+        <div id="importMetaWrap" style="display:none" class="card-form">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap">
+            <div style="font-size:.9rem;color:var(--text-secondary)">Fonte: <strong id="importMetaSrcLbl">—</strong></div>
+            <button class="btn btn-g btn-xs" onclick="resetImportSource()">↺ Trocar fonte</button>
+          </div>
+          <div id="importMetaCartao" class="grid3" style="display:none">
+            <div class="field">
+              <label class="lbl">Cartão de crédito</label>
+              <select class="sel" id="impCartaoSel" onchange="onImpCartaoChange()"></select>
+            </div>
+            <div class="field" id="impCartaoNewWrap" style="display:none">
+              <label class="lbl">Nome do novo cartão</label>
+              <input class="inp" type="text" id="impCartaoNew" placeholder="Ex: Nubank Roxinho"/>
+            </div>
+            <div class="field">
+              <label class="lbl">Mês de pagamento da fatura</label>
+              <select class="sel" id="impMesPag">
+                <option value="JANEIRO">Janeiro</option><option value="FEVEREIRO">Fevereiro</option><option value="MARÇO">Março</option><option value="ABRIL">Abril</option><option value="MAIO">Maio</option><option value="JUNHO">Junho</option><option value="JULHO">Julho</option><option value="AGOSTO">Agosto</option><option value="SETEMBRO">Setembro</option><option value="OUTUBRO">Outubro</option><option value="NOVEMBRO">Novembro</option><option value="DEZEMBRO">Dezembro</option>
+              </select>
+            </div>
+          </div>
+          <div id="importMetaExtrato" class="grid3" style="display:none">
+            <div class="field">
+              <label class="lbl">Banco</label>
+              <select class="sel" id="impBanco">
+                <option>Bradesco</option><option>Nubank</option><option>Banco do Brasil</option><option>Caixa Econômica</option><option>Itaú</option><option>Santander</option><option>Inter</option><option>C6 Bank</option><option>Outro</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-footer">
+            <button class="btn btn-p" onclick="confirmImportMeta()">Continuar →</button>
+          </div>
+        </div>
+
+        <!-- Passo 3: Drop-zone -->
         <div id="importDropWrap" style="display:none">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap">
-            <div style="font-size:.85rem;color:var(--text-secondary)">Fonte: <strong id="importSourceLbl">—</strong></div>
+            <div style="font-size:.9rem;color:var(--text-secondary)">Fonte: <strong id="importSourceLbl">—</strong> · <span id="importMetaLbl"></span></div>
             <button class="btn btn-g btn-xs" onclick="resetImportSource()">↺ Trocar fonte</button>
           </div>
           <div class="import-drop" id="importDrop" onclick="document.getElementById('fileInput').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onFileDrop(event)">
@@ -730,13 +765,13 @@ img,svg{display:block;max-width:100%}
             <div class="import-preview">
               <div class="import-preview-hd">
                 <span class="import-preview-title" id="importFileName">Arquivo carregado</span>
-                <span style="font-size:.76rem;color:var(--text-muted)" id="importRowCount"></span>
+                <span style="font-size:.8rem;color:var(--text-muted)" id="importRowCount"></span>
               </div>
               <div style="padding:14px 16px">
-                <div class="info-box mb-12" style="margin-bottom:12px">Clique na célula da coluna <strong>Categoria</strong> para alterar. Revise os dados antes de enviar.</div>
+                <div class="info-box mb-12" style="margin-bottom:12px">Confira os lançamentos. Marque <strong>Parc.</strong> e informe o nº de parcelas para gerar a projeção. Lançamentos já importados anteriormente são <strong>ignorados automaticamente</strong>.</div>
                 <div class="tbl-wrap">
-                  <table class="tbl" id="importTable">
-                    <thead><tr><th>Data</th><th>Descrição</th><th>Valor (R$)</th><th>Categoria</th><th>Mês Comp.</th><th>✓</th></tr></thead>
+                  <table class="tbl" id="importTable" style="font-size:.95rem;color:var(--text-primary)">
+                    <thead><tr><th>Data</th><th>Descrição</th><th>Valor (R$)</th><th>Categoria</th><th>Mês Comp.</th><th title="Parcelado">Parc.</th><th title="Nº de parcelas">Nº</th><th>✓</th></tr></thead>
                     <tbody id="importTbody"></tbody>
                   </table>
                 </div>
@@ -777,9 +812,9 @@ img,svg{display:block;max-width:100%}
           </div>
         </div>
         <div class="tbl-wrap">
-          <table class="tbl" id="lancTable">
-            <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Forma Pag.</th><th>Banco</th><th>Mês</th><th>Origem</th><th></th></tr></thead>
-            <tbody id="lancTbody"><tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:20px">Carregando...</td></tr></tbody>
+          <table class="tbl" id="lancTable" style="font-size:.92rem">
+            <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Forma Pag.</th><th>Banco/Cartão</th><th>Mês</th><th>Parc.</th><th>Pago</th><th>Origem</th><th></th></tr></thead>
+            <tbody id="lancTbody"><tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:20px">Carregando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1541,24 +1576,77 @@ function switchDespTab(id,btn){
   if(id==='lancadas')loadDespesasLancadas();
 }
 
-/* Fonte da importação (cartão | extrato) */
-let _importSource = null;
+/* Fonte da importação (cartão | extrato) e metadados */
+let _importSource = null;    // 'cartao' | 'extrato'
+let _importMeta = null;      // { cartao, mesPag } | { banco }
+
+const CARTOES_KEY = ()=>`dv_cartoes_${cid()||'_'}`;
+function loadCartoes(){
+  try{const a=JSON.parse(localStorage.getItem(CARTOES_KEY())||'[]');return Array.isArray(a)?a:[];}catch{return [];}
+}
+function saveCartao(name){
+  const n=String(name||'').trim();if(!n)return;
+  const a=loadCartoes();if(!a.includes(n)){a.push(n);localStorage.setItem(CARTOES_KEY(),JSON.stringify(a));}
+}
+function fillCartaoSelect(){
+  const sel=gel('impCartaoSel');if(!sel)return;
+  const a=loadCartoes();
+  sel.innerHTML = a.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')
+    + `<option value="__new__">➕ Adicionar novo cartão…</option>`;
+  onImpCartaoChange();
+}
+function onImpCartaoChange(){
+  const sel=gel('impCartaoSel');const wrap=gel('impCartaoNewWrap');if(!sel||!wrap)return;
+  wrap.style.display = (sel.value==='__new__'||!sel.value)?'':'none';
+}
+
 function chooseImportSource(src){
   _importSource = src;
   gel('importSourcePicker').style.display='none';
-  gel('importDropWrap').style.display='block';
+  gel('importMetaWrap').style.display='block';
   const isCartao = src==='cartao';
-  gel('importSourceLbl').textContent = isCartao?'💳 Cartão de crédito':'🏦 Extrato bancário';
-  gel('importDropSub').innerHTML = isCartao
+  gel('importMetaSrcLbl').textContent = isCartao?'💳 Fatura de cartão de crédito':'🏦 Extrato bancário';
+  gel('importMetaCartao').style.display = isCartao?'grid':'none';
+  gel('importMetaExtrato').style.display = isCartao?'none':'grid';
+  if(isCartao){
+    fillCartaoSelect();
+    const mesNow = CFG.MESES[new Date().getMonth()];
+    const ms=gel('impMesPag');if(ms)ms.value=mesNow;
+  }
+}
+function confirmImportMeta(){
+  if(_importSource==='cartao'){
+    const sel=gel('impCartaoSel');
+    let cartao = sel?.value||'';
+    if(cartao==='__new__'){
+      cartao = (gel('impCartaoNew')?.value||'').trim();
+      if(!cartao){toast('Informe o nome do novo cartão.','error');return;}
+      saveCartao(cartao);
+    }
+    if(!cartao){toast('Selecione um cartão.','error');return;}
+    const mesPag = gel('impMesPag')?.value;
+    _importMeta = { cartao, mesPag };
+    gel('importMetaLbl').textContent = `💳 ${cartao} · pagto ${mesPag}`;
+  } else {
+    const banco = gel('impBanco')?.value;
+    _importMeta = { banco };
+    gel('importMetaLbl').textContent = `🏦 ${banco}`;
+  }
+  gel('importMetaWrap').style.display='none';
+  gel('importDropWrap').style.display='block';
+  gel('importSourceLbl').textContent = _importSource==='cartao'?'💳 Cartão de crédito':'🏦 Extrato bancário';
+  gel('importDropSub').innerHTML = _importSource==='cartao'
     ? 'Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong> — fatura do cartão'
-    : 'Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong> — apenas <strong>saídas/débitos</strong> são importadas';
+    : 'Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong> — apenas <strong>saídas/débitos</strong>';
 }
 function resetImportSource(){
-  _importSource = null;
+  _importSource = null; _importMeta = null;
   clearImport();
   gel('importDropWrap').style.display='none';
+  gel('importMetaWrap').style.display='none';
   gel('importSourcePicker').style.display='flex';
 }
+
 function toggleParcelado(v){gel('parcelFields')?.classList.toggle('hidden',!v);if(!v)clearPrev();}
 function buildDespRows(){
   const fp=gel('despFormaPag')?.value,bco=gel('despBanco')?.value,dt=gel('despData')?.value;
@@ -1612,14 +1700,12 @@ function onFileDrop(e){e.preventDefault();gel('importDrop').classList.remove('dr
 
 function handleFileSelect(file){
   if(!file)return;
+  if(!_importMeta){toast('Selecione a fonte e os dados antes do arquivo.','error');return;}
   const ext=file.name.split('.').pop().toLowerCase();
   if(ext==='csv'){
     const reader=new FileReader();
     reader.onload=e=>{
-      // Tenta header — depois cai para AOA se necessário
       const txt=e.target.result;
-      const hr=Papa.parse(txt,{header:true,skipEmptyLines:true});
-      if(hr.data&&hr.data.length){processImportData(hr.data,file.name);return;}
       const ar=Papa.parse(txt,{header:false,skipEmptyLines:true});
       processImportSheet(ar.data||[],file.name);
     };
@@ -1643,7 +1729,6 @@ function handleFileSelect(file){
         for(let p=1;p<=pdf.numPages;p++){
           const page=await pdf.getPage(p);
           const tc=await page.getTextContent();
-          // Agrupa por linha (mesma y, com tolerância)
           const items=tc.items.map(it=>({s:it.str,x:it.transform[4],y:Math.round(it.transform[5])}));
           const byY={};
           items.forEach(it=>{const k=it.y;(byY[k]=byY[k]||[]).push(it);});
@@ -1661,79 +1746,102 @@ function handleFileSelect(file){
   }
 }
 
-/* Detecta layouts conhecidos (C6, Bradesco, etc.) trabalhando em AOA.
-   Importa SOMENTE saídas/débitos. */
+/* Parser tolerante: detecta cabeçalho mesmo em faturas de cartão.
+   Fallback: se não achar cabeçalho, varre como linhas livres com regex de data. */
 function processImportSheet(aoa,fname){
   if(!aoa||!aoa.length){toast('Arquivo vazio.','error');return;}
-  // Acha linha do cabeçalho (a que contém pelo menos "data" + "valor|saída|débito")
-  let hdrIdx=-1, hdr=null;
-  for(let i=0;i<Math.min(aoa.length,40);i++){
-    const cells=(aoa[i]||[]).map(c=>String(c||'').toLowerCase().trim());
-    const hasData=cells.some(c=>/^data/.test(c));
-    const hasMov =cells.some(c=>/sa[íi]da|d[ée]bito|debit|valor|amount/.test(c));
-    if(hasData&&hasMov){hdrIdx=i;hdr=cells;break;}
-  }
-  if(hdrIdx<0){toast('Não foi possível identificar o cabeçalho do extrato.','error');return;}
+  const isCartao = _importSource==='cartao';
 
-  const idxOf=(re)=>hdr.findIndex(c=>re.test(c));
-  const iData =idxOf(/^data/);
-  const iDesc =(()=>{let i=idxOf(/descri|hist[óo]rico|lan[çc]amento|t[íi]tulo|memo/);return i<0?(iData+1):i;})();
-  const iSaida=idxOf(/sa[íi]da/);
-  const iDeb  =idxOf(/d[ée]bito|debit/);
-  const iEnt  =idxOf(/entrada|cr[ée]dito|credit/);
-  const iVal  =idxOf(/^valor|amount|^vl/);
+  // 1) Tenta detectar cabeçalho
+  let hdrIdx=-1, hdr=null;
+  for(let i=0;i<Math.min(aoa.length,50);i++){
+    const cells=(aoa[i]||[]).map(c=>String(c||'').toLowerCase().trim());
+    const hasData=cells.some(c=>/^data\b|^date\b|dt\.?\s*compra|dt\.?\s*lan[çc]/.test(c));
+    const hasMov =cells.some(c=>/sa[íi]da|d[ée]bito|debit|^valor|amount|^vl|montante|total|r\$/.test(c));
+    const hasDesc=cells.some(c=>/descri|hist[óo]rico|lan[çc]amento|t[íi]tulo|memo|estabelecimento|fornecedor/.test(c));
+    if(hasData&&hasMov&&(hasDesc||isCartao)){hdrIdx=i;hdr=cells;break;}
+  }
 
   const rows=[];
-  const isCartao = _importSource==='cartao';
-  for(let i=hdrIdx+1;i<aoa.length;i++){
-    const r=aoa[i]||[];
-    const dt=String(r[iData]||'').trim();
-    if(!dt||!/\d/.test(dt))continue;
-    const desc=String(r[iDesc]||'').trim();
-    let valor=0;
-    if(isCartao){
-      // Cartão: todos lançamentos positivos são despesa
-      const v = iVal>=0 ? pMoney(r[iVal])
-             : iDeb>=0 ? pMoney(r[iDeb])
-             : iSaida>=0 ? pMoney(r[iSaida]) : 0;
-      if(v===0)continue;
-      // Ignora pagamento/estorno (valores negativos na fatura)
-      if(v<0)continue;
-      valor=Math.abs(v);
-    } else if(iSaida>=0){
-      const s=pMoney(r[iSaida]);
-      if(s>0)valor=s;
-      else continue; // ignora se não houver saída
-    } else if(iDeb>=0){
-      const d=pMoney(r[iDeb]);
-      if(d!==0)valor=Math.abs(d);
-      else continue;
-    } else if(iVal>=0){
-      const v=pMoney(r[iVal]);
-      if(v<0)valor=Math.abs(v);
-      else if(iEnt<0)valor=Math.abs(v);
-      else continue;
-    } else continue;
-    if(valor<=0||!desc)continue;
-    rows.push({data:dt,desc,valor});
+  if(hdrIdx>=0){
+    const idxOf=(re)=>hdr.findIndex(c=>re.test(c));
+    const iData =idxOf(/^data\b|^date\b|dt\.?\s*compra|dt\.?\s*lan[çc]/);
+    let iDesc  = idxOf(/descri|hist[óo]rico|lan[çc]amento|t[íi]tulo|memo|estabelecimento|fornecedor/);
+    if(iDesc<0) iDesc = iData+1;
+    const iSaida=idxOf(/sa[íi]da/);
+    const iDeb  =idxOf(/d[ée]bito|debit/);
+    const iEnt  =idxOf(/entrada|cr[ée]dito|credit/);
+    // valor R$ preferencial sobre valor US$
+    const iValBr= hdr.findIndex(c=>/valor.*(r\$|brl|reais)/.test(c));
+    const iVal  = iValBr>=0 ? iValBr : idxOf(/^valor|^vl|amount|montante|^total/);
+
+    for(let i=hdrIdx+1;i<aoa.length;i++){
+      const r=aoa[i]||[];
+      const dt=String(r[iData]||'').trim();
+      if(!dt||!/\d/.test(dt))continue;
+      const desc=String(r[iDesc]||'').trim();
+      let valor=0;
+      if(isCartao){
+        const v = iVal>=0 ? pMoney(r[iVal])
+               : iDeb>=0 ? pMoney(r[iDeb])
+               : iSaida>=0 ? pMoney(r[iSaida]) : 0;
+        if(v===0)continue;
+        if(v<0)continue; // pagamento/estorno
+        valor=Math.abs(v);
+      } else if(iSaida>=0){
+        const s=pMoney(r[iSaida]); if(s>0)valor=s; else continue;
+      } else if(iDeb>=0){
+        const d=pMoney(r[iDeb]); if(d!==0)valor=Math.abs(d); else continue;
+      } else if(iVal>=0){
+        const v=pMoney(r[iVal]);
+        if(v<0)valor=Math.abs(v);
+        else if(iEnt<0)valor=Math.abs(v);
+        else continue;
+      } else continue;
+      if(valor<=0||!desc)continue;
+      rows.push({data:dt,desc,valor});
+    }
   }
+
+  // 2) Fallback heurístico: percorre linhas e identifica padrão data/descr/valor
+  if(!rows.length){
+    const dateRe=/^\d{1,2}[\/\-\.]\d{1,2}([\/\-\.]\d{2,4})?$/;
+    const valRe =/^-?(r\$\s*)?[\d\.\,]+$/i;
+    for(const r0 of aoa){
+      const r=(r0||[]).map(c=>String(c==null?'':c).trim());
+      if(r.length<2)continue;
+      // acha célula de data
+      const di=r.findIndex(c=>dateRe.test(c));
+      if(di<0)continue;
+      // acha última célula numérica como valor
+      let vi=-1;
+      for(let j=r.length-1;j>=0;j--){if(valRe.test(r[j].replace(/\s+/g,''))){vi=j;break;}}
+      if(vi<0||vi===di)continue;
+      const val=pMoney(r[vi]);
+      if(isCartao){if(val<=0)continue;}
+      else {if(val>=0)continue;}
+      const desc=r.filter((_,k)=>k!==di&&k!==vi).join(' ').replace(/\s+/g,' ').trim();
+      if(!desc)continue;
+      rows.push({data:r[di],desc,valor:Math.abs(val)});
+    }
+  }
+
   finishImportRows(rows,fname);
 }
 
 /* PDF: regex por linha — formato típico "dd/mm/aaaa  descrição ...  -1.234,56" */
 function processImportPdfLines(lines,fname){
   const rows=[];
-  const dateRe=/^(\d{2}\/\d{2}\/\d{2,4})\s+(.+?)\s+(-?[\d\.]+,\d{2})(?:\s+(-?[\d\.]+,\d{2}))?\s*$/;
+  const dateRe=/^(\d{2}\/\d{2}\/\d{2,4})\s+(.+?)\s+(-?(?:r\$\s*)?[\d\.]+,\d{2})(?:\s+(-?(?:r\$\s*)?[\d\.]+,\d{2}))?\s*$/i;
+  const isCartao = _importSource==='cartao';
   for(const ln of lines){
     const m=ln.match(dateRe);
     if(!m)continue;
     const dt=m[1], desc=m[2].trim();
-    // Se há 2 valores: o último é saldo, o primeiro é o lançamento; se 1, é o lançamento.
-    const v1=pMoney(m[3]);
-    const lanc=m[4]?v1:v1;
-    if(_importSource==='cartao'){
-      // Fatura: pega lançamentos positivos, ignora pagamentos (negativos)
+    const lanc=pMoney(m[3]);
+    if(isCartao){
       if(lanc<=0)continue;
+      if(/pagamento.*efetuado|cr[ée]dito.*pagto|estorno/i.test(desc))continue;
       rows.push({data:dt,desc,valor:Math.abs(lanc)});
     } else {
       const isDebito=lanc<0||/pagamento|d[ée]bito|saque|pix enviado|compra|tarifa|envi[ao]/i.test(desc);
@@ -1745,28 +1853,34 @@ function processImportPdfLines(lines,fname){
 }
 
 function finishImportRows(rows,fname){
-  if(!rows.length){toast('Nenhuma saída/débito encontrada no arquivo.','error');return;}
+  if(!rows.length){toast('Nenhum lançamento encontrado no arquivo.','error');return;}
   gel('importFileName').textContent=fname;
-  gel('importRowCount').textContent=`${rows.length} saída(s) encontrada(s)`;
+  gel('importRowCount').textContent=`${rows.length} lançamento(s) encontrado(s)`;
   gel('importPreviewWrap').classList.remove('hidden');
   const cats=getCats();
   const allCats=Object.entries(cats).flatMap(([grp,items])=>items.map(i=>`${grp} · ${i}`));
-  _importRows=rows.map((r,i)=>({id:i,data:r.data,desc:r.desc,valor:r.valor,cat:allCats[0]||'',mes:inferMes(r.data)||CFG.MESES[new Date().getMonth()],selected:true}));
+  const isCartao = _importSource==='cartao';
+  const defMes = isCartao ? (_importMeta?.mesPag || CFG.MESES[new Date().getMonth()]) : null;
+  _importRows=rows.map((r,i)=>({
+    id:i,data:r.data,desc:r.desc,valor:r.valor,
+    cat:allCats[0]||'',
+    mes: defMes || inferMes(r.data) || CFG.MESES[new Date().getMonth()],
+    parc:false, parcN:1,
+    selected:true
+  }));
   renderImportTable();
 }
 
-/* Mantém compatibilidade com CSV com header (uso antigo) */
 function processImportData(data,fname){
-  if(!data||!data.length){toast('Arquivo vazio ou sem dados.','error');return;}
+  if(!data||!data.length){toast('Arquivo vazio.','error');return;}
   const keys=Object.keys(data[0]);
-  // Converte para AOA e delega ao processador novo
   const aoa=[keys, ...data.map(r=>keys.map(k=>r[k]))];
   processImportSheet(aoa,fname);
 }
 
 function inferMes(dateStr){
   if(!dateStr)return CFG.MESES[new Date().getMonth()];
-  const parts=dateStr.split(/[\/\-\.]/);
+  const parts=String(dateStr).split(/[\/\-\.]/);
   if(parts.length>=2){
     const m=parseInt(parts[1])-1;
     if(m>=0&&m<12)return CFG.MESES[m];
@@ -1783,11 +1897,13 @@ function renderImportTable(){
 
   tb.innerHTML=_importRows.map(r=>`
     <tr id="irow_${r.id}" style="${r.selected?'':'opacity:.45'}">
-      <td>${r.data}</td>
+      <td>${esc(r.data)}</td>
       <td>${esc(r.desc)}</td>
-      <td class="mono" style="text-align:right">${fBRL(r.valor)}</td>
+      <td class="mono" style="text-align:right;font-weight:600">${fBRL(r.valor)}</td>
       <td><select class="sel sel-sm" style="min-width:180px" onchange="updateImportRow(${r.id},'cat',this.value)">${catOpts}</select></td>
       <td><select class="sel sel-sm" onchange="updateImportRow(${r.id},'mes',this.value)">${mesOpts}</select></td>
+      <td style="text-align:center"><input type="checkbox" ${r.parc?'checked':''} onchange="updateImportRow(${r.id},'parc',this.checked)" style="accent-color:var(--brand);width:15px;height:15px;cursor:pointer"/></td>
+      <td><input type="number" min="2" max="120" value="${r.parcN||''}" ${r.parc?'':'disabled'} oninput="updateImportRow(${r.id},'parcN',parseInt(this.value)||1)" class="inp inp-sm" style="width:64px"/></td>
       <td style="text-align:center"><input type="checkbox" ${r.selected?'checked':''} style="accent-color:var(--brand);width:15px;height:15px;cursor:pointer" onchange="updateImportRow(${r.id},'selected',this.checked)"/></td>
     </tr>
   `).join('');
@@ -1805,6 +1921,7 @@ function updateImportRow(id,field,val){
   const r=_importRows.find(r=>r.id===id);
   if(!r)return;
   if(field==='selected'){r.selected=val;const row=gel(`irow_${id}`);if(row)row.style.opacity=val?'1':'.45';}
+  else if(field==='parc'){r.parc=val;if(val&&(!r.parcN||r.parcN<2))r.parcN=2;renderImportTable();}
   else r[field]=val;
 }
 
@@ -1812,6 +1929,29 @@ function selectAllImport(v){
   _importRows.forEach(r=>r.selected=v);
   renderImportTable();
 }
+
+function uuid(){
+  if(crypto.randomUUID)return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&0x3|0x8)).toString(16);});
+}
+
+function normDate(s){
+  if(!s)return null;
+  const str=String(s).trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(str))return str.slice(0,10);
+  const m=str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+  if(m){let[,d,mo,y]=m;if(y.length===2)y=(+y>50?'19':'20')+y;return `${y}-${mo.padStart(2,'0')}-${d.padStart(2,'0')}`;}
+  // sem ano: dd/mm
+  const m2=str.match(/^(\d{1,2})[\/\-\.](\d{1,2})$/);
+  if(m2){const y=String(CFG.ANO||new Date().getFullYear());return `${y}-${m2[2].padStart(2,'0')}-${m2[1].padStart(2,'0')}`;}
+  return null;
+}
+function addMonthsISO(iso,n){
+  const [y,m,d]=iso.split('-').map(Number);
+  const dt=new Date(y,m-1+n,d);
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+}
+function mesFromISO(iso){const m=parseInt(iso.split('-')[1])-1;return CFG.MESES[m]||CFG.MESES[0];}
 
 async function submitImport(){
   const selected=_importRows.filter(r=>r.selected&&r.desc&&r.valor>0);
@@ -1821,26 +1961,48 @@ async function submitImport(){
     const isCartao = _importSource==='cartao';
     const origem = isCartao ? 'import_cartao' : 'import';
     const fp = isCartao ? 'Cartão de Crédito' : 'Extrato Bancário';
-    const normDate=(s)=>{
-      if(!s)return null;
-      const str=String(s).trim();
-      if(/^\d{4}-\d{2}-\d{2}/.test(str))return str.slice(0,10);
-      const m=str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
-      if(m){let[,d,mo,y]=m;if(y.length===2)y=(+y>50?'19':'20')+y;return `${y}-${mo.padStart(2,'0')}-${d.padStart(2,'0')}`;}
-      return null;
-    };
-    const recs = selected.map(r=>{
+    const cartao = isCartao ? (_importMeta?.cartao||null) : null;
+    const banco  = isCartao ? null : (_importMeta?.banco||null);
+    const mesPag = isCartao ? (_importMeta?.mesPag||null) : null;
+
+    const recs=[];
+    for(const r of selected){
+      const isoBase = normDate(r.data);
+      if(!isoBase)continue;
       const [grupo,categoria] = String(r.cat||'').split('·').map(s=>s.trim());
-      return {
-        data:normDate(r.data), descricao:r.desc, valor:r.valor,
-        categoria:categoria||r.cat||null, grupo:grupo||null,
-        forma_pagamento:fp, banco:null, mes:r.mes, ano:String(CFG.ANO),
-        origem
-      };
-    }).filter(r=>r.data);
-    await gPost('addDespesas',{rows:recs,clienteId:cid()});
-    toast(`${recs.length} despesa(s) importada(s)!`,'success');
-    clearImport();
+      if(r.parc && r.parcN>1){
+        const grp = uuid();
+        const total = r.parcN;
+        const per = +(r.valor/total).toFixed(2);
+        for(let i=0;i<total;i++){
+          const iso=addMonthsISO(isoBase,i);
+          recs.push({
+            data:iso, descricao:`${r.desc} ${i+1}/${total}`, valor:per,
+            categoria:categoria||r.cat||null, grupo:grupo||null,
+            forma_pagamento:fp, banco, cartao, mes:mesFromISO(iso),
+            mes_pagamento: isCartao ? mesFromISO(addMonthsISO(isoBase,i)) : null,
+            ano:String((iso.split('-')[0])||CFG.ANO), origem,
+            parcela_n:i+1, parcela_total:total, parcela_grupo_id:grp, pago:false
+          });
+        }
+      } else {
+        recs.push({
+          data:isoBase, descricao:r.desc, valor:r.valor,
+          categoria:categoria||r.cat||null, grupo:grupo||null,
+          forma_pagamento:fp, banco, cartao, mes:r.mes,
+          mes_pagamento: mesPag, ano:String(CFG.ANO), origem, pago:false
+        });
+      }
+    }
+    if(!recs.length){toast('Não foi possível normalizar as datas dos lançamentos.','error');return;}
+    const resp = await gPost('addDespesas',{rows:recs,clienteId:cid()});
+    const ins = resp.count||0;
+    const ign = resp.ignored||0;
+    const msg = ign>0
+      ? `${ins} importado(s) · ${ign} ignorado(s) por já existirem.`
+      : `${ins} despesa(s) importada(s)!`;
+    toast(msg, ins>0?'success':'info');
+    resetImportSource();
   }catch(e){toast('Erro: '+e.message,'error');}
   finally{if(btn)btn.disabled=false;}
 }
@@ -1852,19 +2014,20 @@ function clearImport(){
   const tb=gel('importTbody');if(tb)tb.innerHTML='';
 }
 
+
 /* ═══════════════════════════════════════════
    DESPESAS LANÇADAS (listagem)
 ═══════════════════════════════════════════ */
 let _lancRows = [];
 async function loadDespesasLancadas(){
   const tb=gel('lancTbody');if(!tb)return;
-  tb.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:20px">Carregando...</td></tr>';
+  tb.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:20px">Carregando...</td></tr>';
   try{
     const r=await gGet('getDespesas',{clienteId:cid()});
     _lancRows = r.rows||[];
     renderDespesasLancadas();
   }catch(e){
-    tb.innerHTML=`<tr><td colspan="9" style="text-align:center;color:var(--danger);padding:20px">Erro: ${esc(e.message)}</td></tr>`;
+    tb.innerHTML=`<tr><td colspan="11" style="text-align:center;color:var(--danger);padding:20px">Erro: ${esc(e.message)}</td></tr>`;
   }
 }
 function origemLbl(o){
@@ -1888,7 +2051,7 @@ function renderDespesasLancadas(){
     return true;
   });
   if(!filtered.length){
-    tb.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:20px">Nenhuma despesa encontrada.</td></tr>';
+    tb.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:20px">Nenhuma despesa encontrada.</td></tr>';
     gel('lancTotal').textContent='Total: '+fBRL(0);
     return;
   }
@@ -1896,19 +2059,30 @@ function renderDespesasLancadas(){
   tb.innerHTML=filtered.map(r=>{
     const v=Number(r.valor||0);total+=v;
     const cat=r.grupo?`${r.grupo} · ${r.categoria||''}`:(r.categoria||'—');
-    return `<tr>
+    const bcoCar = r.cartao ? `💳 ${esc(r.cartao)}` : esc(r.banco||'—');
+    const parc = (r.parcela_n && r.parcela_total) ? `${r.parcela_n}/${r.parcela_total}` : '—';
+    const pago = r.pago===true;
+    return `<tr style="${pago?'opacity:.75':''}">
       <td>${fDate(r.data)}</td>
       <td>${esc(r.descricao||'')}</td>
       <td>${esc(cat)}</td>
       <td class="mono" style="text-align:right">${fBRL(v)}</td>
       <td>${esc(r.forma_pagamento||'—')}</td>
-      <td>${esc(r.banco||'—')}</td>
+      <td>${bcoCar}</td>
       <td>${esc(r.mes||'—')}</td>
+      <td class="mono" style="text-align:center">${parc}</td>
+      <td style="text-align:center"><input type="checkbox" ${pago?'checked':''} onchange="toggleLancPago('${r.id}',this.checked)" style="accent-color:var(--brand);width:15px;height:15px;cursor:pointer"/></td>
       <td>${origemLbl(r.origem)}</td>
       <td><button class="btn btn-d btn-xs" onclick="deleteDespesaLanc('${r.id}')">✕</button></td>
     </tr>`;
   }).join('');
   gel('lancTotal').textContent='Total: '+fBRL(total);
+}
+async function toggleLancPago(id,pago){
+  try{
+    await gPost('toggleDespesaPaga',{id,pago,clienteId:cid()});
+    const r=_lancRows.find(x=>x.id===id);if(r)r.pago=pago;
+  }catch(e){toast('Erro: '+e.message,'error');renderDespesasLancadas();}
 }
 async function deleteDespesaLanc(id){
   if(!confirm('Excluir esta despesa?'))return;

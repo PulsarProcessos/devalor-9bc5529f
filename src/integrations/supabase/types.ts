@@ -48,6 +48,7 @@ export type Database = {
         Row: {
           ano: string | null
           banco: string | null
+          cartao: string | null
           categoria: string | null
           cliente_id: string
           created_at: string
@@ -57,12 +58,18 @@ export type Database = {
           grupo: string | null
           id: string
           mes: string | null
+          mes_pagamento: string | null
           origem: string
+          pago: boolean
+          parcela_grupo_id: string | null
+          parcela_n: number | null
+          parcela_total: number | null
           valor: number
         }
         Insert: {
           ano?: string | null
           banco?: string | null
+          cartao?: string | null
           categoria?: string | null
           cliente_id: string
           created_at?: string
@@ -72,12 +79,18 @@ export type Database = {
           grupo?: string | null
           id?: string
           mes?: string | null
+          mes_pagamento?: string | null
           origem?: string
+          pago?: boolean
+          parcela_grupo_id?: string | null
+          parcela_n?: number | null
+          parcela_total?: number | null
           valor: number
         }
         Update: {
           ano?: string | null
           banco?: string | null
+          cartao?: string | null
           categoria?: string | null
           cliente_id?: string
           created_at?: string
@@ -87,7 +100,12 @@ export type Database = {
           grupo?: string | null
           id?: string
           mes?: string | null
+          mes_pagamento?: string | null
           origem?: string
+          pago?: boolean
+          parcela_grupo_id?: string | null
+          parcela_n?: number | null
+          parcela_total?: number | null
           valor?: number
         }
         Relationships: []
