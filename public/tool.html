@@ -590,21 +590,37 @@ img,svg{display:block;max-width:100%}
 
     <!-- ══ RENDA ════════════════════════════════════ -->
     <div class="panel" id="panel-renda">
-      <div class="panel-hd"><h1 class="panel-title">Renda & Planejamento Extraordinário</h1><p class="panel-sub">Defina a base de receitas e os eventos financeiros anuais</p></div>
+      <div class="panel-hd"><h1 class="panel-title">Renda</h1><p class="panel-sub">Cadastre todas as fontes de renda recebidas mensalmente</p></div>
       <div class="card-form">
-        <fieldset class="fset"><legend>Renda base mensal</legend>
-          <div class="grid3" style="margin-top:12px">
-            <div class="field"><label class="lbl">Renda mensal recebida (R$)</label><input class="inp inp-money" type="text" id="rendaMensal" placeholder="0,00" data-money/><div style="font-size:.7rem;color:var(--text-muted);margin-top:4px">Quanto você efetivamente recebe por mês (comparado ao realizado no Painel Resumo)</div></div>
-            <div class="field"><label class="lbl">Salário / Pró-labore (R$)</label><input class="inp inp-money" type="text" id="rendaSalario" placeholder="0,00" data-money/></div>
-            <div class="field"><label class="lbl">Outras rendas (R$)</label><input class="inp inp-money" type="text" id="rendaOutras" placeholder="0,00" data-money/></div>
+        <fieldset class="fset"><legend>Fontes de renda mensal</legend>
+          <div id="rendaFontes" style="display:flex;flex-direction:column;gap:10px;margin-top:12px"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap;gap:10px">
+            <button type="button" class="btn btn-g btn-sm" onclick="addRendaFonte()">+ Adicionar renda</button>
+            <div style="font-size:.95rem;color:var(--text-secondary)">Total mensal: <strong id="rendaTotalLbl" style="color:var(--brand);font-family:'DM Mono',monospace">R$ 0,00</strong></div>
           </div>
         </fieldset>
-        <fieldset class="fset"><legend>Planejamento extraordinário anual</legend>
-          <div id="extraOnboarding" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:12px;margin-top:12px"></div>
-        </fieldset>
+        <!-- inputs ocultos preservando compat com submitRenda antigo -->
+        <input type="hidden" id="rendaSalario" value=""/>
+        <input type="hidden" id="rendaOutras" value=""/>
+        <input type="hidden" id="rendaMensal" value=""/>
         <div class="form-footer">
-          <button class="btn btn-p" onclick="submitRenda()">Finalizar cadastro ✓</button>
+          <button class="btn btn-p" onclick="submitRenda()">Salvar renda ✓</button>
         </div>
+      </div>
+    </div>
+
+    <!-- ══ CARTÕES DE CRÉDITO ══════════════════════ -->
+    <div class="panel" id="panel-cartoes">
+      <div class="panel-hd"><h1 class="panel-title">Cartões de Crédito</h1><p class="panel-sub">Cadastre os cartões usados na importação de fatura e no Painel Resumo</p></div>
+      <div class="card-form">
+        <div class="grid3">
+          <div class="field" style="grid-column:span 2"><label class="lbl">Nome do cartão</label><input class="inp" type="text" id="cartaoNome" placeholder="Ex: Cartão Nubank"/></div>
+          <div class="field"><label class="lbl">&nbsp;</label><button type="button" class="btn btn-p" onclick="addCartao()" style="width:100%">+ Adicionar cartão</button></div>
+        </div>
+      </div>
+      <div class="tbl-wrap mt16">
+        <table class="tbl"><thead><tr><th>Cartão</th><th style="width:120px;text-align:right">Ações</th></tr></thead>
+        <tbody id="cartoesTbody"><tr><td colspan="2" style="text-align:center;color:var(--text-muted);padding:18px">Nenhum cartão cadastrado.</td></tr></tbody></table>
       </div>
     </div>
 
