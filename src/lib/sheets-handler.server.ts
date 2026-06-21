@@ -273,16 +273,26 @@ export async function handleAction(action: string, params: Record<string, any>, 
 
     if (target === "dividas") {
       // row: [banco, desc, vs, pt, vp, sd, juros, up, tp, ano]
-      const recs = rows.map((r: any) => ({
-        cliente_id: clienteId,
-        credor: String(r[0] || ""),
-        tipo: String(r[1] || "") || null,
-        saldo_devedor: Number(r[5] || 0),
-        taxa_juros: r[6] != null ? Number(r[6]) : null,
-        parcelas_restantes: r[3] != null ? Number(r[3]) : null,
-        valor_parcela: r[4] != null ? Number(r[4]) : null,
-        status: "ativa",
-      }));
+      const recs = rows.map((r: any) => {
+        const vs = Number(r[2] || 0);
+        const sd = Number(r[5] || 0);
+        const tp = Number(r[8] || 0);
+        return {
+          cliente_id: clienteId,
+          credor: String(r[0] || ""),
+          tipo: String(r[1] || "") || null,
+          valor_original: vs || (sd + tp) || null,
+          saldo_devedor: sd,
+          taxa_juros: r[6] != null ? Number(r[6]) : null,
+          parcelas_totais: r[3] != null ? Number(r[3]) : null,
+          parcelas_restantes: r[3] != null ? Number(r[3]) : null,
+          parcelas_pagas: 0,
+          valor_parcela: r[4] != null ? Number(r[4]) : null,
+          ultima_parcela: r[7] != null ? Number(r[7]) : null,
+          total_pago: tp,
+          status: sd <= 0 && tp > 0 ? "quitada" : "ativa",
+        };
+      });
       const { error } = await supabaseAdmin.from("dividas").insert(recs);
       if (error) return json({ error: error.message });
       return json({ ok: true, count: recs.length });
