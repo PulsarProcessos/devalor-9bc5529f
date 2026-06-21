@@ -1688,6 +1688,7 @@ function progressColor(pct){
   return {bar:'linear-gradient(90deg,#dc2626,#f97316)',fg:'#b91c1c',bg:'rgba(239,68,68,.12)',label:'Início da jornada'};
 }
 
+let _dividasCache=[];
 async function loadQuitacao(){
   const grid=gel('quitacaoGrid'); const sum=gel('quitacaoSummary');
   if(!grid) return;
