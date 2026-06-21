@@ -1574,8 +1574,8 @@ function calcTipoPrazo(prazo){
   if(!prazo) return 'Curto';
   const d=new Date(prazo+'T00:00:00'), today=new Date();
   const years=(d-today)/(365.25*24*3600*1000);
-  if(years<=2) return 'Curto';
-  if(years<=5) return 'Médio';
+  if(years<=0.5) return 'Curto';
+  if(years<=1) return 'Médio';
   return 'Longo';
 }
 function updateTipoPrazoBadge(){
