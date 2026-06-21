@@ -1695,7 +1695,7 @@ async function loadQuitacao(){
   grid.innerHTML='<div style="grid-column:1/-1;padding:32px;text-align:center;color:var(--text-muted)">Carregando…</div>';
   try{
     const r=await gGet('getDividas',{clienteId:cid()});
-    const list=r?.rows||[];
+    const list=r?.rows||[]; _dividasCache=list;
     if(!list.length){
       grid.innerHTML='<div style="grid-column:1/-1;padding:48px;text-align:center;color:var(--text-muted)">Nenhuma dívida cadastrada.</div>';
       if(sum) sum.innerHTML='';
