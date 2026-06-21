@@ -2113,6 +2113,8 @@ function renderPrev(rows){
   });
 }
 function clearPrev(){gel('prevTitle')?.classList.add('hidden');gel('prevTable')?.classList.add('hidden');const t=gel('prevTbody');if(t)t.innerHTML='';}
+let _previewTimer=null;
+function schedulePreview(){ if(_previewTimer)clearTimeout(_previewTimer); _previewTimer=setTimeout(()=>{ const r=buildDespRows(); if(r) renderPrev(r); },280); }
 function genPreview(){
   const r=buildDespRows();if(!r)return;
   renderPrev(r);
