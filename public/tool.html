@@ -2404,50 +2404,126 @@ async function deleteDespesaLanc(id){
 }
 
 /* ═══════════════════════════════════════════
-   EXTRAORDINÁRIO
+   PLANEJAMENTO MENSAL (ex-Extraordinário)
 ═══════════════════════════════════════════ */
-function buildExtraGrid(){
-  const c=gel('extraGrid');if(!c)return;
-  c.innerHTML=CFG.MESES.map(mes=>`
-    <div class="extra-card">
-      <div class="extra-card-hd">${mes}</div>
-      <div style="padding:10px 12px;display:flex;flex-direction:column;gap:10px">
-        ${CFG.CATS_EXTRA.map(cat=>`
-          <div>
-            <div class="extra-cat-lbl">${cat.lbl}</div>
-            <div id="ei_${mes}_${cat.key}" style="display:flex;flex-direction:column;gap:3px">
-              <div class="extra-item"><input class="extra-desc" type="text" placeholder="Descrição..." data-mes="${mes}" data-cat="${cat.key}"/><input class="extra-val" type="text" data-money placeholder="0,00"/></div>
-            </div>
-            <button class="extra-add" onclick="addExtraItem('${mes}','${cat.key}')">+ item</button>
-          </div>
-        `).join('')}
+const MES_NOMES = ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
+let _planAllRows = [];
+
+function currentMesAno(){
+  const d=new Date();
+  return {mes: MES_NOMES[d.getMonth()], ano: String(d.getFullYear())};
+}
+function _planAlertKey(){ return `dv_plan_last_seen_${cid()||'_'}`; }
+function checkPlanMonthAlert(){
+  const cur=currentMesAno();
+  let last=null; try{last=localStorage.getItem(_planAlertKey());}catch{}
+  const key=`${cur.ano}-${cur.mes}`;
+  const el=gel('planAlert'); if(!el) return;
+  if(last!==key){
+    gel('planAlertMsg').textContent=`Novo mês começou — faça o planejamento de ${cur.mes[0]+cur.mes.slice(1).toLowerCase()}/${cur.ano}.`;
+    el.style.display='flex';
+  } else { el.style.display='none'; }
+}
+function dismissPlanAlert(){
+  const cur=currentMesAno();
+  try{localStorage.setItem(_planAlertKey(),`${cur.ano}-${cur.mes}`);}catch{}
+  const el=gel('planAlert'); if(el) el.style.display='none';
+}
+function planNavMes(delta){
+  const ms=gel('planMesSel'), as=gel('planAnoSel'); if(!ms||!as) return;
+  let i=MES_NOMES.indexOf(ms.value); let a=parseInt(as.value)||CFG.ANO;
+  i+=delta;
+  if(i<0){i=11;a-=1;} else if(i>11){i=0;a+=1;}
+  ms.value=MES_NOMES[i];
+  if(![...as.options].some(o=>o.value===String(a))){
+    const opt=document.createElement('option'); opt.value=String(a); opt.textContent=String(a); as.appendChild(opt);
+  }
+  as.value=String(a);
+  loadPlanejamentoMes();
+}
+function initPlanejamentoSelectors(){
+  const ms=gel('planMesSel'), as=gel('planAnoSel'); if(!ms||!as) return;
+  if(!ms.options.length){
+    ms.innerHTML=MES_NOMES.map(m=>`<option value="${m}">${m[0]+m.slice(1).toLowerCase()}</option>`).join('');
+  }
+  if(!as.options.length){
+    const y=new Date().getFullYear();
+    [y-1,y,y+1].forEach(yy=>{ const o=document.createElement('option'); o.value=String(yy); o.textContent=String(yy); as.appendChild(o); });
+  }
+  const cur=currentMesAno();
+  if(!ms.dataset.init){ ms.value=cur.mes; as.value=cur.ano; ms.dataset.init='1'; }
+}
+async function loadAllPlanejamento(){
+  try{
+    const r=await gPost('getExtraordinario',{});
+    _planAllRows = r?.rows || [];
+  }catch{ _planAllRows=[]; }
+}
+function renderPlanejamentoMes(){
+  const ms=gel('planMesSel'), as=gel('planAnoSel'), c=gel('planGroups'); if(!c||!ms||!as) return;
+  const mes=ms.value, ano=as.value;
+  const cats=getCats(); // {grupo: [cat,...]}
+  const existing = _planAllRows.filter(r=>String(r.mes||'').toUpperCase()===mes && String(r.ano||'')===ano);
+  const valOf = (grupo,cat)=>{
+    const m=existing.find(r=>(r.grupo||'')===grupo && (r.categoria||'')===cat);
+    return m ? Number(m.valor_planejado||0) : 0;
+  };
+  c.innerHTML=Object.keys(cats).map(grupo=>{
+    const items=cats[grupo]||[];
+    return `<div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:12px;overflow:hidden">
+      <div style="padding:10px 14px;background:var(--bg-muted,#f5f7fa);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary)">${esc(grupo)}</div>
+      <div style="padding:10px 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
+        ${items.map(cat=>{
+          const v=valOf(grupo,cat);
+          return `<div class="field" style="margin:0">
+            <label class="lbl" style="font-size:.74rem">${esc(cat)}</label>
+            <input class="inp inp-money inp-sm" type="text" data-money data-grupo="${esc(grupo)}" data-cat="${esc(cat)}" value="${v>0?fBRL(v).replace('R$','').trim():''}" placeholder="0,00" oninput="updatePlanTotal()"/>
+          </div>`;
+        }).join('')}
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
   initMasks(c);
+  updatePlanTotal();
+  const hasData = existing.length>0;
+  const st=gel('planStatus');
+  if(st) st.textContent = hasData ? `Planejamento salvo (${existing.length} categoria(s))` : 'Sem planejamento para este mês';
 }
-function addExtraItem(mes,catKey){
-  const c=gel(`ei_${mes}_${catKey}`);if(!c)return;
-  const d=document.createElement('div');d.className='extra-item';
-  d.innerHTML=`<input class="extra-desc" type="text" placeholder="Descrição..."/><input class="extra-val" type="text" data-money placeholder="0,00"/>`;
-  c.appendChild(d);
-  const m=d.querySelector('[data-money]');if(m)m.addEventListener('input',()=>mMask(m));
+function updatePlanTotal(){
+  let total=0;
+  document.querySelectorAll('#planGroups [data-grupo]').forEach(i=>{ total += pMoney(i.value)||0; });
+  const t=gel('planTotal'); if(t) t.textContent=fBRL(total);
 }
-async function saveExtraordinario(){
+async function loadPlanejamentoMes(){
+  initPlanejamentoSelectors();
+  if(!_planAllRows.length) await loadAllPlanejamento();
+  renderPlanejamentoMes();
+}
+async function openPlanejamentoPanel(){
+  initPlanejamentoSelectors();
+  await loadAllPlanejamento();
+  renderPlanejamentoMes();
+  checkPlanMonthAlert();
+}
+async function savePlanejamentoMes(){
+  const mes=gel('planMesSel')?.value, ano=gel('planAnoSel')?.value;
+  if(!mes||!ano){toast('Selecione mês e ano.','error');return;}
   const rows=[];
-  CFG.MESES.forEach(mes=>{
-    CFG.CATS_EXTRA.forEach(cat=>{
-      document.querySelectorAll(`#ei_${mes}_${cat.key} .extra-item`).forEach(item=>{
-        const desc=item.querySelector('.extra-desc')?.value.trim();
-        const val=pMoney(item.querySelector('.extra-val')?.value);
-        if(desc&&val>0)rows.push([mes,cat.lbl,desc,val,CFG.ANO]);
-      });
-    });
+  document.querySelectorAll('#planGroups [data-grupo]').forEach(i=>{
+    const v=pMoney(i.value);
+    if(v>0) rows.push({mes,ano,grupo:i.dataset.grupo,categoria:i.dataset.cat,valor_planejado:v});
   });
-  if(!rows.length){toast('Nenhum item para salvar.','info');return;}
-  try{await apiRows(CFG.SH.EXTRA,rows);toast(`${rows.length} item(ns) salvos!`,'success');}
-  catch(e){toast('Erro: '+e.message,'error');}
+  try{
+    await gPost('saveExtraordinario',{mes,ano,rows});
+    toast(rows.length?`Planejamento de ${mes}/${ano} salvo (${rows.length} categoria(s)).`:`Planejamento de ${mes}/${ano} limpo.`,'success');
+    dismissPlanAlert();
+    await loadAllPlanejamento(); renderPlanejamentoMes();
+  }catch(e){toast('Erro: '+e.message,'error');}
 }
+
+/* Compat — legados que referenciam buildExtraGrid / saveExtraordinario no front */
+function buildExtraGrid(){ /* substituído por openPlanejamentoPanel */ }
+function saveExtraordinario(){ return savePlanejamentoMes(); }
 
 /* ═══════════════════════════════════════════
    PAINEL — MENSAL
