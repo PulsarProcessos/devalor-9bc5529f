@@ -1678,20 +1678,103 @@ async function saveAcoes(){
 }
 
 /* ═══════════════════════════════════════════
-   QUITAÇÃO
+   QUITAÇÃO — acompanhamento com barra de progresso
 ═══════════════════════════════════════════ */
-function renderQuitacao(list){
-  const tb=gel('quitacaoTbody');if(!tb)return;
-  list.forEach(d=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${esc(d.banco||d[0]||'—')}</td><td>${esc(d.desc||d[1]||'—')}</td>
-    <td class="mono">${fBRL(d.vs??d[2]??0)}</td><td style="text-align:center">${d.pt??d[3]??'—'}</td>
-    <td class="mono">${fBRL(d.vp??d[4]??0)}</td><td class="mono text-danger">${fBRL(d.sd??d[5]??0)}</td>
-    <td class="mono">${d.j??d[6]??0}%</td><td class="mono">${fBRL(d.up??d[7]??0)}</td>
-    <td class="mono">${fBRL(d.tp??d[8]??0)}</td>
-    <td><button class="btn btn-d btn-xs" onclick="this.closest('tr').remove()">✕</button></td>`;
-    tb.appendChild(tr);
-  });
+function renderQuitacao(/* legacy: list */){ /* substituído por loadQuitacao */ }
+
+function progressColor(pct){
+  if(pct>=75) return {bar:'linear-gradient(90deg,#16a34a,#22c55e)',fg:'#16a34a',bg:'rgba(34,197,94,.12)',label:'Próximo da quitação'};
+  if(pct>=33) return {bar:'linear-gradient(90deg,#ca8a04,#eab308)',fg:'#a16207',bg:'rgba(234,179,8,.14)',label:'No meio do caminho'};
+  return {bar:'linear-gradient(90deg,#dc2626,#f97316)',fg:'#b91c1c',bg:'rgba(239,68,68,.12)',label:'Início da jornada'};
+}
+
+async function loadQuitacao(){
+  const grid=gel('quitacaoGrid'); const sum=gel('quitacaoSummary');
+  if(!grid) return;
+  grid.innerHTML='<div style="grid-column:1/-1;padding:32px;text-align:center;color:var(--text-muted)">Carregando…</div>';
+  try{
+    const r=await gGet('getDividas',{clienteId:cid()});
+    const list=r?.rows||[];
+    if(!list.length){
+      grid.innerHTML='<div style="grid-column:1/-1;padding:48px;text-align:center;color:var(--text-muted)">Nenhuma dívida cadastrada.</div>';
+      if(sum) sum.innerHTML='';
+      return;
+    }
+    let totOrig=0,totPago=0,totSaldo=0,quitCount=0;
+    grid.innerHTML=list.map(d=>{
+      const orig=Number(d.valor_original||0) || (Number(d.saldo_devedor||0)+Number(d.total_pago||0));
+      const pago=Number(d.total_pago||0);
+      const saldo=Number(d.saldo_devedor||0);
+      const pct=orig>0?Math.min(100,Math.round((pago/orig)*100)):(saldo<=0?100:0);
+      const pt=d.parcelas_totais||0, pp=Number(d.parcelas_pagas||0);
+      const quitada=saldo<=0 || (d.status||'').toLowerCase()==='quitada' || pct>=100;
+      totOrig+=orig; totPago+=pago; totSaldo+=saldo; if(quitada) quitCount++;
+      const eff=quitada?100:pct;
+      const c=progressColor(eff);
+      return `<article style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;${quitada?'border-color:#16a34a;box-shadow:0 0 0 2px rgba(22,163,74,.08)':''}">
+        <div style="display:flex;justify-content:space-between;align-items:start;gap:8px">
+          <div style="min-width:0">
+            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)">${esc(d.credor||'—')}</div>
+            <h3 style="font-family:'Playfair Display',serif;font-size:1rem;color:var(--text-primary);margin:2px 0 0">${esc(d.tipo||'—')}</h3>
+          </div>
+          ${quitada
+            ? `<span style="display:inline-flex;padding:4px 10px;border-radius:99px;font-size:.66rem;font-weight:700;text-transform:uppercase;background:rgba(22,163,74,.15);color:#16a34a">✓ Quitada</span>`
+            : `<span style="display:inline-flex;padding:4px 10px;border-radius:99px;font-size:.66rem;font-weight:700;text-transform:uppercase;background:${c.bg};color:${c.fg}">${c.label}</span>`}
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:.78rem;color:var(--text-secondary);margin-bottom:4px">
+            <span><strong style="color:${c.fg}">${eff}% quitado</strong></span>
+            <span class="mono">${fBRL(pago)} / ${fBRL(orig)}</span>
+          </div>
+          <div style="height:10px;background:var(--bg-muted,#eef2f7);border-radius:99px;overflow:hidden">
+            <div style="height:100%;width:${eff}%;background:${c.bar};transition:width .4s ease"></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:.74rem">
+          <div><div style="color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;font-size:.66rem">Saldo</div><div class="mono" style="font-weight:600;color:${saldo>0?'var(--danger,#dc2626)':'#16a34a'}">${fBRL(saldo)}</div></div>
+          <div><div style="color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;font-size:.66rem">Parcelas</div><div class="mono" style="font-weight:600">${pp}${pt?' / '+pt:''}</div></div>
+          <div><div style="color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;font-size:.66rem">Parcela</div><div class="mono" style="font-weight:600">${fBRL(d.valor_parcela||0)}</div></div>
+        </div>
+        <div style="display:flex;gap:6px;border-top:1px solid var(--border-subtle);padding-top:10px">
+          ${quitada?'':`<button class="btn btn-p btn-xs" style="flex:1" onclick="openPagamentoDivida('${d.id}','${esc(d.credor||'').replace(/'/g,&quot;&#39;&quot;)}',${Number(d.valor_parcela||0)})">＄ Registrar pagamento</button>`}
+          <button class="btn btn-d btn-xs" onclick="deleteDivida('${d.id}')">✕</button>
+        </div>
+      </article>`;
+    }).join('');
+    if(sum){
+      const pctGlobal=totOrig>0?Math.round((totPago/totOrig)*100):0;
+      sum.innerHTML=`
+        <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:12px;padding:12px"><div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)">Total contratado</div><div class="mono" style="font-size:1.1rem;font-weight:700">${fBRL(totOrig)}</div></div>
+        <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:12px;padding:12px"><div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)">Total pago</div><div class="mono" style="font-size:1.1rem;font-weight:700;color:#16a34a">${fBRL(totPago)}</div></div>
+        <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:12px;padding:12px"><div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)">Saldo devedor</div><div class="mono" style="font-size:1.1rem;font-weight:700;color:var(--danger,#dc2626)">${fBRL(totSaldo)}</div></div>
+        <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:12px;padding:12px"><div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)">Progresso global</div><div class="mono" style="font-size:1.1rem;font-weight:700">${pctGlobal}% &middot; ${quitCount}/${list.length} quitadas</div></div>`;
+    }
+  }catch(e){
+    grid.innerHTML=`<div style="grid-column:1/-1;padding:32px;text-align:center;color:var(--danger,#dc2626)">Erro ao carregar: ${esc(e.message)}</div>`;
+  }
+}
+
+async function openPagamentoDivida(id,credor,sugestao){
+  const def = sugestao>0 ? String(sugestao).replace('.',',') : '';
+  const v = prompt(`Registrar pagamento — ${credor}\n\nValor pago (R$):`, def);
+  if(v==null) return;
+  const valor = pMoney(v);
+  if(!(valor>0)){toast('Valor inválido.','error');return;}
+  try{
+    const r=await gPost('registerDividaPagamento',{id,valor});
+    if(r?.error){toast('Erro: '+r.error,'error');return;}
+    toast(r?.status==='quitada'?'Dívida quitada! 🎉':'Pagamento registrado.','success');
+    await loadQuitacao();
+  }catch(e){toast('Erro: '+e.message,'error');}
+}
+
+async function deleteDivida(id){
+  if(!confirm('Excluir esta dívida?')) return;
+  try{
+    await gPost('deleteDivida',{id});
+    await loadQuitacao();
+    toast('Dívida excluída.','info');
+  }catch(e){toast('Erro: '+e.message,'error');}
 }
 
 /* ═══════════════════════════════════════════
