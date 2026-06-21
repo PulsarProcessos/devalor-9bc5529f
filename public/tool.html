@@ -1219,6 +1219,7 @@ function goPanel(id, btnEl){
   if(id==='extraordinario') openPlanejamentoPanel();
   if(id==='vencimentos'){ buildVencCategoriaSelect(); renderVencimentos(); }
   if(id==='renda') loadRendaPanel();
+  if(id==='painel'){ loadRendaPanel().finally(()=>loadPainelData()); }
 }
 
 function toggleNavGroup(name){
