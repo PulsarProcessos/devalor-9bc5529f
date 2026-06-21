@@ -904,6 +904,7 @@ img,svg{display:block;max-width:100%}
         <select class="sel sel-sm" id="planMesSel" onchange="loadPlanejamentoMes()" style="min-width:140px"></select>
         <select class="sel sel-sm" id="planAnoSel" onchange="loadPlanejamentoMes()" style="width:100px"></select>
         <button class="btn btn-s btn-sm" onclick="planNavMes(1)">→</button>
+        <button class="btn btn-g btn-sm" onclick="replicarPlanejamentoAnterior()" title="Copia os valores do mês anterior para o mês atual">⎘ Replicar mês anterior</button>
         <span id="planStatus" style="margin-left:auto;font-size:.78rem;color:var(--text-muted)"></span>
       </div>
       <div id="planGroups" style="display:flex;flex-direction:column;gap:14px"></div>
