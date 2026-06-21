@@ -657,17 +657,23 @@ img,svg{display:block;max-width:100%}
       <button class="btn btn-s mt16" onclick="saveAcoes()">✓ Salvar</button>
     </div>
 
-    <!-- ══ RESERVA IDEAL ════════════════════════════ -->
-    <div class="panel" id="panel-reserva">
-      <div class="sec-hd"><div><h2 class="sec-title">Reserva Ideal</h2><p class="sec-sub">Cálculo personalizado de segurança financeira</p></div></div>
-      <div class="res-panel">
-        <div class="res-qs">
-          <div class="res-q"><span style="font-size:.86rem;font-weight:500;color:var(--text-primary)">Possui carteira assinada (CLT)?</span><div class="radio-grp"><label class="radio-opt"><input type="radio" name="rClt" value="sim" onchange="calcReserveDash()"/> Sim</label><label class="radio-opt"><input type="radio" name="rClt" value="nao" checked onchange="calcReserveDash()"/> Não</label></div></div>
-          <div class="res-q"><span style="font-size:.86rem;font-weight:500;color:var(--text-primary)">Tem filhos?</span><div class="radio-grp"><label class="radio-opt"><input type="radio" name="rFilhos" value="sim" onchange="calcReserveDash()"/> Sim</label><label class="radio-opt"><input type="radio" name="rFilhos" value="nao" checked onchange="calcReserveDash()"/> Não</label></div></div>
-          <div class="res-q"><span style="font-size:.86rem;font-weight:500;color:var(--text-primary)">Tem a quem recorrer em emergência?</span><div class="radio-grp"><label class="radio-opt"><input type="radio" name="rRede" value="sim" checked onchange="calcReserveDash()"/> Sim</label><label class="radio-opt"><input type="radio" name="rRede" value="nao" onchange="calcReserveDash()"/> Não</label></div></div>
-          <div class="res-q"><label style="font-size:.86rem;font-weight:500;color:var(--text-primary)">Gastos fixos mensais (R$)</label><input class="inp inp-money inp-sm" type="text" id="rGastos" placeholder="0,00" data-money oninput="calcReserveDash()"/></div>
+    <!-- ══ VENCIMENTOS DE CONTAS ═══════════════════ -->
+    <div class="panel" id="panel-vencimentos">
+      <div class="panel-hd"><h1 class="panel-title">Vencimentos de Contas</h1><p class="panel-sub">Cadastre contas recorrentes para acompanhamento e lembrete</p></div>
+      <div class="card-form">
+        <div class="grid3">
+          <div class="field"><label class="lbl">Descrição</label><input class="inp" type="text" id="vencDesc" placeholder="Ex: Conta de luz"/></div>
+          <div class="field"><label class="lbl">Valor estimado (R$)</label><input class="inp inp-money" type="text" id="vencValor" placeholder="0,00" data-money/></div>
+          <div class="field"><label class="lbl">Dia do vencimento</label><input class="inp" type="number" id="vencDia" min="1" max="31" placeholder="10"/></div>
+          <div class="field"><label class="lbl">Categoria</label><select class="sel" id="vencCategoria"></select></div>
+          <div class="field"><label class="lbl">Observações</label><input class="inp" type="text" id="vencObs" placeholder="Opcional"/></div>
         </div>
-        <div><div class="res-card"><p style="font-size:.74rem;opacity:.65;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Sugerimos uma reserva de</p><div class="res-card__months"><span id="drMonths">—</span> meses</div><p style="font-size:.74rem;opacity:.55;margin:12px 0 6px;text-transform:uppercase;letter-spacing:.08em">equivalente a</p><div class="res-card__val" id="drAmount">R$ —</div></div></div>
+        <div class="form-footer">
+          <button class="btn btn-p" onclick="addVencimento()">+ Adicionar conta</button>
+        </div>
+      </div>
+      <div class="tbl-wrap mt16">
+        <table class="tbl" id="vencTable"><thead><tr><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Dia</th><th>Próx. venc.</th><th>Obs.</th><th></th></tr></thead><tbody id="vencTbody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:18px">Nenhuma conta cadastrada.</td></tr></tbody></table>
       </div>
     </div>
 
