@@ -2027,7 +2027,7 @@ async function loadDespesasLancadas(){
     _lancRows = r.rows||[];
     renderDespesasLancadas();
   }catch(e){
-    tb.innerHTML=`<tr><td colspan="9" style="text-align:center;color:var(--danger);padding:20px">Erro: ${esc(e.message)}</td></tr>`;
+    tb.innerHTML=`<tr><td colspan="11" style="text-align:center;color:var(--danger);padding:20px">Erro: ${esc(e.message)}</td></tr>`;
   }
 }
 function origemLbl(o){
