@@ -1530,7 +1530,7 @@ async function submitDividas(){
     await apiRows(CFG.SH.DIVIDAS,rows);
     _dividasQ.length=0;
     const tb=gel('dividasTbody'); if(tb) tb.innerHTML='';
-    renderQuitacao(_dividasQ);
+    const tbl=gel('dividasTable'); if(tbl) tbl.classList.add('hidden');
     toast(`${rows.length} dívida(s) salvas!`,'success');
     markNavDone('dividas');goPanel('renda');
   }catch(e){toast('Erro: '+e.message,'error');}
