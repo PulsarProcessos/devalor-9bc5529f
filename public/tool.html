@@ -2021,7 +2021,7 @@ function clearImport(){
 let _lancRows = [];
 async function loadDespesasLancadas(){
   const tb=gel('lancTbody');if(!tb)return;
-  tb.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:20px">Carregando...</td></tr>';
+  tb.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:20px">Carregando...</td></tr>';
   try{
     const r=await gGet('getDespesas',{clienteId:cid()});
     _lancRows = r.rows||[];
