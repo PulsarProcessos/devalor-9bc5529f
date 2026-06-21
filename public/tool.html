@@ -473,8 +473,9 @@ img,svg{display:block;max-width:100%}
           <button class="nav-item active" data-panel="perfil" onclick="goPanel('perfil',this)"><span class="nav-dot"></span><span class="nav-icon">👤</span>Perfil & Reserva</button>
           <button class="nav-item" data-panel="sonhos" onclick="goPanel('sonhos',this)"><span class="nav-dot"></span><span class="nav-icon">✨</span>Sonhos & Objetivos</button>
           <button class="nav-item" data-panel="dividas" onclick="goPanel('dividas',this)"><span class="nav-dot"></span><span class="nav-icon">📋</span>Inventário de Dívidas</button>
-          <button class="nav-item" data-panel="renda" onclick="goPanel('renda',this)"><span class="nav-dot"></span><span class="nav-icon">💰</span>Renda & Planejamento</button>
+          <button class="nav-item" data-panel="renda" onclick="goPanel('renda',this)"><span class="nav-dot"></span><span class="nav-icon">💰</span>Renda</button>
           <button class="nav-item" data-panel="vencimentos" onclick="goPanel('vencimentos',this)"><span class="nav-dot"></span><span class="nav-icon">📆</span>Vencimentos de Contas</button>
+          <button class="nav-item" data-panel="cartoes" onclick="goPanel('cartoes',this)"><span class="nav-dot"></span><span class="nav-icon">💳</span>Cartões de Crédito</button>
           <button class="nav-item" data-panel="__catsCad" onclick="openModal('modalCats');buildCatEditor()"><span class="nav-dot"></span><span class="nav-icon">🏷️</span>Categorias</button>
         </div>
       </div>
@@ -507,14 +508,7 @@ img,svg{display:block;max-width:100%}
     </div>
 
     <!-- CONFIGURAÇÕES -->
-    <div class="nav-section">
-      <div class="nav-group" data-group="configuracoes">
-        <button class="nav-group-hd" onclick="toggleNavGroup('configuracoes')"><span class="nav-icon">⚙️</span>Configurações<span class="nav-group-chev">›</span></button>
-        <div class="nav-group-items">
-          <button class="nav-item" data-panel="__cats" onclick="openModal('modalCats');buildCatEditor()"><span class="nav-dot"></span><span class="nav-icon">🏷️</span>Categorias</button>
-        </div>
-      </div>
-    </div>
+    <!-- (Configurações: edição de Categorias foi movida para Cadastros) -->
   </aside>
 
   <!-- CONTENT -->
@@ -596,21 +590,37 @@ img,svg{display:block;max-width:100%}
 
     <!-- ══ RENDA ════════════════════════════════════ -->
     <div class="panel" id="panel-renda">
-      <div class="panel-hd"><h1 class="panel-title">Renda & Planejamento Extraordinário</h1><p class="panel-sub">Defina a base de receitas e os eventos financeiros anuais</p></div>
+      <div class="panel-hd"><h1 class="panel-title">Renda</h1><p class="panel-sub">Cadastre todas as fontes de renda recebidas mensalmente</p></div>
       <div class="card-form">
-        <fieldset class="fset"><legend>Renda base mensal</legend>
-          <div class="grid3" style="margin-top:12px">
-            <div class="field"><label class="lbl">Renda mensal recebida (R$)</label><input class="inp inp-money" type="text" id="rendaMensal" placeholder="0,00" data-money/><div style="font-size:.7rem;color:var(--text-muted);margin-top:4px">Quanto você efetivamente recebe por mês (comparado ao realizado no Painel Resumo)</div></div>
-            <div class="field"><label class="lbl">Salário / Pró-labore (R$)</label><input class="inp inp-money" type="text" id="rendaSalario" placeholder="0,00" data-money/></div>
-            <div class="field"><label class="lbl">Outras rendas (R$)</label><input class="inp inp-money" type="text" id="rendaOutras" placeholder="0,00" data-money/></div>
+        <fieldset class="fset"><legend>Fontes de renda mensal</legend>
+          <div id="rendaFontes" style="display:flex;flex-direction:column;gap:10px;margin-top:12px"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap;gap:10px">
+            <button type="button" class="btn btn-g btn-sm" onclick="addRendaFonte()">+ Adicionar renda</button>
+            <div style="font-size:.95rem;color:var(--text-secondary)">Total mensal: <strong id="rendaTotalLbl" style="color:var(--brand);font-family:'DM Mono',monospace">R$ 0,00</strong></div>
           </div>
         </fieldset>
-        <fieldset class="fset"><legend>Planejamento extraordinário anual</legend>
-          <div id="extraOnboarding" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:12px;margin-top:12px"></div>
-        </fieldset>
+        <!-- inputs ocultos preservando compat com submitRenda antigo -->
+        <input type="hidden" id="rendaSalario" value=""/>
+        <input type="hidden" id="rendaOutras" value=""/>
+        <input type="hidden" id="rendaMensal" value=""/>
         <div class="form-footer">
-          <button class="btn btn-p" onclick="submitRenda()">Finalizar cadastro ✓</button>
+          <button class="btn btn-p" onclick="submitRenda()">Salvar renda ✓</button>
         </div>
+      </div>
+    </div>
+
+    <!-- ══ CARTÕES DE CRÉDITO ══════════════════════ -->
+    <div class="panel" id="panel-cartoes">
+      <div class="panel-hd"><h1 class="panel-title">Cartões de Crédito</h1><p class="panel-sub">Cadastre os cartões usados na importação de fatura e no Painel Resumo</p></div>
+      <div class="card-form">
+        <div class="grid3">
+          <div class="field" style="grid-column:span 2"><label class="lbl">Nome do cartão</label><input class="inp" type="text" id="cartaoNome" placeholder="Ex: Cartão Nubank"/></div>
+          <div class="field"><label class="lbl">&nbsp;</label><button type="button" class="btn btn-p" onclick="addCartao()" style="width:100%">+ Adicionar cartão</button></div>
+        </div>
+      </div>
+      <div class="tbl-wrap mt16">
+        <table class="tbl"><thead><tr><th>Cartão</th><th style="width:120px;text-align:right">Ações</th></tr></thead>
+        <tbody id="cartoesTbody"><tr><td colspan="2" style="text-align:center;color:var(--text-muted);padding:18px">Nenhum cartão cadastrado.</td></tr></tbody></table>
       </div>
     </div>
 
@@ -718,7 +728,7 @@ img,svg{display:block;max-width:100%}
             <div class="field field-full"><label class="lbl">Descrição</label><input class="inp" type="text" id="despDesc" placeholder="Ex: Mercado, Escola, Netflix..."/></div>
             <div class="field"><label class="lbl">Valor da parcela (R$)</label><input class="inp inp-money" type="text" id="despValorParc" placeholder="0,00" data-money/></div>
             <div class="field"><label class="lbl">Categoria</label><select class="sel" id="despCategoria"></select></div>
-            <div class="field"><label class="lbl">Mês de competência (pagamento real)</label>
+            <div class="field"><label class="lbl">Data de pagamento <span style="color:var(--text-muted);font-weight:400;font-size:.7rem">(mês do desembolso real / fatura)</span></label>
               <select class="sel" id="despMesComp"><option value="JANEIRO">Janeiro</option><option value="FEVEREIRO">Fevereiro</option><option value="MARÇO">Março</option><option value="ABRIL">Abril</option><option value="MAIO">Maio</option><option value="JUNHO">Junho</option><option value="JULHO">Julho</option><option value="AGOSTO">Agosto</option><option value="SETEMBRO">Setembro</option><option value="OUTUBRO">Outubro</option><option value="NOVEMBRO">Novembro</option><option value="DEZEMBRO">Dezembro</option></select>
             </div>
           </div>
@@ -1220,6 +1230,7 @@ function goPanel(id, btnEl){
   if(id==='vencimentos'){ buildVencCategoriaSelect(); renderVencimentos(); }
   if(id==='renda') loadRendaPanel();
   if(id==='painel'){ loadRendaPanel().finally(()=>loadPainelData()); }
+  if(id==='cartoes') renderCartoes();
 }
 
 function toggleNavGroup(name){
@@ -1645,23 +1656,65 @@ function buildExtraOnboarding(){
   initMasks(c);
 }
 
+/* ═══════════════════════════════════════════
+   RENDA — fontes dinâmicas (Salário + extras)
+═══════════════════════════════════════════ */
+let _rendaFontes = [];
+
+function renderRendaFontes(){
+  const c = gel('rendaFontes'); if(!c) return;
+  if(!_rendaFontes.length) _rendaFontes = [{nome:'Salário / Pró-labore', valor:0, fixed:true}];
+  c.innerHTML = _rendaFontes.map((f,i)=>`
+    <div style="display:grid;grid-template-columns:1.6fr 1fr auto;gap:8px;align-items:end">
+      <div class="field" style="margin:0">
+        <label class="lbl" style="font-size:.7rem">Fonte ${i===0?'(principal)':''}</label>
+        <input class="inp" type="text" value="${esc(f.nome||'')}" ${f.fixed?'readonly style="opacity:.8;cursor:default"':''} oninput="updateRendaFonte(${i},'nome',this.value)" placeholder="Ex: Aluguel, Dividendos"/>
+      </div>
+      <div class="field" style="margin:0">
+        <label class="lbl" style="font-size:.7rem">Valor mensal (R$)</label>
+        <input class="inp inp-money" type="text" data-money value="${f.valor>0?Number(f.valor).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):''}" oninput="updateRendaFonte(${i},'valor',this.value)" placeholder="0,00"/>
+      </div>
+      <button type="button" class="btn btn-d btn-xs" ${f.fixed?'disabled style="opacity:.3;cursor:not-allowed"':''} onclick="removeRendaFonte(${i})" title="Remover">✕</button>
+    </div>
+  `).join('');
+  initMasks(c);
+  recalcRendaTotal();
+}
+function updateRendaFonte(i,field,val){
+  if(!_rendaFontes[i]) return;
+  if(field==='valor') _rendaFontes[i].valor = pMoney(val)||0;
+  else _rendaFontes[i][field] = val;
+  if(field==='valor') recalcRendaTotal();
+}
+function addRendaFonte(){
+  _rendaFontes.push({nome:'', valor:0});
+  renderRendaFontes();
+}
+function removeRendaFonte(i){
+  if(_rendaFontes[i]?.fixed) return;
+  _rendaFontes.splice(i,1);
+  renderRendaFontes();
+}
+function recalcRendaTotal(){
+  const total = _rendaFontes.reduce((s,f)=>s+(Number(f.valor)||0),0);
+  const lbl = gel('rendaTotalLbl'); if(lbl) lbl.textContent = fBRL(total);
+  const hid = gel('rendaMensal'); if(hid) hid.value = total>0?String(total):'';
+  _rendaMensalCache = total;
+}
+
 async function submitRenda(){
-  const salario=pMoney(gel('rendaSalario')?.value),outras=pMoney(gel('rendaOutras')?.value);
-  const rendaMensal=pMoney(gel('rendaMensal')?.value);
-  const extra=[];
-  CFG.MESES.forEach(mes=>{
-    CFG.CATS_EXTRA.forEach(cat=>{
-      const v=pMoney(gel(`exob_${mes}_${cat.key}`)?.value);
-      if(v>0)extra.push({mes,cat:cat.lbl,valor:v});
-    });
-  });
+  // sincroniza valores atuais dos inputs antes de salvar
+  document.querySelectorAll('#rendaFontes [data-money]').forEach((el,i)=>{ if(_rendaFontes[i]) _rendaFontes[i].valor = pMoney(el.value)||0; });
+  document.querySelectorAll('#rendaFontes input[type="text"]:not([data-money])').forEach((el,i)=>{ if(_rendaFontes[i] && !_rendaFontes[i].fixed) _rendaFontes[i].nome = el.value.trim()||_rendaFontes[i].nome; });
+  recalcRendaTotal();
+  const rendaMensal = _rendaFontes.reduce((s,f)=>s+(Number(f.valor)||0),0);
+  const salario = Number(_rendaFontes[0]?.valor||0);
+  const outras  = rendaMensal - salario;
   const btn=document.querySelector('[onclick="submitRenda()"]');if(btn)btn.disabled=true;
   try{
-    await apiSaveRenda({salario,outras,rendaMensal,extra,ano:CFG.ANO});
-    if(extra.length)await apiRows(CFG.SH.EXTRA,extra.map(e=>[e.mes,e.cat,e.valor,CFG.ANO]));
-    toast('Cadastro finalizado! 🎉','success');
+    await apiSaveRenda({salario,outras,rendaMensal,fontes:_rendaFontes,ano:CFG.ANO});
+    toast('Renda salva! 🎉','success');
     markNavDone('renda');
-    setTimeout(()=>goPanel('vidarica'),900);
   }catch(e){toast('Erro: '+e.message,'error');}
   finally{if(btn)btn.disabled=false;}
 }
@@ -1670,23 +1723,72 @@ async function submitRenda(){
    RENDA — carregar valores existentes
 ═══════════════════════════════════════════ */
 let _rendaMensalCache = 0;
-let _rendaLoadedFor = null; // evita re-fetch que limpa o que o usuário digitou
+let _rendaLoadedFor = null;
 async function loadRendaPanel(force){
   const key = cid()+'|'+CFG.ANO;
-  if(!force && _rendaLoadedFor===key) return;
+  if(!force && _rendaLoadedFor===key){ renderRendaFontes(); return; }
   try{
     const r = await gGet('getRenda',{ano:CFG.ANO,clienteId:cid()});
     const renda = r?.renda;
-    if(!renda){ _rendaLoadedFor=key; return; }
-    const dt = renda.data || {};
-    // Só preenche inputs que estão VAZIOS — nunca sobrescreve o que o usuário digitou
-    const fillMoney = (id,v)=>{ const el=gel(id); if(el && v>0 && !el.value.trim() && document.activeElement!==el) el.value = Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); };
-    fillMoney('rendaSalario', renda.salario||0);
-    fillMoney('rendaOutras', renda.outras||0);
-    fillMoney('rendaMensal', dt.rendaMensal||0);
-    _rendaMensalCache = Number(dt.rendaMensal||0);
+    const dt = renda?.data || {};
+    // Preferência: data.fontes; fallback: salario+outras+rendaMensal
+    if(Array.isArray(dt.fontes) && dt.fontes.length){
+      _rendaFontes = dt.fontes.map((f,idx)=>({nome:f.nome||(idx===0?'Salário / Pró-labore':''), valor:Number(f.valor)||0, fixed: idx===0}));
+    } else if(renda){
+      _rendaFontes = [{nome:'Salário / Pró-labore', valor:Number(renda.salario||0), fixed:true}];
+      const outras = Number(renda.outras||0);
+      if(outras>0) _rendaFontes.push({nome:'Outras rendas', valor:outras});
+    } else {
+      _rendaFontes = [{nome:'Salário / Pró-labore', valor:0, fixed:true}];
+    }
     _rendaLoadedFor = key;
-  }catch{}
+  }catch{
+    _rendaFontes = [{nome:'Salário / Pró-labore', valor:0, fixed:true}];
+  }
+  renderRendaFontes();
+}
+
+/* ═══════════════════════════════════════════
+   CARTÕES DE CRÉDITO — painel de gerência
+═══════════════════════════════════════════ */
+function renameCartao(oldName){
+  const nv = (prompt('Novo nome para o cartão:', oldName)||'').trim();
+  if(!nv || nv===oldName) return;
+  const list = loadCartoes();
+  const i = list.indexOf(oldName);
+  if(i<0) return;
+  if(list.some(c=>c.toLowerCase()===nv.toLowerCase() && c!==oldName)){ toast('Já existe um cartão com esse nome.','error'); return; }
+  list[i] = nv;
+  localStorage.setItem(CARTOES_KEY(), JSON.stringify(list));
+  renderCartoes(); toast('Cartão renomeado.','success');
+}
+function removeCartao(name){
+  if(!confirm(`Remover o cartão "${name}"? Lançamentos já importados serão mantidos.`)) return;
+  const list = loadCartoes().filter(c=>c!==name);
+  localStorage.setItem(CARTOES_KEY(), JSON.stringify(list));
+  renderCartoes(); toast('Cartão removido.','info');
+}
+function addCartao(){
+  const el = gel('cartaoNome'); const n = (el?.value||'').trim();
+  if(!n){ toast('Informe o nome do cartão.','error'); return; }
+  const list = loadCartoes();
+  if(list.some(c=>c.toLowerCase()===n.toLowerCase())){ toast('Cartão já cadastrado.','info'); return; }
+  list.push(n); localStorage.setItem(CARTOES_KEY(), JSON.stringify(list));
+  if(el) el.value=''; renderCartoes(); toast('Cartão adicionado.','success');
+}
+function renderCartoes(){
+  const tb = gel('cartoesTbody'); if(!tb) return;
+  const list = loadCartoes();
+  if(!list.length){ tb.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--text-muted);padding:18px">Nenhum cartão cadastrado.</td></tr>'; return; }
+  tb.innerHTML = list.map(c=>`
+    <tr>
+      <td><span style="font-size:1.05rem;margin-right:6px">💳</span>${esc(c)}</td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="btn btn-g btn-xs" onclick="renameCartao('${esc(c).replace(/'/g,'&#39;')}')">✎ Editar</button>
+        <button class="btn btn-d btn-xs" onclick="removeCartao('${esc(c).replace(/'/g,'&#39;')}')">✕</button>
+      </td>
+    </tr>
+  `).join('');
 }
 
 /* ═══════════════════════════════════════════
