@@ -2082,8 +2082,34 @@ function clearImport(){
    DESPESAS LANÇADAS (listagem)
 ═══════════════════════════════════════════ */
 let _lancRows = [];
+
+function fillLancCategoriaSelect(){
+  const sel=gel('lancFiltroCategoria');if(!sel)return;
+  const cats=getCats();
+  let html='<option value="">Todas</option>';
+  Object.entries(cats).forEach(([grp,items])=>{
+    items.forEach(item=>{
+      html+=`<option value="${esc(grp)} · ${esc(item)}">${esc(item)}</option>`;
+    });
+  });
+  const cur=sel.value;
+  sel.innerHTML=html;
+  if(cur)sel.value=cur;
+}
+function fillLancBancoSelect(){
+  const sel=gel('lancFiltroBanco');if(!sel)return;
+  const list=loadBancos();
+  let html='<option value="">Todos</option>';
+  list.forEach(b=>{html+=`<option value="${esc(b)}">${esc(b)}</option>`;});
+  const cur=sel.value;
+  sel.innerHTML=html;
+  if(cur)sel.value=cur;
+}
+
 async function loadDespesasLancadas(){
   const tb=gel('lancTbody');if(!tb)return;
+  fillLancCategoriaSelect();
+  fillLancBancoSelect();
   tb.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:20px">Carregando...</td></tr>';
   try{
     const r=await gGet('getDespesas',{clienteId:cid()});
