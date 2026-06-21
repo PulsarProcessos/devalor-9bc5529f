@@ -273,16 +273,26 @@ export async function handleAction(action: string, params: Record<string, any>, 
 
     if (target === "dividas") {
       // row: [banco, desc, vs, pt, vp, sd, juros, up, tp, ano]
-      const recs = rows.map((r: any) => ({
-        cliente_id: clienteId,
-        credor: String(r[0] || ""),
-        tipo: String(r[1] || "") || null,
-        saldo_devedor: Number(r[5] || 0),
-        taxa_juros: r[6] != null ? Number(r[6]) : null,
-        parcelas_restantes: r[3] != null ? Number(r[3]) : null,
-        valor_parcela: r[4] != null ? Number(r[4]) : null,
-        status: "ativa",
-      }));
+      const recs = rows.map((r: any) => {
+        const vs = Number(r[2] || 0);
+        const sd = Number(r[5] || 0);
+        const tp = Number(r[8] || 0);
+        return {
+          cliente_id: clienteId,
+          credor: String(r[0] || ""),
+          tipo: String(r[1] || "") || null,
+          valor_original: vs || (sd + tp) || null,
+          saldo_devedor: sd,
+          taxa_juros: r[6] != null ? Number(r[6]) : null,
+          parcelas_totais: r[3] != null ? Number(r[3]) : null,
+          parcelas_restantes: r[3] != null ? Number(r[3]) : null,
+          parcelas_pagas: 0,
+          valor_parcela: r[4] != null ? Number(r[4]) : null,
+          ultima_parcela: r[7] != null ? Number(r[7]) : null,
+          total_pago: tp,
+          status: sd <= 0 && tp > 0 ? "quitada" : "ativa",
+        };
+      });
       const { error } = await supabaseAdmin.from("dividas").insert(recs);
       if (error) return json({ error: error.message });
       return json({ ok: true, count: recs.length });
@@ -591,6 +601,30 @@ export async function handleAction(action: string, params: Record<string, any>, 
     if (!id) return json({ error: "id obrigatório." });
     await supabaseAdmin.from("dividas").delete().eq("id", id).eq("cliente_id", clienteId);
     return json({ ok: true });
+  }
+  if (action === "registerDividaPagamento") {
+    const id = params.id;
+    const valor = Number(params.valor || 0);
+    if (!id || valor <= 0) return json({ error: "id e valor obrigatórios." });
+    const { data: d, error: e1 } = await supabaseAdmin.from("dividas").select("*")
+      .eq("id", id).eq("cliente_id", clienteId).maybeSingle();
+    if (e1 || !d) return json({ error: e1?.message || "Dívida não encontrada." });
+    const novoSaldo = Math.max(0, Number(d.saldo_devedor || 0) - valor);
+    const novoTotalPago = Number(d.total_pago || 0) + valor;
+    const parcRest = d.parcelas_restantes != null ? Math.max(0, Number(d.parcelas_restantes) - 1) : null;
+    const parcPagas = Number(d.parcelas_pagas || 0) + 1;
+    const status = novoSaldo <= 0 ? "quitada" : (d.status || "ativa");
+    const { error: e2 } = await supabaseAdmin.from("dividas").update({
+      saldo_devedor: novoSaldo,
+      total_pago: novoTotalPago,
+      parcelas_restantes: parcRest,
+      parcelas_pagas: parcPagas,
+      ultima_parcela: valor,
+      status,
+      updated_at: new Date().toISOString(),
+    }).eq("id", id).eq("cliente_id", clienteId);
+    if (e2) return json({ error: e2.message });
+    return json({ ok: true, saldo_devedor: novoSaldo, total_pago: novoTotalPago, status });
   }
 
   /* ── NEW: EXTRAORDINÁRIO ── */
