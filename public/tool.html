@@ -2648,9 +2648,13 @@ async function loadAllPlanejamento(){
     _planAllRows = r?.rows || [];
   }catch{ _planAllRows=[]; }
 }
-function renderPlanejamentoMes(){
+let _planRenderedKey = null;
+function renderPlanejamentoMes(force){
   const ms=gel('planMesSel'), as=gel('planAnoSel'), c=gel('planGroups'); if(!c||!ms||!as) return;
   const mes=ms.value, ano=as.value;
+  const key = `${mes}|${ano}`;
+  if(!force && _planRenderedKey===key && c.querySelector('[data-grupo]')) { updatePlanTotal(); return; }
+  _planRenderedKey = key;
   const cats=getCats(); // {grupo: [cat,...]}
   const existing = _planAllRows.filter(r=>String(r.mes||'').toUpperCase()===mes && String(r.ano||'')===ano);
   const valOf = (grupo,cat)=>{
