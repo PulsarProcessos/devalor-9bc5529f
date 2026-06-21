@@ -1737,7 +1737,7 @@ async function loadQuitacao(){
           <div><div style="color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;font-size:.66rem">Parcela</div><div class="mono" style="font-weight:600">${fBRL(d.valor_parcela||0)}</div></div>
         </div>
         <div style="display:flex;gap:6px;border-top:1px solid var(--border-subtle);padding-top:10px">
-          ${quitada?'':`<button class="btn btn-p btn-xs" style="flex:1" onclick="openPagamentoDivida('${d.id}','${esc(d.credor||'').replace(/'/g,&quot;&#39;&quot;)}',${Number(d.valor_parcela||0)})">＄ Registrar pagamento</button>`}
+          ${quitada?'':`<button class="btn btn-p btn-xs" style="flex:1" onclick="openPagamentoDivida(${idx})">＄ Registrar pagamento</button>`}
           <button class="btn btn-d btn-xs" onclick="deleteDivida('${d.id}')">✕</button>
         </div>
       </article>`;
