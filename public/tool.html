@@ -2051,7 +2051,7 @@ function renderDespesasLancadas(){
     return true;
   });
   if(!filtered.length){
-    tb.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:20px">Nenhuma despesa encontrada.</td></tr>';
+    tb.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:20px">Nenhuma despesa encontrada.</td></tr>';
     gel('lancTotal').textContent='Total: '+fBRL(0);
     return;
   }
@@ -2059,19 +2059,30 @@ function renderDespesasLancadas(){
   tb.innerHTML=filtered.map(r=>{
     const v=Number(r.valor||0);total+=v;
     const cat=r.grupo?`${r.grupo} · ${r.categoria||''}`:(r.categoria||'—');
-    return `<tr>
+    const bcoCar = r.cartao ? `💳 ${esc(r.cartao)}` : esc(r.banco||'—');
+    const parc = (r.parcela_n && r.parcela_total) ? `${r.parcela_n}/${r.parcela_total}` : '—';
+    const pago = r.pago===true;
+    return `<tr style="${pago?'opacity:.75':''}">
       <td>${fDate(r.data)}</td>
       <td>${esc(r.descricao||'')}</td>
       <td>${esc(cat)}</td>
       <td class="mono" style="text-align:right">${fBRL(v)}</td>
       <td>${esc(r.forma_pagamento||'—')}</td>
-      <td>${esc(r.banco||'—')}</td>
+      <td>${bcoCar}</td>
       <td>${esc(r.mes||'—')}</td>
+      <td class="mono" style="text-align:center">${parc}</td>
+      <td style="text-align:center"><input type="checkbox" ${pago?'checked':''} onchange="toggleLancPago('${r.id}',this.checked)" style="accent-color:var(--brand);width:15px;height:15px;cursor:pointer"/></td>
       <td>${origemLbl(r.origem)}</td>
       <td><button class="btn btn-d btn-xs" onclick="deleteDespesaLanc('${r.id}')">✕</button></td>
     </tr>`;
   }).join('');
   gel('lancTotal').textContent='Total: '+fBRL(total);
+}
+async function toggleLancPago(id,pago){
+  try{
+    await gPost('toggleDespesaPaga',{id,pago,clienteId:cid()});
+    const r=_lancRows.find(x=>x.id===id);if(r)r.pago=pago;
+  }catch(e){toast('Erro: '+e.message,'error');renderDespesasLancadas();}
 }
 async function deleteDespesaLanc(id){
   if(!confirm('Excluir esta despesa?'))return;
