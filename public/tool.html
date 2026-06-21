@@ -2572,32 +2572,128 @@ function switchPainelView(view,btn){
 
 async function loadPainelData(){
   const mes=gel('painelMes')?.value;if(!mes)return;
-  ['pcRPlan','pcRReal','pcRDiff','pcOPlan','pcOReal','pcODiff','pcNPlan','pcNReal','pcNDiff','pcIPlan','pcIReal','pcIDiff','saldoPlan','saldoReal','saldoDiff'].forEach(id=>{
-    const el=gel(id);if(el){el.textContent='R$ —';el.className=el.className.replace(/\s*(pos|neg)/g,'');}
-  });
+  const ano=String(CFG.ANO);
   try{
-    const data=await apiGetPainel(mes);
-    if(!data||data.error){toast('Sem dados para '+mes+'.','info');return;}
-    const gs=[
-      {key:'receitas',pId:'pcRPlan',rId:'pcRReal',dId:'pcRDiff',rec:true},
-      {key:'obrigatorias',pId:'pcOPlan',rId:'pcOReal',dId:'pcODiff',rec:false},
-      {key:'naoobl',pId:'pcNPlan',rId:'pcNReal',dId:'pcNDiff',rec:false},
-      {key:'invest',pId:'pcIPlan',rId:'pcIReal',dId:'pcIDiff',rec:false},
+    const [data,despR]=await Promise.all([
+      apiGetPainel(mes).catch(()=>null),
+      gPost('getDespesas',{}).catch(()=>({rows:[]})),
+    ]);
+    const d=data||{};
+    const rec=d.receitas||{}, obl=d.obrigatorias||{}, noo=d.naoobl||{}, inv=d.invest||{};
+    const groups=[
+      {key:'rec', lbl:'Receitas',          icon:'📈', plan:Number(rec.planejado||0), real:Number(rec.realizado||0), positive:true},
+      {key:'obl', lbl:'Obrigatórias',      icon:'🏠', plan:Number(obl.planejado||0), real:Number(obl.realizado||0), positive:false},
+      {key:'noo', lbl:'Não Obrigatórias',  icon:'🎯', plan:Number(noo.planejado||0), real:Number(noo.realizado||0), positive:false},
+      {key:'inv', lbl:'Investimentos',     icon:'💎', plan:Number(inv.planejado||0), real:Number(inv.realizado||0), positive:true},
     ];
-    let pp=0,rp=0,pn=0,rn=0;
-    gs.forEach(g=>{
-      const gr=data[g.key]||{},p=Number(gr.planejado||0),r=Number(gr.realizado||0);
-      const diff=g.rec?(r-p):(p-r);
-      const st=(id,t)=>{const e=gel(id);if(e)e.textContent=t;};
-      st(g.pId,fBRL(p));st(g.rId,fBRL(r));
-      const de=gel(g.dId);
-      if(de){de.textContent=(diff>=0?'+':'')+fBRL(diff);de.className=de.className.replace(/\s*(pos|neg)/g,'');de.classList.add(diff>=0?'pos':'neg');}
-      if(g.rec){pp+=p;rp+=r;}else{pn+=p;rn+=r;}
-    });
-    const sp=pp-pn,sr=rp-rn,sd=sr-sp;
-    const st=(id,t)=>{const e=gel(id);if(e)e.textContent=t;};
-    st('saldoPlan',fBRL(sp));st('saldoReal',fBRL(sr));st('saldoDiff',fBRL(Math.abs(sd)));
-    const se=gel('saldoDiff');if(se)se.style.color=sd>=0?'var(--success)':'var(--danger)';
+
+    // 4 cards de grupo
+    const grid=gel('painelGroupsGrid');
+    if(grid){
+      grid.innerHTML=groups.map(g=>{
+        // Para receitas/invest, "bom" = realizado >= planejado. Para despesas, "bom" = realizado <= planejado.
+        const diff = g.real - g.plan;
+        const isGood = g.positive ? diff>=0 : diff<=0;
+        const pct = g.plan>0 ? Math.round((g.real/g.plan)*100) : (g.real>0?100:0);
+        const arrow = diff===0?'→':(diff>0?'▲':'▼');
+        const color = isGood ? '#16a34a' : '#dc2626';
+        const bg = isGood ? 'rgba(22,163,74,.08)' : 'rgba(220,38,38,.08)';
+        const sinal = diff>0?'+':(diff<0?'−':'');
+        const barColor = g.positive
+          ? (pct>=100?'#16a34a':(pct>=70?'#eab308':'#dc2626'))
+          : (pct<=70?'#16a34a':(pct<=100?'#eab308':'#dc2626'));
+        return `<article style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${barColor}"></div>
+          <div style="display:flex;justify-content:space-between;align-items:start">
+            <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:600">${g.icon} ${g.lbl}</div></div>
+            <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:.72rem;font-weight:700;background:${bg};color:${color}">${arrow} ${sinal}${fBRL(Math.abs(diff))}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.78rem"><span style="color:var(--text-muted)">Planejado</span><span class="mono" style="font-weight:600">${fBRL(g.plan)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:.78rem"><span style="color:var(--text-muted)">Realizado</span><span class="mono" style="font-weight:700;color:${color}">${fBRL(g.real)}</span></div>
+          <div style="height:6px;background:var(--bg-muted,#eef2f7);border-radius:99px;overflow:hidden"><div style="height:100%;width:${Math.min(150,pct)}%;background:${barColor};transition:width .4s"></div></div>
+          <div style="font-size:.7rem;color:var(--text-muted);text-align:right">${pct}% do planejado</div>
+        </article>`;
+      }).join('');
+    }
+
+    // Saldo (receitas - despesas)
+    const despPlan = groups[1].plan + groups[2].plan + groups[3].plan;
+    const despReal = groups[1].real + groups[2].real + groups[3].real;
+    const sp = groups[0].plan - despPlan;
+    const sr = groups[0].real - despReal;
+    const sDiff = sr - sp;
+    const setTxt=(id,v,clr)=>{const e=gel(id);if(e){e.textContent=fBRL(v); if(clr) e.style.color=clr;}};
+    setTxt('saldoPlan', sp, sp>=0?'#16a34a':'#dc2626');
+    setTxt('saldoReal', sr, sr>=0?'#16a34a':'#dc2626');
+    setTxt('saldoDiff', sDiff, sDiff>=0?'#16a34a':'#dc2626');
+    const despDiff = despReal - despPlan; // positivo = gastou mais que planejou (ruim)
+    setTxt('despDiff', despDiff, despDiff<=0?'#16a34a':'#dc2626');
+    const ds=gel('despDiffSub');
+    if(ds){
+      ds.textContent = despDiff===0?'No alvo'
+        : despDiff>0 ? `▲ ${fBRL(despDiff)} acima do planejado`
+                     : `▼ ${fBRL(Math.abs(despDiff))} abaixo do planejado`;
+      ds.style.color = despDiff<=0?'#16a34a':'#dc2626';
+    }
+
+    // Realizado vs Projetado (despesas totais)
+    const rvpBars=gel('rvpBars');
+    if(rvpBars){
+      const maxV = Math.max(despPlan, despReal, 1);
+      const pctReal = Math.round((despReal/maxV)*100);
+      const pctPlan = Math.round((despPlan/maxV)*100);
+      rvpBars.innerHTML=`
+        <div><div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:4px"><span style="color:var(--text-muted)">Projetado (despesas)</span><span class="mono" style="font-weight:600">${fBRL(despPlan)}</span></div><div style="height:14px;background:var(--bg-muted,#eef2f7);border-radius:99px;overflow:hidden"><div style="height:100%;width:${pctPlan}%;background:linear-gradient(90deg,#64748b,#94a3b8)"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:4px"><span style="color:var(--text-muted)">Realizado (despesas)</span><span class="mono" style="font-weight:700;color:${despDiff>0?'#dc2626':'#16a34a'}">${fBRL(despReal)}</span></div><div style="height:14px;background:var(--bg-muted,#eef2f7);border-radius:99px;overflow:hidden"><div style="height:100%;width:${pctReal}%;background:linear-gradient(90deg,${despDiff>0?'#dc2626,#f97316':'#16a34a,#22c55e'})"></div></div></div>`;
+      const st=gel('rvpStatus');
+      if(st){
+        if(despPlan===0){ st.textContent='Sem planejamento'; st.style.background='var(--bg-muted,#eef2f7)'; st.style.color='var(--text-muted)'; }
+        else if(despDiff>0){ st.textContent=`▲ ${Math.round((despDiff/despPlan)*100)}% acima`; st.style.background='rgba(220,38,38,.12)'; st.style.color='#dc2626'; }
+        else if(despDiff<0){ st.textContent=`▼ ${Math.round((Math.abs(despDiff)/despPlan)*100)}% abaixo`; st.style.background='rgba(22,163,74,.12)'; st.style.color='#16a34a'; }
+        else { st.textContent='No alvo'; st.style.background='rgba(22,163,74,.12)'; st.style.color='#16a34a'; }
+      }
+    }
+
+    // Resumo cartões — agrupa despesas do mês com cartao preenchido (ou forma_pagamento=Cartão de Crédito)
+    const cartoesBox=gel('cartoesResumo');
+    if(cartoesBox){
+      const despAll = despR?.rows || [];
+      const isCard = (r)=> (r.cartao && String(r.cartao).trim()) || /cart[ãa]o/i.test(String(r.forma_pagamento||''));
+      const ofMonth = despAll.filter(r=>{
+        if(!isCard(r)) return false;
+        const m = String(r.mes_pagamento||r.mes||'').toUpperCase();
+        const a = String(r.ano||'');
+        return m===mes && (!a || a===ano);
+      });
+      if(!ofMonth.length){
+        cartoesBox.innerHTML=`<div style="grid-column:1/-1;padding:18px;text-align:center;color:var(--text-muted);font-size:.85rem">Sem lançamentos no cartão neste mês.</div>`;
+      } else {
+        const byCard={};
+        ofMonth.forEach(r=>{
+          const key=String(r.cartao||'Cartão').trim()||'Cartão';
+          if(!byCard[key]) byCard[key]={total:0,count:0,pagos:0};
+          byCard[key].total += Number(r.valor||0);
+          byCard[key].count += 1;
+          if(r.pago) byCard[key].pagos += 1;
+        });
+        const totalFatura=Object.values(byCard).reduce((s,c)=>s+c.total,0);
+        cartoesBox.innerHTML=Object.entries(byCard).map(([nome,c])=>`
+          <div style="background:var(--bg-muted,#f5f7fa);border-radius:12px;padding:14px">
+            <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-weight:600">💳 ${esc(nome)}</div>
+            <div class="mono" style="font-size:1.15rem;font-weight:700;margin-top:4px">${fBRL(c.total)}</div>
+            <div style="font-size:.72rem;color:var(--text-muted);margin-top:4px">${c.count} lançamento(s) · ${c.pagos} pago(s)</div>
+          </div>
+        `).join('') + `<div style="grid-column:1/-1;padding-top:8px;border-top:1px dashed var(--border-subtle);display:flex;justify-content:space-between;font-weight:700"><span>Fatura total do mês</span><span class="mono" style="color:var(--brand,#7c3aed)">${fBRL(totalFatura)}</span></div>`;
+      }
+    }
+
+    // Consolidado geral
+    const setCons=(id,v)=>{const e=gel(id);if(e)e.textContent=v;};
+    setCons('consMes', mes[0]+mes.slice(1).toLowerCase()+'/'+ano);
+    setCons('consReceitas', fBRL(groups[0].real));
+    setCons('consDespesas', fBRL(groups[1].real+groups[2].real));
+    setCons('consInvest', fBRL(groups[3].real));
+    setCons('consSaldo', fBRL(sr));
   }catch(e){toast('Erro: '+e.message,'error');}
 }
 
