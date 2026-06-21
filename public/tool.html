@@ -724,7 +724,7 @@ img,svg{display:block;max-width:100%}
           </div>
           <div class="parcel-row">
             <label class="toggle-lbl"><input type="checkbox" id="chkParcelado" onchange="toggleParcelado(this.checked)"/><span class="toggle-sl"></span>Despesa parcelada</label>
-            <div class="parcel-fields hidden" id="parcelFields"><div class="field"><label class="lbl">Nº total de parcelas</label><input class="inp inp-sm" type="number" id="despNParcelas" min="2" max="120" placeholder="Ex: 12" oninput="genPreview()"/></div></div>
+            <div class="parcel-fields hidden" id="parcelFields"><div class="field"><label class="lbl">Nº total de parcelas</label><input class="inp inp-sm" type="number" id="despNParcelas" min="2" max="120" placeholder="Ex: 12" oninput="schedulePreview()"/></div></div>
           </div>
           <div class="form-footer">
             <button class="btn btn-g" onclick="clearDespForm()">Limpar</button>
@@ -1670,17 +1670,22 @@ async function submitRenda(){
    RENDA — carregar valores existentes
 ═══════════════════════════════════════════ */
 let _rendaMensalCache = 0;
-async function loadRendaPanel(){
+let _rendaLoadedFor = null; // evita re-fetch que limpa o que o usuário digitou
+async function loadRendaPanel(force){
+  const key = cid()+'|'+CFG.ANO;
+  if(!force && _rendaLoadedFor===key) return;
   try{
     const r = await gGet('getRenda',{ano:CFG.ANO,clienteId:cid()});
     const renda = r?.renda;
-    if(!renda) return;
+    if(!renda){ _rendaLoadedFor=key; return; }
     const dt = renda.data || {};
-    const fillMoney = (id,v)=>{ const el=gel(id); if(el && v>0) el.value = Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); };
+    // Só preenche inputs que estão VAZIOS — nunca sobrescreve o que o usuário digitou
+    const fillMoney = (id,v)=>{ const el=gel(id); if(el && v>0 && !el.value.trim() && document.activeElement!==el) el.value = Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); };
     fillMoney('rendaSalario', renda.salario||0);
     fillMoney('rendaOutras', renda.outras||0);
     fillMoney('rendaMensal', dt.rendaMensal||0);
     _rendaMensalCache = Number(dt.rendaMensal||0);
+    _rendaLoadedFor = key;
   }catch{}
 }
 
@@ -2113,6 +2118,8 @@ function renderPrev(rows){
   });
 }
 function clearPrev(){gel('prevTitle')?.classList.add('hidden');gel('prevTable')?.classList.add('hidden');const t=gel('prevTbody');if(t)t.innerHTML='';}
+let _previewTimer=null;
+function schedulePreview(){ if(_previewTimer)clearTimeout(_previewTimer); _previewTimer=setTimeout(()=>{ const r=buildDespRows(); if(r) renderPrev(r); },280); }
 function genPreview(){
   const r=buildDespRows();if(!r)return;
   renderPrev(r);
@@ -2193,45 +2200,48 @@ function handleFileSelect(file){
 
 /* Parser tolerante: detecta cabeçalho mesmo em faturas de cartão.
    Fallback: se não achar cabeçalho, varre como linhas livres com regex de data. */
+const _SKIP_LINE_RE = /(total\s+da\s+fatura|pagamento\s+recebido|saldo\s+anterior|subtotal|saldo\s+atual|limite\s+(?:dispon|de\s+cr)|pr[óo]xima\s+fatura|encargos|juros\s+rotativ)/i;
+
 function processImportSheet(aoa,fname){
   if(!aoa||!aoa.length){toast('Arquivo vazio.','error');return;}
   const isCartao = _importSource==='cartao';
 
   // 1) Tenta detectar cabeçalho
   let hdrIdx=-1, hdr=null;
-  for(let i=0;i<Math.min(aoa.length,50);i++){
+  for(let i=0;i<Math.min(aoa.length,60);i++){
     const cells=(aoa[i]||[]).map(c=>String(c||'').toLowerCase().trim());
     const hasData=cells.some(c=>/^data\b|^date\b|dt\.?\s*compra|dt\.?\s*lan[çc]/.test(c));
-    const hasMov =cells.some(c=>/sa[íi]da|d[ée]bito|debit|^valor|amount|^vl|montante|total|r\$/.test(c));
-    const hasDesc=cells.some(c=>/descri|hist[óo]rico|lan[çc]amento|t[íi]tulo|memo|estabelecimento|fornecedor/.test(c));
-    if(hasData&&hasMov&&(hasDesc||isCartao)){hdrIdx=i;hdr=cells;break;}
+    const hasMov =cells.some(c=>/sa[íi]da|d[ée]bito|debit|^valor\b|amount|^vl\b|montante|^total\b|r\$/.test(c));
+    const hasDesc=cells.some(c=>/descri|hist[óo]rico|lan[çc]amento|t[íi]tulo|memo|estabelecimento|fornecedor|merchant/.test(c));
+    // Para cartão, descrição é opcional (alguns formatos só têm Data+Valor+Categoria)
+    if(hasData && (hasMov||isCartao) && (hasDesc||isCartao)){hdrIdx=i;hdr=cells;break;}
   }
 
   const rows=[];
   if(hdrIdx>=0){
     const idxOf=(re)=>hdr.findIndex(c=>re.test(c));
     const iData =idxOf(/^data\b|^date\b|dt\.?\s*compra|dt\.?\s*lan[çc]/);
-    let iDesc  = idxOf(/descri|hist[óo]rico|lan[çc]amento|t[íi]tulo|memo|estabelecimento|fornecedor/);
+    let iDesc  = idxOf(/descri|hist[óo]rico|lan[çc]amento|t[íi]tulo|memo|estabelecimento|fornecedor|merchant/);
     if(iDesc<0) iDesc = iData+1;
     const iSaida=idxOf(/sa[íi]da/);
     const iDeb  =idxOf(/d[ée]bito|debit/);
     const iEnt  =idxOf(/entrada|cr[ée]dito|credit/);
-    // valor R$ preferencial sobre valor US$
     const iValBr= hdr.findIndex(c=>/valor.*(r\$|brl|reais)/.test(c));
-    const iVal  = iValBr>=0 ? iValBr : idxOf(/^valor|^vl|amount|montante|^total/);
+    const iVal  = iValBr>=0 ? iValBr : idxOf(/^valor\b|^vl\b|amount|montante|^total\b/);
 
     for(let i=hdrIdx+1;i<aoa.length;i++){
       const r=aoa[i]||[];
       const dt=String(r[iData]||'').trim();
       if(!dt||!/\d/.test(dt))continue;
       const desc=String(r[iDesc]||'').trim();
+      if(desc && _SKIP_LINE_RE.test(desc)) continue;
       let valor=0;
       if(isCartao){
         const v = iVal>=0 ? pMoney(r[iVal])
                : iDeb>=0 ? pMoney(r[iDeb])
                : iSaida>=0 ? pMoney(r[iSaida]) : 0;
         if(v===0)continue;
-        if(v<0)continue; // pagamento/estorno
+        if(v<0)continue;
         valor=Math.abs(v);
       } else if(iSaida>=0){
         const s=pMoney(r[iSaida]); if(s>0)valor=s; else continue;
@@ -2243,47 +2253,53 @@ function processImportSheet(aoa,fname){
         else if(iEnt<0)valor=Math.abs(v);
         else continue;
       } else continue;
-      if(valor<=0||!desc)continue;
-      rows.push({data:dt,desc,valor});
+      if(valor<=0)continue;
+      if(!desc && !isCartao)continue;
+      rows.push({data:dt,desc:desc||'Lançamento',valor});
     }
   }
 
-  // 2) Fallback heurístico: percorre linhas e identifica padrão data/descr/valor
+  // 2) Fallback heurístico
   if(!rows.length){
     const dateRe=/^\d{1,2}[\/\-\.]\d{1,2}([\/\-\.]\d{2,4})?$/;
+    // Aceita 1234,56 / 1.234,56 / 1234.56 / 1,234.56 / R$ ...
     const valRe =/^-?(r\$\s*)?[\d\.\,]+$/i;
     for(const r0 of aoa){
       const r=(r0||[]).map(c=>String(c==null?'':c).trim());
       if(r.length<2)continue;
-      // acha célula de data
+      const joined = r.join(' ');
+      if(_SKIP_LINE_RE.test(joined))continue;
       const di=r.findIndex(c=>dateRe.test(c));
       if(di<0)continue;
-      // acha última célula numérica como valor
       let vi=-1;
-      for(let j=r.length-1;j>=0;j--){if(valRe.test(r[j].replace(/\s+/g,''))){vi=j;break;}}
+      for(let j=r.length-1;j>=0;j--){if(valRe.test(r[j].replace(/\s+/g,''))&&/\d/.test(r[j])){vi=j;break;}}
       if(vi<0||vi===di)continue;
       const val=pMoney(r[vi]);
+      if(!val)continue;
       if(isCartao){if(val<=0)continue;}
       else {if(val>=0)continue;}
       const desc=r.filter((_,k)=>k!==di&&k!==vi).join(' ').replace(/\s+/g,' ').trim();
-      if(!desc)continue;
-      rows.push({data:r[di],desc,valor:Math.abs(val)});
+      if(!desc && !isCartao)continue;
+      rows.push({data:r[di],desc:desc||'Lançamento',valor:Math.abs(val)});
     }
   }
 
   finishImportRows(rows,fname);
 }
 
-/* PDF: regex por linha — formato típico "dd/mm/aaaa  descrição ...  -1.234,56" */
+/* PDF: regex por linha — aceita data dd/mm[/aaaa] e valor com ou sem vírgula */
 function processImportPdfLines(lines,fname){
   const rows=[];
-  const dateRe=/^(\d{2}\/\d{2}\/\d{2,4})\s+(.+?)\s+(-?(?:r\$\s*)?[\d\.]+,\d{2})(?:\s+(-?(?:r\$\s*)?[\d\.]+,\d{2}))?\s*$/i;
+  const dateRe=/^(\d{2}\/\d{2}(?:\/\d{2,4})?)\s+(.+?)\s+(-?(?:r\$\s*)?[\d\.]+(?:,\d{2})?)(?:\s+(-?(?:r\$\s*)?[\d\.]+(?:,\d{2})?))?\s*$/i;
   const isCartao = _importSource==='cartao';
   for(const ln of lines){
+    if(_SKIP_LINE_RE.test(ln))continue;
     const m=ln.match(dateRe);
     if(!m)continue;
-    const dt=m[1], desc=m[2].trim();
+    let dt=m[1], desc=m[2].trim();
+    if(!/\/\d{2,4}$/.test(dt)){ dt = dt + '/' + (CFG.ANO||new Date().getFullYear()); }
     const lanc=pMoney(m[3]);
+    if(!lanc)continue;
     if(isCartao){
       if(lanc<=0)continue;
       if(/pagamento.*efetuado|cr[ée]dito.*pagto|estorno/i.test(desc))continue;
@@ -2366,7 +2382,16 @@ function updateImportRow(id,field,val){
   const r=_importRows.find(r=>r.id===id);
   if(!r)return;
   if(field==='selected'){r.selected=val;const row=gel(`irow_${id}`);if(row)row.style.opacity=val?'1':'.45';}
-  else if(field==='parc'){r.parc=val;if(val&&(!r.parcN||r.parcN<2))r.parcN=2;renderImportTable();}
+  else if(field==='parc'){
+    r.parc=val;
+    if(val&&(!r.parcN||r.parcN<2))r.parcN=2;
+    // Toggle in-place (sem rebuild da tabela inteira) para preservar foco/digitação
+    const row=gel(`irow_${id}`);
+    if(row){
+      const np=row.querySelector('input[type="number"]');
+      if(np){ np.disabled=!val; if(val) np.value=r.parcN; }
+    }
+  }
   else r[field]=val;
 }
 
@@ -2623,9 +2648,13 @@ async function loadAllPlanejamento(){
     _planAllRows = r?.rows || [];
   }catch{ _planAllRows=[]; }
 }
-function renderPlanejamentoMes(){
+let _planRenderedKey = null;
+function renderPlanejamentoMes(force){
   const ms=gel('planMesSel'), as=gel('planAnoSel'), c=gel('planGroups'); if(!c||!ms||!as) return;
   const mes=ms.value, ano=as.value;
+  const key = `${mes}|${ano}`;
+  if(!force && _planRenderedKey===key && c.querySelector('[data-grupo]')) { updatePlanTotal(); return; }
+  _planRenderedKey = key;
   const cats=getCats(); // {grupo: [cat,...]}
   const existing = _planAllRows.filter(r=>String(r.mes||'').toUpperCase()===mes && String(r.ano||'')===ano);
   const valOf = (grupo,cat)=>{
@@ -2661,12 +2690,12 @@ function updatePlanTotal(){
 async function loadPlanejamentoMes(){
   initPlanejamentoSelectors();
   if(!_planAllRows.length) await loadAllPlanejamento();
-  renderPlanejamentoMes();
+  renderPlanejamentoMes(true); // troca de mês → força rebuild
 }
 async function openPlanejamentoPanel(){
   initPlanejamentoSelectors();
-  await loadAllPlanejamento();
-  renderPlanejamentoMes();
+  if(!_planAllRows.length) await loadAllPlanejamento();
+  renderPlanejamentoMes(false); // mesmo mês? preserva o que o usuário digitou
   checkPlanMonthAlert();
 }
 async function savePlanejamentoMes(){
@@ -2681,7 +2710,7 @@ async function savePlanejamentoMes(){
     await gPost('saveExtraordinario',{mes,ano,rows});
     toast(rows.length?`Planejamento de ${mes}/${ano} salvo (${rows.length} categoria(s)).`:`Planejamento de ${mes}/${ano} limpo.`,'success');
     dismissPlanAlert();
-    await loadAllPlanejamento(); renderPlanejamentoMes();
+    await loadAllPlanejamento(); renderPlanejamentoMes(true);
   }catch(e){toast('Erro: '+e.message,'error');}
 }
 
