@@ -2698,7 +2698,7 @@ function renderDespesasLancadas(){
     return;
   }
   let total=0;
-  const now=new Date(); const curMesIdx=now.getMonth(); const curAno=now.getFullYear();
+  const curMesIdx=curMesIdx0; const curAno=curAno0;
   tb.innerHTML=filtered.map(r=>{
     const v=Number(r.valor||0);total+=v;
     const cat=r.grupo?`${r.grupo} · ${r.categoria||''}`:(r.categoria||'—');
