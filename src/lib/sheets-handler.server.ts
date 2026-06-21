@@ -602,6 +602,30 @@ export async function handleAction(action: string, params: Record<string, any>, 
     await supabaseAdmin.from("dividas").delete().eq("id", id).eq("cliente_id", clienteId);
     return json({ ok: true });
   }
+  if (action === "registerDividaPagamento") {
+    const id = params.id;
+    const valor = Number(params.valor || 0);
+    if (!id || valor <= 0) return json({ error: "id e valor obrigatórios." });
+    const { data: d, error: e1 } = await supabaseAdmin.from("dividas").select("*")
+      .eq("id", id).eq("cliente_id", clienteId).maybeSingle();
+    if (e1 || !d) return json({ error: e1?.message || "Dívida não encontrada." });
+    const novoSaldo = Math.max(0, Number(d.saldo_devedor || 0) - valor);
+    const novoTotalPago = Number(d.total_pago || 0) + valor;
+    const parcRest = d.parcelas_restantes != null ? Math.max(0, Number(d.parcelas_restantes) - 1) : null;
+    const parcPagas = Number(d.parcelas_pagas || 0) + 1;
+    const status = novoSaldo <= 0 ? "quitada" : (d.status || "ativa");
+    const { error: e2 } = await supabaseAdmin.from("dividas").update({
+      saldo_devedor: novoSaldo,
+      total_pago: novoTotalPago,
+      parcelas_restantes: parcRest,
+      parcelas_pagas: parcPagas,
+      ultima_parcela: valor,
+      status,
+      updated_at: new Date().toISOString(),
+    }).eq("id", id).eq("cliente_id", clienteId);
+    if (e2) return json({ error: e2.message });
+    return json({ ok: true, saldo_devedor: novoSaldo, total_pago: novoTotalPago, status });
+  }
 
   /* ── NEW: EXTRAORDINÁRIO ── */
   if (action === "getExtraordinario") {
