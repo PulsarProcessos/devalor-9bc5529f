@@ -366,17 +366,43 @@ export async function handleAction(action: string, params: Record<string, any>, 
     if (sheet === "Vida Rica") {
       const { data } = await supabaseAdmin.from("sonhos").select("*")
         .eq("cliente_id", clienteId).order("created_at", { ascending: true });
-      // formato esperado pelo frontend: row[0..5] = quem,obj,motivo,valor,prazo,tipo
+      // formato esperado pelo frontend: row[0..6] = quem,obj,motivo,valor,prazo,tipo,id
       const rows = (data || []).map((s: any) => {
         const parts = String(s.descricao || "").split(" — ");
         const quem = parts[0] || "";
         const rest = parts.slice(1).join(" — ");
         const [obj, motivo] = rest.split(": ");
-        return [quem, obj || rest, motivo || "", s.valor, s.prazo, s.prioridade];
+        return [quem, obj || rest, motivo || "", s.valor, s.prazo, s.prioridade, s.id];
       });
       return json({ ok: true, rows });
     }
     return json({ ok: true, rows: [] });
+  }
+
+  if (action === "saveSonho") {
+    const r = params.data || {};
+    const payload = {
+      cliente_id: clienteId,
+      descricao: `${r.quem || ""} — ${r.obj || ""}${r.motivo ? ": " + r.motivo : ""}`.trim(),
+      prazo: r.prazo || null,
+      valor: Number(r.valor || 0),
+      prioridade: r.tipo || null,
+      ano: String(r.ano || new Date().getFullYear()),
+    };
+    if (r.id) {
+      const { error } = await supabaseAdmin.from("sonhos").update(payload).eq("id", r.id).eq("cliente_id", clienteId);
+      if (error) return json({ error: error.message });
+    } else {
+      const { error } = await supabaseAdmin.from("sonhos").insert(payload);
+      if (error) return json({ error: error.message });
+    }
+    return json({ ok: true });
+  }
+  if (action === "deleteSonho") {
+    const id = params.id;
+    if (!id) return json({ error: "id obrigatório." });
+    await supabaseAdmin.from("sonhos").delete().eq("id", id).eq("cliente_id", clienteId);
+    return json({ ok: true });
   }
 
   if (action === "getPainel") {
