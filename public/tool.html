@@ -2537,6 +2537,13 @@ async function submitImport(){
     const banco  = isCartao ? null : (_importMeta?.banco||null);
     const mesPag = isCartao ? (_importMeta?.mesPag||null) : null;
 
+    // âncora p/ parcelas no cartão: usar o mês da fatura (mesPag) como mês da 1ª parcela
+    const mesPagIdx = isCartao && mesPag ? CFG.MESES.indexOf(mesPag) : -1;
+    const anoBaseCartao = isCartao ? parseInt(CFG.ANO||new Date().getFullYear(),10) : null;
+    const cartaoAnchorIso = (isCartao && mesPagIdx>=0)
+      ? `${anoBaseCartao}-${String(mesPagIdx+1).padStart(2,'0')}-01`
+      : null;
+
     const recs=[];
     for(const r of selected){
       const isoBase = normDate(r.data);
@@ -2547,13 +2554,16 @@ async function submitImport(){
         const total = r.parcN;
         const per = +(r.valor/total).toFixed(2);
         for(let i=0;i<total;i++){
-          const iso=addMonthsISO(isoBase,i);
+          // Cartão: parcela i cai no mês da fatura + i. Extrato: segue data da compra.
+          const isoMes = (isCartao && cartaoAnchorIso) ? addMonthsISO(cartaoAnchorIso,i) : addMonthsISO(isoBase,i);
+          const mesParc = mesFromISO(isoMes);
+          const anoParc = String((isoMes.split('-')[0])||CFG.ANO);
           recs.push({
-            data:iso, descricao:`${r.desc} ${i+1}/${total}`, valor:per,
+            data:isoBase, descricao:`${r.desc} ${i+1}/${total}`, valor:per,
             categoria:categoria||r.cat||null, grupo:grupo||null,
-            forma_pagamento:fp, banco, cartao, mes:mesFromISO(iso),
-            mes_pagamento: isCartao ? mesFromISO(addMonthsISO(isoBase,i)) : null,
-            ano:String((iso.split('-')[0])||CFG.ANO), origem,
+            forma_pagamento:fp, banco, cartao, mes:mesParc,
+            mes_pagamento: isCartao ? mesParc : null,
+            ano: anoParc, origem,
             parcela_n:i+1, parcela_total:total, parcela_grupo_id:grp, pago:false
           });
         }
@@ -2561,11 +2571,12 @@ async function submitImport(){
         recs.push({
           data:isoBase, descricao:r.desc, valor:r.valor,
           categoria:categoria||r.cat||null, grupo:grupo||null,
-          forma_pagamento:fp, banco, cartao, mes:r.mes,
+          forma_pagamento:fp, banco, cartao, mes: isCartao ? (mesPag||r.mes) : r.mes,
           mes_pagamento: mesPag, ano:String(CFG.ANO), origem, pago:false
         });
       }
     }
+
     if(!recs.length){toast('Não foi possível normalizar as datas dos lançamentos.','error');return;}
     const resp = await gPost('addDespesas',{rows:recs,clienteId:cid()});
     const ins = resp.count||0;
