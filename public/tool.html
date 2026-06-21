@@ -1613,6 +1613,7 @@ function buildExtraOnboarding(){
 
 async function submitRenda(){
   const salario=pMoney(gel('rendaSalario')?.value),outras=pMoney(gel('rendaOutras')?.value);
+  const rendaMensal=pMoney(gel('rendaMensal')?.value);
   const extra=[];
   CFG.MESES.forEach(mes=>{
     CFG.CATS_EXTRA.forEach(cat=>{
