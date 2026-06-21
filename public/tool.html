@@ -2102,15 +2102,17 @@ function origemLbl(o){
 function renderDespesasLancadas(){
   const tb=gel('lancTbody');if(!tb)return;
   const fMes=gel('lancFiltroMes')?.value||'';
-  const fOri=gel('lancFiltroOrigem')?.value||'';
-  const fDesc=(gel('lancFiltroDesc')?.value||'').toLowerCase().trim();
+  const fCat=gel('lancFiltroCategoria')?.value||'';
+  const fBanco=gel('lancFiltroBanco')?.value||'';
+  const fFormaPag=gel('lancFiltroFormaPag')?.value||'';
   const filtered=_lancRows.filter(r=>{
     if(fMes && String(r.mes||'').toUpperCase()!==fMes)return false;
-    if(fOri){
-      if(fOri==='import' && !(r.origem==='import'||r.origem==='import_extrato'))return false;
-      if(fOri!=='import' && r.origem!==fOri)return false;
+    if(fCat){
+      const catFull = r.grupo ? `${r.grupo} · ${r.categoria||''}` : (r.categoria||'');
+      if(catFull!==fCat)return false;
     }
-    if(fDesc && !String(r.descricao||'').toLowerCase().includes(fDesc))return false;
+    if(fBanco && !(r.banco===fBanco || r.cartao===fBanco))return false;
+    if(fFormaPag && String(r.forma_pagamento||'')!==fFormaPag)return false;
     return true;
   });
   if(!filtered.length){
