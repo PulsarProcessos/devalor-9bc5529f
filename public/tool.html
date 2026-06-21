@@ -2690,12 +2690,12 @@ function updatePlanTotal(){
 async function loadPlanejamentoMes(){
   initPlanejamentoSelectors();
   if(!_planAllRows.length) await loadAllPlanejamento();
-  renderPlanejamentoMes();
+  renderPlanejamentoMes(true); // troca de mês → força rebuild
 }
 async function openPlanejamentoPanel(){
   initPlanejamentoSelectors();
-  await loadAllPlanejamento();
-  renderPlanejamentoMes();
+  if(!_planAllRows.length) await loadAllPlanejamento();
+  renderPlanejamentoMes(false); // mesmo mês? preserva o que o usuário digitou
   checkPlanMonthAlert();
 }
 async function savePlanejamentoMes(){
@@ -2710,7 +2710,7 @@ async function savePlanejamentoMes(){
     await gPost('saveExtraordinario',{mes,ano,rows});
     toast(rows.length?`Planejamento de ${mes}/${ano} salvo (${rows.length} categoria(s)).`:`Planejamento de ${mes}/${ano} limpo.`,'success');
     dismissPlanAlert();
-    await loadAllPlanejamento(); renderPlanejamentoMes();
+    await loadAllPlanejamento(); renderPlanejamentoMes(true);
   }catch(e){toast('Erro: '+e.message,'error');}
 }
 
