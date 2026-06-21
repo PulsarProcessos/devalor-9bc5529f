@@ -635,12 +635,21 @@ export async function handleAction(action: string, params: Record<string, any>, 
   }
   if (action === "saveExtraordinario") {
     const rows = Array.isArray(params.rows) ? params.rows : [];
-    await supabaseAdmin.from("extraordinario").delete().eq("cliente_id", clienteId);
+    const scopeMes = params.mes ? String(params.mes).toUpperCase() : null;
+    const scopeAno = params.ano ? String(params.ano) : null;
+    if (scopeMes && scopeAno) {
+      // Substitui apenas o mês/ano alvo (mantém histórico dos demais)
+      await supabaseAdmin.from("extraordinario").delete()
+        .eq("cliente_id", clienteId).eq("mes", scopeMes).eq("ano", scopeAno);
+    } else {
+      // Compat antigo: sem escopo → limpa tudo
+      await supabaseAdmin.from("extraordinario").delete().eq("cliente_id", clienteId);
+    }
     if (rows.length) {
       const recs = rows.map((r: any) => ({
         cliente_id: clienteId,
-        mes: String(r.mes || "").toUpperCase(),
-        ano: String(r.ano || ""),
+        mes: String(r.mes || scopeMes || "").toUpperCase(),
+        ano: String(r.ano || scopeAno || ""),
         categoria: r.categoria || null,
         grupo: r.grupo || null,
         valor_planejado: Number(r.valor_planejado || 0),
@@ -648,7 +657,7 @@ export async function handleAction(action: string, params: Record<string, any>, 
       }));
       await supabaseAdmin.from("extraordinario").insert(recs);
     }
-    return json({ ok: true });
+    return json({ ok: true, count: rows.length });
   }
 
   return json({ error: "Ação desconhecida: " + action });
