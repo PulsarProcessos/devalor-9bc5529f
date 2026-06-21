@@ -2119,6 +2119,8 @@ function chooseImportSource(src){
     const mesNow = CFG.MESES[new Date().getMonth()];
     const ms=gel('impMesPag');if(ms)ms.value=mesNow;
   }
+  // mantém drop-zone visível mas bloqueado
+  const dw=gel('importDropWrap'); if(dw) dw.classList.add('imp-locked');
 }
 function confirmImportMeta(){
   if(_importSource==='cartao'){
@@ -2139,18 +2141,31 @@ function confirmImportMeta(){
     gel('importMetaLbl').textContent = `🏦 ${banco}`;
   }
   gel('importMetaWrap').style.display='none';
-  gel('importDropWrap').style.display='block';
+  const dw=gel('importDropWrap'); if(dw) dw.classList.remove('imp-locked');
   gel('importSourceLbl').textContent = _importSource==='cartao'?'💳 Cartão de crédito':'🏦 Extrato bancário';
+  gel('importDropIcon').textContent = '📂';
+  gel('importDropTitle').textContent = 'Arraste ou clique para selecionar o arquivo';
   gel('importDropSub').innerHTML = _importSource==='cartao'
     ? 'Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong> — fatura do cartão'
     : 'Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong> — apenas <strong>saídas/débitos</strong>';
+  const rb=gel('impResetBtn3'); if(rb) rb.style.display='';
 }
 function resetImportSource(){
   _importSource = null; _importMeta = null;
   clearImport();
-  gel('importDropWrap').style.display='none';
+  const dw=gel('importDropWrap'); if(dw) dw.classList.add('imp-locked');
   gel('importMetaWrap').style.display='none';
-  gel('importSourcePicker').style.display='flex';
+  gel('importSourcePicker').style.display='';
+  gel('importSourceLbl').textContent='—';
+  gel('importMetaLbl').textContent='aguardando confirmação';
+  gel('importDropIcon').textContent='🔒';
+  gel('importDropTitle').textContent='Confirme a fonte acima para liberar';
+  gel('importDropSub').textContent='Complete os passos 1 e 2 para habilitar o envio';
+  const rb=gel('impResetBtn3'); if(rb) rb.style.display='none';
+}
+function onImportDropClick(){
+  if(!_importMeta){ toast('Confirme a fonte (passos 1 e 2) antes de enviar o arquivo.','error'); return; }
+  document.getElementById('fileInput').click();
 }
 
 /* Bancos persistidos por cliente */
