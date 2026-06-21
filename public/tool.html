@@ -1131,16 +1131,23 @@ let _cats = null;
 
 function cid(){ return (_cliente||_user)?.clienteId || null; }
 
+const CATS_KEY = ()=>`dv_cats_${cid()||'_'}`;
 function getCats(){
   if(_cats) return _cats;
   try{
-    const saved = localStorage.getItem('dv_cats');
+    const saved = localStorage.getItem(CATS_KEY());
     _cats = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(CFG.DEFAULT_CATS));
   }catch{ _cats = JSON.parse(JSON.stringify(CFG.DEFAULT_CATS)); }
   return _cats;
 }
 function saveCatsStore(){
-  try{ localStorage.setItem('dv_cats', JSON.stringify(getCats())); }catch{}
+  try{ localStorage.setItem(CATS_KEY(), JSON.stringify(getCats())); }catch{}
+}
+function resetCatsCache(){ _cats=null; }
+function refreshCatSelectors(){
+  try{ buildCatSelect(); }catch{}
+  try{ buildVencCategoriaSelect(); }catch{}
+  try{ buildCatEditor(); }catch{}
 }
 
 /* ═══════════════════════════════════════════
