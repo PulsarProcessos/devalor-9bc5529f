@@ -494,15 +494,31 @@ export async function handleAction(action: string, params: Record<string, any>, 
       valor: Math.abs(Number(r.valor || 0)),
       forma_pagamento: r.forma_pagamento || null,
       banco: r.banco || null,
+      cartao: r.cartao || null,
       mes: r.mes || null,
+      mes_pagamento: r.mes_pagamento || null,
       ano: r.ano || null,
       origem: r.origem || "manual",
+      parcela_n: r.parcela_n ?? null,
+      parcela_total: r.parcela_total ?? null,
+      parcela_grupo_id: r.parcela_grupo_id || null,
+      pago: r.pago === true,
     }));
-    const { error, count } = await supabaseAdmin
-      .from("despesas")
-      .upsert(records, { onConflict: "cliente_id,data,valor,descricao", ignoreDuplicates: true, count: "exact" });
+    const beforeIds = new Set(
+      ((await supabaseAdmin.from("despesas").select("data,valor,descricao,cartao,banco").eq("cliente_id", clienteId)).data || [])
+        .map((d: any) => `${d.data}|${Number(d.valor)}|${(d.descricao || "").trim().toLowerCase()}|${(d.cartao || d.banco || "").toLowerCase()}`)
+    );
+    const fresh = records.filter((r) => {
+      const k = `${r.data}|${Number(r.valor)}|${(r.descricao || "").trim().toLowerCase()}|${(r.cartao || r.banco || "").toLowerCase()}`;
+      if (beforeIds.has(k)) return false;
+      beforeIds.add(k);
+      return true;
+    });
+    const ignored = records.length - fresh.length;
+    if (!fresh.length) return json({ ok: true, count: 0, ignored });
+    const { error } = await supabaseAdmin.from("despesas").insert(fresh);
     if (error) return json({ error: error.message });
-    return json({ ok: true, count: count ?? records.length });
+    return json({ ok: true, count: fresh.length, ignored });
   }
   if (action === "deleteDespesa") {
     const id = params.id;
@@ -510,6 +526,13 @@ export async function handleAction(action: string, params: Record<string, any>, 
     await supabaseAdmin.from("despesas").delete().eq("id", id).eq("cliente_id", clienteId);
     return json({ ok: true });
   }
+  if (action === "toggleDespesaPaga") {
+    const id = params.id;
+    if (!id) return json({ error: "id obrigatório." });
+    await supabaseAdmin.from("despesas").update({ pago: !!params.pago }).eq("id", id).eq("cliente_id", clienteId);
+    return json({ ok: true });
+  }
+
 
   /* ── NEW: DÍVIDAS ── */
   if (action === "getDividas") {
