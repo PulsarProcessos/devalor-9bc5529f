@@ -1549,20 +1549,26 @@ async function submitRenda(){
 /* ═══════════════════════════════════════════
    VIDA RICA
 ═══════════════════════════════════════════ */
+let _dreamsCache=[];
 function renderDreams(list){
+  _dreamsCache=list||[];
   const g=gel('dreamsGrid');if(!g)return;
   if(!list?.length){g.innerHTML='<div style="grid-column:1/-1;padding:48px;text-align:center;color:var(--text-muted)"><span style="font-size:2.5rem;opacity:.25;display:block;margin-bottom:10px">◈</span>Nenhum sonho cadastrado ainda.</div>';return;}
-  g.innerHTML=list.map(s=>{
+  g.innerHTML=list.map((s,i)=>{
     const tipo=(s.tipo||'Curto').toLowerCase();
     const c=tipo.startsWith('m')?'tm':tipo.startsWith('l')?'tl':'tc';
     return`<article class="dream-card ${c}">
-      <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)">${esc(s.quem||s[0]||'—')}</div>
-      <h3 style="font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--text-primary)">${esc(s.obj||s[1]||'—')}</h3>
-      <p style="font-size:.8rem;color:var(--text-secondary);line-height:1.5;flex:1">${esc(s.motivo||s[2]||'')}</p>
+      <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)">${esc(s.quem||'—')}</div>
+      <h3 style="font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--text-primary)">${esc(s.obj||'—')}</h3>
+      <p style="font-size:.8rem;color:var(--text-secondary);line-height:1.5;flex:1">${esc(s.motivo||'')}</p>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:7px;border-top:1px solid var(--border-subtle);padding-top:10px;flex-wrap:wrap">
-        <span class="mono" style="font-size:.93rem;font-weight:600;color:var(--brand)">${fBRL(s.valor||s[3]||0)}</span>
-        <span style="font-size:.72rem;color:var(--text-muted)">${fDate(s.prazo||s[4]||'')}</span>
+        <span class="mono" style="font-size:.93rem;font-weight:600;color:var(--brand)">${fBRL(s.valor||0)}</span>
+        <span style="font-size:.72rem;color:var(--text-muted)">${fDate(s.prazo||'')}</span>
         <span style="display:inline-flex;padding:2px 9px;border-radius:99px;font-size:.66rem;font-weight:700;text-transform:uppercase;background:${c==='tc'?'var(--success-bg)':c==='tm'?'var(--warning-bg)':'var(--gold-light)'};color:${c==='tc'?'var(--success)':c==='tm'?'var(--warning)':'var(--brand)'}">${s.tipo||'Curto'}</span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="btn btn-s btn-xs" style="flex:1" onclick="openEditSonho(${i})">✎ Editar</button>
+        <button class="btn btn-d btn-xs" onclick="deleteSonho(${i})">✕</button>
       </div>
     </article>`;
   }).join('');
@@ -1570,8 +1576,57 @@ function renderDreams(list){
 async function loadSonhosFromSheets(){
   try{
     const r=await apiGetSonhos();
-    if(r?.rows?.length)renderDreams(r.rows.map(row=>({quem:row[0],obj:row[1],motivo:row[2],valor:row[3],prazo:row[4],tipo:row[5]})));
+    const list=(r?.rows||[]).map(row=>({id:row[6],quem:row[0],obj:row[1],motivo:row[2],valor:row[3],prazo:row[4],tipo:row[5]}));
+    list.forEach(s=>addSonhoCategoria(s.obj));
+    renderDreams(list);
   }catch{}
+}
+function openEditSonho(i){
+  const s=_dreamsCache[i]; if(!s) return;
+  gel('editSonhoId').value=s.id||'';
+  gel('editSonhoOldObj').value=s.obj||'';
+  gel('editSonhoQuem').value=s.quem||'';
+  gel('editSonhoObj').value=s.obj||'';
+  gel('editSonhoMotivo').value=s.motivo||'';
+  gel('editSonhoValor').value=s.valor?fBRL(s.valor).replace('R$','').trim():'';
+  gel('editSonhoPrazo').value=s.prazo||'';
+  updateEditTipoBadge();
+  gel('editSonhoModal').style.display='flex';
+}
+function closeEditSonho(){ const m=gel('editSonhoModal'); if(m) m.style.display='none'; }
+function updateEditTipoBadge(){
+  const b=gel('editSonhoTipoBadge'); if(!b) return;
+  const tipo=calcTipoPrazo(gel('editSonhoPrazo')?.value);
+  b.textContent=tipo;
+  const map={'Curto':['var(--success-bg)','var(--success)'],'Médio':['var(--warning-bg)','var(--warning)'],'Longo':['var(--gold-light)','var(--brand)']};
+  const [bg,fg]=map[tipo]||map['Curto']; b.style.background=bg; b.style.color=fg;
+}
+async function saveEditSonho(){
+  const id=gel('editSonhoId').value;
+  const oldObj=gel('editSonhoOldObj').value;
+  const obj=gel('editSonhoObj').value.trim();
+  if(!obj){toast('Preencha o "Objetivo".','error');return;}
+  const data={
+    id, quem:gel('editSonhoQuem').value.trim(), obj, motivo:gel('editSonhoMotivo').value.trim(),
+    valor:pMoney(gel('editSonhoValor').value), prazo:gel('editSonhoPrazo').value,
+  };
+  data.tipo=calcTipoPrazo(data.prazo);
+  try{
+    await gPost('saveSonho',{data});
+    renameSonhoCategoria(oldObj,obj);
+    closeEditSonho();
+    await loadSonhosFromSheets();
+    toast('Sonho atualizado.','success');
+  }catch(e){toast('Erro: '+e.message,'error');}
+}
+async function deleteSonho(i){
+  const s=_dreamsCache[i]; if(!s||!s.id) return;
+  if(!confirm(`Excluir o sonho "${s.obj}"?`)) return;
+  try{
+    await gPost('deleteSonho',{id:s.id});
+    await loadSonhosFromSheets();
+    toast('Sonho excluído.','info');
+  }catch(e){toast('Erro: '+e.message,'error');}
 }
 
 /* ═══════════════════════════════════════════
