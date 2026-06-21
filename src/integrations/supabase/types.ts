@@ -116,12 +116,17 @@ export type Database = {
           created_at: string
           credor: string
           id: string
+          parcelas_pagas: number
           parcelas_restantes: number | null
+          parcelas_totais: number | null
           saldo_devedor: number
           status: string
           taxa_juros: number | null
           tipo: string | null
+          total_pago: number
+          ultima_parcela: number | null
           updated_at: string
+          valor_original: number | null
           valor_parcela: number | null
         }
         Insert: {
@@ -129,12 +134,17 @@ export type Database = {
           created_at?: string
           credor: string
           id?: string
+          parcelas_pagas?: number
           parcelas_restantes?: number | null
+          parcelas_totais?: number | null
           saldo_devedor?: number
           status?: string
           taxa_juros?: number | null
           tipo?: string | null
+          total_pago?: number
+          ultima_parcela?: number | null
           updated_at?: string
+          valor_original?: number | null
           valor_parcela?: number | null
         }
         Update: {
@@ -142,12 +152,17 @@ export type Database = {
           created_at?: string
           credor?: string
           id?: string
+          parcelas_pagas?: number
           parcelas_restantes?: number | null
+          parcelas_totais?: number | null
           saldo_devedor?: number
           status?: string
           taxa_juros?: number | null
           tipo?: string | null
+          total_pago?: number
+          ultima_parcela?: number | null
           updated_at?: string
+          valor_original?: number | null
           valor_parcela?: number | null
         }
         Relationships: []
