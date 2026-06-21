@@ -551,12 +551,16 @@ img,svg{display:block;max-width:100%}
       <div class="panel-hd"><h1 class="panel-title">Sonhos & Objetivos de Vida</h1><p class="panel-sub">Cadastre os objetivos que dão sentido ao planejamento</p></div>
       <div class="card-form">
         <div class="grid2">
-          <div class="field"><label class="lbl">Quem</label><input class="inp" type="text" id="sonhoQuem" placeholder="Ex: Família toda"/></div>
+          <div class="field"><label class="lbl">Quem <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label><input class="inp" type="text" id="sonhoQuem" placeholder="Ex: Família toda"/></div>
           <div class="field"><label class="lbl">Objetivo / Sonho</label><input class="inp" type="text" id="sonhoObj" placeholder="Ex: Casa própria"/></div>
           <div class="field"><label class="lbl">Motivo</label><input class="inp" type="text" id="sonhoMotivo" placeholder="Por que é importante?"/></div>
           <div class="field"><label class="lbl">Valor total (R$)</label><input class="inp inp-money" type="text" id="sonhoValor" placeholder="0,00" data-money/></div>
-          <div class="field"><label class="lbl">Prazo (data limite)</label><input class="inp" type="date" id="sonhoPrazo"/></div>
-          <div class="field"><label class="lbl">Tipo de prazo</label><select class="sel" id="sonhoTipo"><option value="Curto">Curto (até 2 anos)</option><option value="Médio">Médio (2–5 anos)</option><option value="Longo">Longo (acima de 5 anos)</option></select></div>
+          <div class="field"><label class="lbl">Prazo (data limite)</label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input class="inp" type="date" id="sonhoPrazo" oninput="updateTipoPrazoBadge()" style="flex:1"/>
+              <span id="sonhoTipoBadge" style="display:inline-flex;padding:6px 12px;border-radius:99px;font-size:.72rem;font-weight:700;text-transform:uppercase;background:var(--success-bg);color:var(--success);white-space:nowrap">Curto</span>
+            </div>
+          </div>
         </div>
         <div class="form-footer">
           <button class="btn btn-s" onclick="addSonhoPreview()">+ Adicionar à lista</button>
@@ -615,6 +619,28 @@ img,svg{display:block;max-width:100%}
         <button class="btn btn-p btn-sm" onclick="goPanel('sonhos')">+ Novo sonho</button>
       </div>
       <div class="dreams-grid" id="dreamsGrid"><div style="grid-column:1/-1;padding:48px;text-align:center;color:var(--text-muted)"><span style="font-size:2.5rem;opacity:.25;display:block;margin-bottom:10px">◈</span>Nenhum sonho cadastrado ainda.</div></div>
+    </div>
+
+    <!-- Edit Sonho Modal -->
+    <div id="editSonhoModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;padding:20px">
+      <div style="background:var(--bg-elev,#fff);color:var(--text-primary);border-radius:14px;max-width:520px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.4);max-height:90vh;overflow:auto">
+        <h3 style="margin:0 0 16px;font-family:'Playfair Display',serif">Editar Sonho</h3>
+        <input type="hidden" id="editSonhoId"/><input type="hidden" id="editSonhoOldObj"/>
+        <div class="field"><label class="lbl">Quem <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label><input class="inp" type="text" id="editSonhoQuem"/></div>
+        <div class="field"><label class="lbl">Objetivo / Sonho</label><input class="inp" type="text" id="editSonhoObj"/></div>
+        <div class="field"><label class="lbl">Motivo</label><input class="inp" type="text" id="editSonhoMotivo"/></div>
+        <div class="field"><label class="lbl">Valor total (R$)</label><input class="inp inp-money" type="text" id="editSonhoValor" data-money/></div>
+        <div class="field"><label class="lbl">Prazo (data limite)</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input class="inp" type="date" id="editSonhoPrazo" oninput="updateEditTipoBadge()" style="flex:1"/>
+            <span id="editSonhoTipoBadge" style="display:inline-flex;padding:6px 12px;border-radius:99px;font-size:.72rem;font-weight:700;text-transform:uppercase;background:var(--success-bg);color:var(--success);white-space:nowrap">Curto</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
+          <button class="btn btn-s" onclick="closeEditSonho()">Cancelar</button>
+          <button class="btn btn-p" onclick="saveEditSonho()">Salvar</button>
+        </div>
+      </div>
     </div>
 
     <!-- ══ PLANO DE AÇÃO ═══════════════════════════ -->
@@ -1422,17 +1448,47 @@ async function submitPerfil(){
   finally{if(btn)btn.disabled=false;}
 }
 
+function calcTipoPrazo(prazo){
+  if(!prazo) return 'Curto';
+  const d=new Date(prazo+'T00:00:00'), today=new Date();
+  const years=(d-today)/(365.25*24*3600*1000);
+  if(years<=2) return 'Curto';
+  if(years<=5) return 'Médio';
+  return 'Longo';
+}
+function updateTipoPrazoBadge(){
+  const b=gel('sonhoTipoBadge'); if(!b) return;
+  const tipo=calcTipoPrazo(gel('sonhoPrazo')?.value);
+  b.textContent=tipo;
+  const map={'Curto':['var(--success-bg)','var(--success)'],'Médio':['var(--warning-bg)','var(--warning)'],'Longo':['var(--gold-light)','var(--brand)']};
+  const [bg,fg]=map[tipo]||map['Curto']; b.style.background=bg; b.style.color=fg;
+}
+function addSonhoCategoria(obj){
+  if(!obj) return;
+  const cats=getCats(); if(!cats['Investimentos']) cats['Investimentos']=[];
+  if(!cats['Investimentos'].includes(obj)){ cats['Investimentos'].push(obj); saveCatsStore(); }
+}
+function renameSonhoCategoria(oldObj,newObj){
+  if(!newObj) return;
+  if(!oldObj||oldObj===newObj){ addSonhoCategoria(newObj); return; }
+  const cats=getCats(); if(!cats['Investimentos']) cats['Investimentos']=[];
+  const i=cats['Investimentos'].indexOf(oldObj);
+  if(i>=0) cats['Investimentos'][i]=newObj; else cats['Investimentos'].push(newObj);
+  saveCatsStore();
+}
+
 function addSonhoPreview(){
   const quem=gel('sonhoQuem')?.value.trim(),obj=gel('sonhoObj')?.value.trim();
-  if(!quem||!obj){toast('Preencha "Quem" e "Objetivo".','error');return;}
+  if(!obj){toast('Preencha o "Objetivo".','error');return;}
   const motivo=gel('sonhoMotivo')?.value.trim(),valor=pMoney(gel('sonhoValor')?.value);
-  const prazo=gel('sonhoPrazo')?.value,tipo=gel('sonhoTipo')?.value||'Curto';
+  const prazo=gel('sonhoPrazo')?.value,tipo=calcTipoPrazo(prazo);
   _sonhosQ.push({quem,obj,motivo,valor,prazo,tipo});
   const tbl=gel('sonhosTable');if(tbl)tbl.classList.remove('hidden');
   const tr=document.createElement('tr');
   tr.innerHTML=`<td>${esc(quem)}</td><td>${esc(obj)}</td><td>${esc(motivo)}</td><td class="mono">${fBRL(valor)}</td><td>${fDate(prazo)}</td><td>${tipo}</td><td><button class="btn btn-d btn-xs" onclick="this.closest('tr').remove()">✕</button></td>`;
   gel('sonhosTbody').appendChild(tr);
   ['sonhoQuem','sonhoObj','sonhoMotivo','sonhoValor','sonhoPrazo'].forEach(id=>{const el=gel(id);if(el)el.value='';});
+  updateTipoPrazoBadge();
   toast(`"${obj}" adicionado.`,'info');
 }
 async function submitSonhos(){
@@ -1441,7 +1497,10 @@ async function submitSonhos(){
   const btn=document.querySelector('[onclick="submitSonhos()"]');if(btn)btn.disabled=true;
   try{
     await apiRows(CFG.SH.SONHOS,rows);
-    renderDreams(_sonhosQ);
+    _sonhosQ.forEach(s=>addSonhoCategoria(s.obj));
+    await loadSonhosFromSheets();
+    _sonhosQ.length=0;
+    const tb=gel('sonhosTbody'); if(tb) tb.innerHTML='';
     toast(`${rows.length} sonho(s) salvos!`,'success');
     markNavDone('sonhos');goPanel('dividas');
   }catch(e){toast('Erro: '+e.message,'error');}
@@ -1512,20 +1571,26 @@ async function submitRenda(){
 /* ═══════════════════════════════════════════
    VIDA RICA
 ═══════════════════════════════════════════ */
+let _dreamsCache=[];
 function renderDreams(list){
+  _dreamsCache=list||[];
   const g=gel('dreamsGrid');if(!g)return;
   if(!list?.length){g.innerHTML='<div style="grid-column:1/-1;padding:48px;text-align:center;color:var(--text-muted)"><span style="font-size:2.5rem;opacity:.25;display:block;margin-bottom:10px">◈</span>Nenhum sonho cadastrado ainda.</div>';return;}
-  g.innerHTML=list.map(s=>{
+  g.innerHTML=list.map((s,i)=>{
     const tipo=(s.tipo||'Curto').toLowerCase();
     const c=tipo.startsWith('m')?'tm':tipo.startsWith('l')?'tl':'tc';
     return`<article class="dream-card ${c}">
-      <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)">${esc(s.quem||s[0]||'—')}</div>
-      <h3 style="font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--text-primary)">${esc(s.obj||s[1]||'—')}</h3>
-      <p style="font-size:.8rem;color:var(--text-secondary);line-height:1.5;flex:1">${esc(s.motivo||s[2]||'')}</p>
+      <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)">${esc(s.quem||'—')}</div>
+      <h3 style="font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--text-primary)">${esc(s.obj||'—')}</h3>
+      <p style="font-size:.8rem;color:var(--text-secondary);line-height:1.5;flex:1">${esc(s.motivo||'')}</p>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:7px;border-top:1px solid var(--border-subtle);padding-top:10px;flex-wrap:wrap">
-        <span class="mono" style="font-size:.93rem;font-weight:600;color:var(--brand)">${fBRL(s.valor||s[3]||0)}</span>
-        <span style="font-size:.72rem;color:var(--text-muted)">${fDate(s.prazo||s[4]||'')}</span>
+        <span class="mono" style="font-size:.93rem;font-weight:600;color:var(--brand)">${fBRL(s.valor||0)}</span>
+        <span style="font-size:.72rem;color:var(--text-muted)">${fDate(s.prazo||'')}</span>
         <span style="display:inline-flex;padding:2px 9px;border-radius:99px;font-size:.66rem;font-weight:700;text-transform:uppercase;background:${c==='tc'?'var(--success-bg)':c==='tm'?'var(--warning-bg)':'var(--gold-light)'};color:${c==='tc'?'var(--success)':c==='tm'?'var(--warning)':'var(--brand)'}">${s.tipo||'Curto'}</span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="btn btn-s btn-xs" style="flex:1" onclick="openEditSonho(${i})">✎ Editar</button>
+        <button class="btn btn-d btn-xs" onclick="deleteSonho(${i})">✕</button>
       </div>
     </article>`;
   }).join('');
@@ -1533,8 +1598,57 @@ function renderDreams(list){
 async function loadSonhosFromSheets(){
   try{
     const r=await apiGetSonhos();
-    if(r?.rows?.length)renderDreams(r.rows.map(row=>({quem:row[0],obj:row[1],motivo:row[2],valor:row[3],prazo:row[4],tipo:row[5]})));
+    const list=(r?.rows||[]).map(row=>({id:row[6],quem:row[0],obj:row[1],motivo:row[2],valor:row[3],prazo:row[4],tipo:row[5]}));
+    list.forEach(s=>addSonhoCategoria(s.obj));
+    renderDreams(list);
   }catch{}
+}
+function openEditSonho(i){
+  const s=_dreamsCache[i]; if(!s) return;
+  gel('editSonhoId').value=s.id||'';
+  gel('editSonhoOldObj').value=s.obj||'';
+  gel('editSonhoQuem').value=s.quem||'';
+  gel('editSonhoObj').value=s.obj||'';
+  gel('editSonhoMotivo').value=s.motivo||'';
+  gel('editSonhoValor').value=s.valor?fBRL(s.valor).replace('R$','').trim():'';
+  gel('editSonhoPrazo').value=s.prazo||'';
+  updateEditTipoBadge();
+  gel('editSonhoModal').style.display='flex';
+}
+function closeEditSonho(){ const m=gel('editSonhoModal'); if(m) m.style.display='none'; }
+function updateEditTipoBadge(){
+  const b=gel('editSonhoTipoBadge'); if(!b) return;
+  const tipo=calcTipoPrazo(gel('editSonhoPrazo')?.value);
+  b.textContent=tipo;
+  const map={'Curto':['var(--success-bg)','var(--success)'],'Médio':['var(--warning-bg)','var(--warning)'],'Longo':['var(--gold-light)','var(--brand)']};
+  const [bg,fg]=map[tipo]||map['Curto']; b.style.background=bg; b.style.color=fg;
+}
+async function saveEditSonho(){
+  const id=gel('editSonhoId').value;
+  const oldObj=gel('editSonhoOldObj').value;
+  const obj=gel('editSonhoObj').value.trim();
+  if(!obj){toast('Preencha o "Objetivo".','error');return;}
+  const data={
+    id, quem:gel('editSonhoQuem').value.trim(), obj, motivo:gel('editSonhoMotivo').value.trim(),
+    valor:pMoney(gel('editSonhoValor').value), prazo:gel('editSonhoPrazo').value,
+  };
+  data.tipo=calcTipoPrazo(data.prazo);
+  try{
+    await gPost('saveSonho',{data});
+    renameSonhoCategoria(oldObj,obj);
+    closeEditSonho();
+    await loadSonhosFromSheets();
+    toast('Sonho atualizado.','success');
+  }catch(e){toast('Erro: '+e.message,'error');}
+}
+async function deleteSonho(i){
+  const s=_dreamsCache[i]; if(!s||!s.id) return;
+  if(!confirm(`Excluir o sonho "${s.obj}"?`)) return;
+  try{
+    await gPost('deleteSonho',{id:s.id});
+    await loadSonhosFromSheets();
+    toast('Sonho excluído.','info');
+  }catch(e){toast('Erro: '+e.message,'error');}
 }
 
 /* ═══════════════════════════════════════════
