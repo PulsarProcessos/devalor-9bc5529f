@@ -860,13 +860,28 @@ img,svg{display:block;max-width:100%}
       </div>
     </div>
 
-    <!-- ══ EXTRAORDINÁRIO ══════════════════════════ -->
+    <!-- ══ PLANEJAMENTO (mês a mês) ════════════════ -->
     <div class="panel" id="panel-extraordinario">
       <div class="sec-hd">
-        <div><h2 class="sec-title">Planejamento Extraordinário</h2><p class="sec-sub">Despesas sazonais e receitas extras organizadas por categoria</p></div>
-        <button class="btn btn-p btn-sm" onclick="saveExtraordinario()">✓ Salvar</button>
+        <div><h2 class="sec-title">Planejamento</h2><p class="sec-sub">Quanto você planeja gastar em cada categoria neste mês</p></div>
+        <button class="btn btn-p btn-sm" onclick="savePlanejamentoMes()">✓ Salvar mês</button>
       </div>
-      <div class="extra-grid" id="extraGrid"></div>
+      <div id="planAlert" style="display:none;background:var(--warning-bg,#fef3c7);color:var(--warning,#92400e);border:1px solid rgba(234,179,8,.35);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:none;align-items:center;gap:10px;justify-content:space-between">
+        <span id="planAlertMsg">Novo mês começou! Faça o planejamento das categorias.</span>
+        <button class="btn btn-s btn-xs" onclick="dismissPlanAlert()">Ok</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <button class="btn btn-s btn-sm" onclick="planNavMes(-1)">←</button>
+        <select class="sel sel-sm" id="planMesSel" onchange="loadPlanejamentoMes()" style="min-width:140px"></select>
+        <select class="sel sel-sm" id="planAnoSel" onchange="loadPlanejamentoMes()" style="width:100px"></select>
+        <button class="btn btn-s btn-sm" onclick="planNavMes(1)">→</button>
+        <span id="planStatus" style="margin-left:auto;font-size:.78rem;color:var(--text-muted)"></span>
+      </div>
+      <div id="planGroups" style="display:flex;flex-direction:column;gap:14px"></div>
+      <div style="margin-top:18px;padding:14px;background:var(--bg-muted,#f5f7fa);border-radius:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <span style="font-size:.84rem;color:var(--text-secondary)">Total planejado para o mês</span>
+        <span id="planTotal" class="mono" style="font-size:1.25rem;font-weight:700;color:var(--brand)">R$ 0,00</span>
+      </div>
     </div>
 
     <!-- ══ PAINEL ══════════════════════════════════ -->
