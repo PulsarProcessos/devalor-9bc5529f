@@ -2337,7 +2337,18 @@ function handleFileSelect(file){
 
 /* Parser tolerante: detecta cabeçalho mesmo em faturas de cartão.
    Fallback: se não achar cabeçalho, varre como linhas livres com regex de data. */
-const _SKIP_LINE_RE = /(total\s+da\s+fatura|pagamento\s+recebido|saldo\s+anterior|subtotal|saldo\s+atual|limite\s+(?:dispon|de\s+cr)|pr[óo]xima\s+fatura|encargos|juros\s+rotativ)/i;
+const _SKIP_LINE_RE = /(total\s+da\s+fatura|pagamento\s+recebido|^\s*saldo\b|\bsaldo\s+(?:anterior|atual|do\s+dia|em\s+conta|final|dispon[íi]vel|bloqueado|inicial|liquido|l[íi]quido)|subtotal|limite\s+(?:dispon|de\s+cr)|pr[óo]xima\s+fatura|encargos|juros\s+rotativ)/i;
+const _MES_TXT = {jan:'01',fev:'02',mar:'03',abr:'04',mai:'05',jun:'06',jul:'07',ago:'08',set:'09',out:'10',nov:'11',dez:'12',janeiro:'01',fevereiro:'02','março':'03',marco:'03',abril:'04',maio:'05',junho:'06',julho:'07',agosto:'08',setembro:'09',outubro:'10',novembro:'11',dezembro:'12'};
+function _normalizePdfDate(ln){
+  // "15 JUN" / "15 JUNHO" / "15-jun-2025" → "15/06[/2025]"
+  return ln.replace(/\b(\d{1,2})[\s\-\/]+([A-Za-zçÇ]{3,9})(?:[\s\-\/]+(\d{2,4}))?\b/g, (m,d,mon,y)=>{
+    const k = mon.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const mm = _MES_TXT[k] || _MES_TXT[k.slice(0,3)];
+    if(!mm) return m;
+    const dd = d.padStart(2,'0');
+    return y ? `${dd}/${mm}/${y}` : `${dd}/${mm}`;
+  });
+}
 
 function processImportSheet(aoa,fname){
   if(!aoa||!aoa.length){toast('Arquivo vazio.','error');return;}
