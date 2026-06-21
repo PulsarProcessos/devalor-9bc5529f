@@ -1653,12 +1653,56 @@ function resetImportSource(){
   gel('importSourcePicker').style.display='flex';
 }
 
-function toggleParcelado(v){gel('parcelFields')?.classList.toggle('hidden',!v);if(!v)clearPrev();}
+/* Bancos persistidos por cliente */
+const BANCOS_KEY = ()=>`dv_bancos_${cid()||'_'}`;
+const BANCOS_DEFAULT = ['Bradesco','Nubank','Banco do Brasil','Caixa Econômica','Itaú','Santander','Inter','C6 Bank','Outro'];
+function loadBancos(){
+  try{const a=JSON.parse(localStorage.getItem(BANCOS_KEY())||'null');if(Array.isArray(a)&&a.length)return a;}catch{}
+  return BANCOS_DEFAULT.slice();
+}
+function saveBancos(arr){localStorage.setItem(BANCOS_KEY(),JSON.stringify(arr));}
+function fillBancoSelect(selected){
+  const sel=gel('despBanco');if(!sel)return;
+  const list=loadBancos();
+  sel.innerHTML=list.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');
+  if(selected)sel.value=selected;
+}
+function addBancoPrompt(){
+  const name=(prompt('Nome do novo banco:')||'').trim();
+  if(!name)return;
+  const list=loadBancos();
+  if(list.some(b=>b.toLowerCase()===name.toLowerCase())){toast('Banco já existe.','info');gel('despBanco').value=list.find(b=>b.toLowerCase()===name.toLowerCase());return;}
+  list.push(name);saveBancos(list);fillBancoSelect(name);toast('Banco adicionado.','success');
+}
+
+function isAVista(){return (gel('despFormaPag')?.value||'')==='Débito/Dinheiro/Pix';}
+function syncMesFromData(){
+  const dt=gel('despData')?.value;if(!dt)return;
+  const mes = mesFromISO(dt);
+  const sel=gel('despMesComp');if(sel)sel.value=mes;
+}
+function onDespDataChange(){if(isAVista())syncMesFromData();}
+function onDespFormaPagChange(){
+  const avista=isAVista();
+  const chk=gel('chkParcelado');
+  const mesSel=gel('despMesComp');
+  if(chk){
+    if(avista){chk.checked=false;chk.disabled=true;toggleParcelado(false);}
+    else chk.disabled=false;
+  }
+  if(mesSel)mesSel.disabled=avista;
+  if(avista)syncMesFromData();
+}
+
+function toggleParcelado(v){
+  if(isAVista()){const c=gel('chkParcelado');if(c)c.checked=false;v=false;}
+  gel('parcelFields')?.classList.toggle('hidden',!v);if(!v)clearPrev();
+}
 function buildDespRows(){
   const fp=gel('despFormaPag')?.value,bco=gel('despBanco')?.value,dt=gel('despData')?.value;
   const desc=gel('despDesc')?.value.trim(),vp=pMoney(gel('despValorParc')?.value);
   const cat=gel('despCategoria')?.value,mes=gel('despMesComp')?.value;
-  const parc=gel('chkParcelado')?.checked,np=parseInt(gel('despNParcelas')?.value)||1;
+  const parc=gel('chkParcelado')?.checked&&!isAVista(),np=parseInt(gel('despNParcelas')?.value)||1;
   if(!desc){toast('Informe a descrição.','error');return null;}
   if(vp<=0){toast('Informe o valor da parcela.','error');return null;}
   const total=parc?np:1;const rows=[];let m=mes;
@@ -1679,7 +1723,11 @@ function renderPrev(rows){
   });
 }
 function clearPrev(){gel('prevTitle')?.classList.add('hidden');gel('prevTable')?.classList.add('hidden');const t=gel('prevTbody');if(t)t.innerHTML='';}
-function genPreview(){const r=buildDespRows();if(r)renderPrev(r);}
+function genPreview(){
+  const r=buildDespRows();if(!r)return;
+  renderPrev(r);
+  setTimeout(()=>{gel('prevTitle')?.scrollIntoView({behavior:'smooth',block:'start'});},50);
+}
 async function submitDespesas(){
   const rows=buildDespRows();if(!rows)return;
   if(!gel('prevTbody')?.hasChildNodes()){renderPrev(rows);toast('Confira a prévia antes de enviar.','info');return;}
