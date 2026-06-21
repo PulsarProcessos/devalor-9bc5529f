@@ -224,7 +224,7 @@ export async function handleAction(action: string, params: Record<string, any>, 
       ano,
       salario: Number(d.salario || 0),
       outras: Number(d.outras || 0),
-      data: d,
+      data: { ...d, rendaMensal: Number(d.rendaMensal || 0) },
       updated_at: new Date().toISOString(),
     };
     const { error } = await supabaseAdmin.from("renda_planejamento").upsert(payload, { onConflict: "cliente_id,ano" });
