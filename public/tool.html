@@ -865,10 +865,12 @@ img,svg{display:block;max-width:100%}
             </div>
           </div>
           <div class="form-footer">
+            <label class="toggle-lbl" style="margin-right:auto"><input type="checkbox" id="lancHideProj" onchange="renderDespesasLancadas()"/><span class="toggle-sl"></span>Ocultar parcelas futuras (projetadas)</label>
             <button class="btn btn-g" onclick="loadDespesasLancadas()">↻ Atualizar</button>
-            <span id="lancTotal" style="margin-left:auto;font-weight:600;color:var(--brand)">Total: R$ 0,00</span>
+            <span id="lancTotal" style="margin-left:12px;font-weight:600;color:var(--brand)">Total: R$ 0,00</span>
           </div>
         </div>
+
         <div class="tbl-wrap">
           <table class="tbl" id="lancTable" style="font-size:.92rem">
             <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Forma Pag.</th><th>Banco/Cartão</th><th>Mês</th><th>Parc.</th><th>Pago</th><th>Origem</th><th></th></tr></thead>
