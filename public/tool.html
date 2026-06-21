@@ -673,12 +673,12 @@ img,svg{display:block;max-width:100%}
     <!-- ══ QUITAÇÃO ════════════════════════════════ -->
     <div class="panel" id="panel-quitacao">
       <div class="sec-hd">
-        <div><h2 class="sec-title">Quitação de Dívidas</h2><p class="sec-sub">Diagnóstico e plano de eliminação de passivos</p></div>
+        <div><h2 class="sec-title">Quitação de Dívidas</h2><p class="sec-sub">Acompanhe o progresso e registre pagamentos</p></div>
         <button class="btn btn-p btn-sm" onclick="goPanel('dividas')">+ Nova dívida</button>
       </div>
-      <div class="tbl-wrap">
-        <table class="tbl"><thead><tr><th>Credor</th><th>Descrição</th><th>Valor solic.</th><th>Parcelas</th><th>Valor parc.</th><th>Saldo devedor</th><th>Juros %</th><th>Últ. parcela</th><th>Total pago</th><th></th></tr></thead>
-        <tbody id="quitacaoTbody"></tbody></table>
+      <div id="quitacaoSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:18px"></div>
+      <div id="quitacaoGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px">
+        <div style="grid-column:1/-1;padding:48px;text-align:center;color:var(--text-muted)">Nenhuma dívida cadastrada.</div>
       </div>
     </div>
 
