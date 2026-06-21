@@ -2232,7 +2232,26 @@ async function submitDespesas(){
   if(!gel('prevTbody')?.hasChildNodes()){renderPrev(rows);toast('Confira a prévia antes de enviar.','info');return;}
   const btn=document.querySelector('[onclick="submitDespesas()"]');if(btn)btn.disabled=true;
   try{
-    await apiRows(CFG.SH.DESPESAS,rows.map(r=>[r.fp,r.bco,r.dt,r.desc,r.vp,r.cat,r.mes,r.ano]));
+    const isoBase = rows[0].dt ? normDate(rows[0].dt) : null;
+    const parcN = rows.length;
+    const grp = parcN>1 ? uuid() : null;
+    const recs = rows.map((r,i)=>{
+      const [grupo,categoria] = String(r.cat||'').split('·').map(s=>s.trim());
+      const isCartao = r.fp==='Cartão de Crédito';
+      return {
+        data: isoBase || r.dt || null,
+        descricao: r.desc, valor: r.vp,
+        categoria: categoria||r.cat||null, grupo: grupo||null,
+        forma_pagamento: r.fp, banco: r.bco, cartao: null,
+        mes: r.mes, mes_pagamento: isCartao ? r.mes : null,
+        ano: String(r.ano||CFG.ANO), origem: 'manual',
+        parcela_n: parcN>1 ? i+1 : null,
+        parcela_total: parcN>1 ? parcN : null,
+        parcela_grupo_id: grp,
+        pago: false
+      };
+    });
+    await gPost('addDespesas',{rows:recs,clienteId:cid()});
     toast(`${rows.length} lançamento(s) enviado(s)!`,'success');
     clearDespForm();clearPrev();
   }catch(e){toast('Erro: '+e.message,'error');}
@@ -2244,6 +2263,7 @@ function clearDespForm(){
   ['despFormaPag','despBanco','despCategoria','despMesComp'].forEach(id=>{const el=gel(id);if(el)el.selectedIndex=0;});
   onDespFormaPagChange();
 }
+
 
 /* ═══════════════════════════════════════════
    DESPESAS — IMPORTAR ARQUIVO
