@@ -1133,6 +1133,7 @@ function goPanel(id, btnEl){
   }
   window.scrollTo({top:0,behavior:'smooth'});
   if(window.innerWidth<769) gel('appSidebar').classList.remove('open');
+  if(id==='quitacao') loadQuitacao();
 }
 
 function toggleNavGroup(name){
