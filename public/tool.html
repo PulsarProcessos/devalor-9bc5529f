@@ -2169,7 +2169,21 @@ function addBancoPrompt(){
   list.push(name);saveBancos(list);fillBancoSelect(name);toast('Banco adicionado.','success');
 }
 
-function isAVista(){return (gel('despFormaPag')?.value||'')==='Débito/Dinheiro/Pix';}
+function fillFormaPagSelect(selected){
+  const sel=gel('despFormaPag');if(!sel)return;
+  const prev=selected||sel.value||'';
+  const cartoes=loadCartoes();
+  const opts=[`<option value="Débito/Dinheiro/Pix">Débito / Dinheiro / Pix</option>`];
+  if(cartoes.length){
+    cartoes.forEach(c=>opts.push(`<option value="CARTAO::${esc(c)}">💳 ${esc(c)}</option>`));
+  }else{
+    opts.push(`<option value="Cartão de Crédito">Cartão de Crédito</option>`);
+  }
+  sel.innerHTML=opts.join('');
+  if(prev && [...sel.options].some(o=>o.value===prev))sel.value=prev;
+}
+function despCartaoFromFP(fp){return String(fp||'').startsWith('CARTAO::')?String(fp).slice(8):null;}
+function isAVista(){const v=gel('despFormaPag')?.value||'';return v==='Débito/Dinheiro/Pix';}
 function syncMesFromData(){
   const dt=gel('despData')?.value;if(!dt)return;
   const mes = mesFromISO(dt);
