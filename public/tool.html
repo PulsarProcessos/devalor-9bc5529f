@@ -1743,6 +1743,7 @@ function clearDespForm(){
   ['despDesc','despValorParc','despData','despNParcelas'].forEach(id=>{const el=gel(id);if(el)el.value='';});
   const c=gel('chkParcelado');if(c){c.checked=false;toggleParcelado(false);}
   ['despFormaPag','despBanco','despCategoria','despMesComp'].forEach(id=>{const el=gel(id);if(el)el.selectedIndex=0;});
+  onDespFormaPagChange();
 }
 
 /* ═══════════════════════════════════════════
