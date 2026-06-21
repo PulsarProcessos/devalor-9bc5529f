@@ -285,6 +285,10 @@ img,svg{display:block;max-width:100%}
 .import-drop:hover,.import-drop.drag{border-color:var(--brand);background:var(--gold-pale)}
 .import-drop__icon{font-size:2.2rem;margin-bottom:10px;opacity:.4}
 .import-drop__title{font-size:.9rem;font-weight:600;color:var(--text-secondary);margin-bottom:4px}
+.imp-locked .import-drop{opacity:.5;cursor:not-allowed;background:repeating-linear-gradient(45deg,var(--bg-body),var(--bg-body) 10px,rgba(0,0,0,.03) 10px,rgba(0,0,0,.03) 20px);border-style:dashed;border-color:var(--border-default)}
+.imp-locked .import-drop:hover{border-color:var(--border-default);background:repeating-linear-gradient(45deg,var(--bg-body),var(--bg-body) 10px,rgba(0,0,0,.03) 10px,rgba(0,0,0,.03) 20px)}
+.imp-step-hd{display:flex;align-items:center;gap:10px;font-weight:600;color:var(--text-primary);font-size:.95rem;margin-bottom:6px}
+.imp-step-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;font-size:.9rem;flex-shrink:0}
 .import-drop__sub{font-size:.78rem;color:var(--text-muted)}
 .import-preview{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--rl);margin-top:18px}
 .import-preview-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border-subtle)}
@@ -751,22 +755,26 @@ img,svg{display:block;max-width:100%}
       <!-- Importar -->
       <div class="desp-panel" id="desp-importar">
         <!-- Passo 1: Fonte -->
-        <div id="importSourcePicker" style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;padding:24px 12px">
-          <button class="btn btn-g" style="min-width:240px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportSource('cartao')">
-            <span style="font-size:2rem">💳</span>
-            <span style="font-weight:600">Fatura de cartão de crédito</span>
-            <span style="font-size:.75rem;color:var(--text-muted)">Todos os lançamentos da fatura viram despesa</span>
-          </button>
-          <button class="btn btn-g" style="min-width:240px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportSource('extrato')">
-            <span style="font-size:2rem">🏦</span>
-            <span style="font-weight:600">Extrato bancário</span>
-            <span style="font-size:.75rem;color:var(--text-muted)">Apenas saídas / débitos são importados</span>
-          </button>
+        <div id="importSourcePicker">
+          <div class="imp-step-hd"><span class="imp-step-badge">1</span><span>Escolha a fonte do arquivo</span></div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;padding:12px">
+            <button class="btn btn-g" style="min-width:240px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportSource('cartao')">
+              <span style="font-size:2rem">💳</span>
+              <span style="font-weight:600">Fatura de cartão de crédito</span>
+              <span style="font-size:.75rem;color:var(--text-muted)">Todos os lançamentos da fatura viram despesa</span>
+            </button>
+            <button class="btn btn-g" style="min-width:240px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportSource('extrato')">
+              <span style="font-size:2rem">🏦</span>
+              <span style="font-weight:600">Extrato bancário</span>
+              <span style="font-size:.75rem;color:var(--text-muted)">Apenas saídas / débitos são importados</span>
+            </button>
+          </div>
         </div>
 
         <!-- Passo 2: Metadados -->
         <div id="importMetaWrap" style="display:none" class="card-form">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap">
+          <div class="imp-step-hd"><span class="imp-step-badge">2</span><span>Confirme os dados da fonte</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0;gap:8px;flex-wrap:wrap">
             <div style="font-size:.9rem;color:var(--text-secondary)">Fonte: <strong id="importMetaSrcLbl">—</strong></div>
             <button class="btn btn-g btn-xs" onclick="resetImportSource()">↺ Trocar fonte</button>
           </div>
@@ -799,16 +807,17 @@ img,svg{display:block;max-width:100%}
           </div>
         </div>
 
-        <!-- Passo 3: Drop-zone -->
-        <div id="importDropWrap" style="display:none">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap">
-            <div style="font-size:.9rem;color:var(--text-secondary)">Fonte: <strong id="importSourceLbl">—</strong> · <span id="importMetaLbl"></span></div>
-            <button class="btn btn-g btn-xs" onclick="resetImportSource()">↺ Trocar fonte</button>
+        <!-- Passo 3: Drop-zone (sempre visível, bloqueado até confirmar) -->
+        <div id="importDropWrap" class="imp-locked">
+          <div class="imp-step-hd"><span class="imp-step-badge">3</span><span>Envie o arquivo</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0;gap:8px;flex-wrap:wrap">
+            <div style="font-size:.9rem;color:var(--text-secondary)">Fonte: <strong id="importSourceLbl">—</strong> · <span id="importMetaLbl">aguardando confirmação</span></div>
+            <button class="btn btn-g btn-xs" onclick="resetImportSource()" id="impResetBtn3" style="display:none">↺ Trocar fonte</button>
           </div>
-          <div class="import-drop" id="importDrop" onclick="document.getElementById('fileInput').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onFileDrop(event)">
-            <div class="import-drop__icon">📂</div>
-            <div class="import-drop__title">Arraste ou clique para selecionar o arquivo</div>
-            <div class="import-drop__sub" id="importDropSub">Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong></div>
+          <div class="import-drop" id="importDrop" onclick="onImportDropClick()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onFileDrop(event)">
+            <div class="import-drop__icon" id="importDropIcon">🔒</div>
+            <div class="import-drop__title" id="importDropTitle">Confirme a fonte acima para liberar</div>
+            <div class="import-drop__sub" id="importDropSub">Complete os passos 1 e 2 para habilitar o envio</div>
           </div>
           <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.pdf" style="display:none" onchange="handleFileSelect(this.files[0])"/>
           <div id="importPreviewWrap" class="hidden mt16">
@@ -2114,6 +2123,8 @@ function chooseImportSource(src){
     const mesNow = CFG.MESES[new Date().getMonth()];
     const ms=gel('impMesPag');if(ms)ms.value=mesNow;
   }
+  // mantém drop-zone visível mas bloqueado
+  const dw=gel('importDropWrap'); if(dw) dw.classList.add('imp-locked');
 }
 function confirmImportMeta(){
   if(_importSource==='cartao'){
@@ -2134,18 +2145,31 @@ function confirmImportMeta(){
     gel('importMetaLbl').textContent = `🏦 ${banco}`;
   }
   gel('importMetaWrap').style.display='none';
-  gel('importDropWrap').style.display='block';
+  const dw=gel('importDropWrap'); if(dw) dw.classList.remove('imp-locked');
   gel('importSourceLbl').textContent = _importSource==='cartao'?'💳 Cartão de crédito':'🏦 Extrato bancário';
+  gel('importDropIcon').textContent = '📂';
+  gel('importDropTitle').textContent = 'Arraste ou clique para selecionar o arquivo';
   gel('importDropSub').innerHTML = _importSource==='cartao'
     ? 'Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong> — fatura do cartão'
     : 'Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong> — apenas <strong>saídas/débitos</strong>';
+  const rb=gel('impResetBtn3'); if(rb) rb.style.display='';
 }
 function resetImportSource(){
   _importSource = null; _importMeta = null;
   clearImport();
-  gel('importDropWrap').style.display='none';
+  const dw=gel('importDropWrap'); if(dw) dw.classList.add('imp-locked');
   gel('importMetaWrap').style.display='none';
-  gel('importSourcePicker').style.display='flex';
+  gel('importSourcePicker').style.display='';
+  gel('importSourceLbl').textContent='—';
+  gel('importMetaLbl').textContent='aguardando confirmação';
+  gel('importDropIcon').textContent='🔒';
+  gel('importDropTitle').textContent='Confirme a fonte acima para liberar';
+  gel('importDropSub').textContent='Complete os passos 1 e 2 para habilitar o envio';
+  const rb=gel('impResetBtn3'); if(rb) rb.style.display='none';
+}
+function onImportDropClick(){
+  if(!_importMeta){ toast('Confirme a fonte (passos 1 e 2) antes de enviar o arquivo.','error'); return; }
+  document.getElementById('fileInput').click();
 }
 
 /* Bancos persistidos por cliente */
@@ -2337,7 +2361,18 @@ function handleFileSelect(file){
 
 /* Parser tolerante: detecta cabeçalho mesmo em faturas de cartão.
    Fallback: se não achar cabeçalho, varre como linhas livres com regex de data. */
-const _SKIP_LINE_RE = /(total\s+da\s+fatura|pagamento\s+recebido|saldo\s+anterior|subtotal|saldo\s+atual|limite\s+(?:dispon|de\s+cr)|pr[óo]xima\s+fatura|encargos|juros\s+rotativ)/i;
+const _SKIP_LINE_RE = /(total\s+da\s+fatura|pagamento\s+recebido|^\s*saldo\b|\bsaldo\s+(?:anterior|atual|do\s+dia|em\s+conta|final|dispon[íi]vel|bloqueado|inicial|liquido|l[íi]quido)|subtotal|limite\s+(?:dispon|de\s+cr)|pr[óo]xima\s+fatura|encargos|juros\s+rotativ)/i;
+const _MES_TXT = {jan:'01',fev:'02',mar:'03',abr:'04',mai:'05',jun:'06',jul:'07',ago:'08',set:'09',out:'10',nov:'11',dez:'12',janeiro:'01',fevereiro:'02','março':'03',marco:'03',abril:'04',maio:'05',junho:'06',julho:'07',agosto:'08',setembro:'09',outubro:'10',novembro:'11',dezembro:'12'};
+function _normalizePdfDate(ln){
+  // "15 JUN" / "15 JUNHO" / "15-jun-2025" → "15/06[/2025]"
+  return ln.replace(/\b(\d{1,2})[\s\-\/]+([A-Za-zçÇ]{3,9})(?:[\s\-\/]+(\d{2,4}))?\b/g, (m,d,mon,y)=>{
+    const k = mon.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const mm = _MES_TXT[k] || _MES_TXT[k.slice(0,3)];
+    if(!mm) return m;
+    const dd = d.padStart(2,'0');
+    return y ? `${dd}/${mm}/${y}` : `${dd}/${mm}`;
+  });
+}
 
 function processImportSheet(aoa,fname){
   if(!aoa||!aoa.length){toast('Arquivo vazio.','error');return;}
@@ -2358,8 +2393,18 @@ function processImportSheet(aoa,fname){
   if(hdrIdx>=0){
     const idxOf=(re)=>hdr.findIndex(c=>re.test(c));
     const iData =idxOf(/^data\b|^date\b|dt\.?\s*compra|dt\.?\s*lan[çc]/);
-    let iDesc  = idxOf(/descri|hist[óo]rico|lan[çc]amento|t[íi]tulo|memo|estabelecimento|fornecedor|merchant/);
-    if(iDesc<0) iDesc = iData+1;
+    let iDesc  = idxOf(/^title$|^name$|descri|hist[óo]rico|lan[çc]amento|t[íi]tulo|memo|estabelecimento|fornecedor|merchant/);
+    if(iDesc<0){
+      // fallback: tentar coluna seguinte a data, mas pular se for "category"
+      const next = iData+1;
+      if(next < hdr.length && /^categor/.test(hdr[next]||'')){
+        // procurar qualquer outra coluna textual que não seja data/valor/categoria
+        iDesc = hdr.findIndex((c,k)=> k!==iData && !/^categor|^data\b|^date\b|valor|amount|^vl\b/.test(c) && c);
+        if(iDesc<0) iDesc = next;
+      } else {
+        iDesc = next;
+      }
+    }
     const iSaida=idxOf(/sa[íi]da/);
     const iDeb  =idxOf(/d[ée]bito|debit/);
     const iEnt  =idxOf(/entrada|cr[ée]dito|credit/);
@@ -2429,8 +2474,13 @@ function processImportPdfLines(lines,fname){
   const rows=[];
   const dateRe=/^(\d{2}\/\d{2}(?:\/\d{2,4})?)\s+(.+?)\s+(-?(?:r\$\s*)?[\d\.]+(?:,\d{2})?)(?:\s+(-?(?:r\$\s*)?[\d\.]+(?:,\d{2})?))?\s*$/i;
   const isCartao = _importSource==='cartao';
-  for(const ln of lines){
+  for(const lnRaw of lines){
+    let ln = _normalizePdfDate(lnRaw);
     if(_SKIP_LINE_RE.test(ln))continue;
+    // Detectar sufixo D/C de extratos (BB/Bradesco)
+    let dcFlag = null;
+    const mDC = ln.match(/^(.*?\d[\d\.,]*)\s+([DC])\s*$/);
+    if(mDC){ ln = mDC[1]; dcFlag = mDC[2].toUpperCase(); }
     const m=ln.match(dateRe);
     if(!m)continue;
     let dt=m[1], desc=m[2].trim();
@@ -2442,7 +2492,8 @@ function processImportPdfLines(lines,fname){
       if(/pagamento.*efetuado|cr[ée]dito.*pagto|estorno/i.test(desc))continue;
       rows.push({data:dt,desc,valor:Math.abs(lanc)});
     } else {
-      const isDebito=lanc<0||/pagamento|d[ée]bito|saque|pix enviado|compra|tarifa|envi[ao]/i.test(desc);
+      if(dcFlag==='C') continue; // crédito/entrada não importa
+      const isDebito = dcFlag==='D' || lanc<0 || /pagamento|d[ée]bito|saque|pix enviado|compra|tarifa|envi[ao]/i.test(desc);
       if(!isDebito)continue;
       rows.push({data:dt,desc,valor:Math.abs(lanc)});
     }
