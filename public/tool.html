@@ -2226,7 +2226,8 @@ function renderPrev(rows){
   t.classList.remove('hidden');tbl.classList.remove('hidden');tb.innerHTML='';
   rows.forEach(r=>{
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${r.fp}</td><td>${r.bco}</td><td>${fDate(r.dt)}</td><td>${esc(r.desc)}</td><td class="mono" style="text-align:right">${fBRL(r.vp)}</td><td>${r.cat}</td><td class="mono">${r.mes}</td>`;
+    const cn=despCartaoFromFP(r.fp); const fpLbl = cn?('Cartão: '+cn):r.fp;
+    tr.innerHTML=`<td>${esc(fpLbl)}</td><td>${r.bco}</td><td>${fDate(r.dt)}</td><td>${esc(r.desc)}</td><td class="mono" style="text-align:right">${fBRL(r.vp)}</td><td>${r.cat}</td><td class="mono">${r.mes}</td>`;
     tb.appendChild(tr);
   });
 }
