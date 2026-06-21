@@ -700,12 +700,12 @@ img,svg{display:block;max-width:100%}
 
       <!-- Importar -->
       <div class="desp-panel" id="desp-importar">
-        <!-- Escolha da fonte -->
+        <!-- Passo 1: Fonte -->
         <div id="importSourcePicker" style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;padding:24px 12px">
           <button class="btn btn-g" style="min-width:240px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportSource('cartao')">
             <span style="font-size:2rem">💳</span>
-            <span style="font-weight:600">Cartão de crédito</span>
-            <span style="font-size:.75rem;color:var(--text-muted)">Fatura: todos os lançamentos viram despesa</span>
+            <span style="font-weight:600">Fatura de cartão de crédito</span>
+            <span style="font-size:.75rem;color:var(--text-muted)">Todos os lançamentos da fatura viram despesa</span>
           </button>
           <button class="btn btn-g" style="min-width:240px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportSource('extrato')">
             <span style="font-size:2rem">🏦</span>
@@ -714,10 +714,45 @@ img,svg{display:block;max-width:100%}
           </button>
         </div>
 
-        <!-- Drop-zone (oculto até escolher fonte) -->
+        <!-- Passo 2: Metadados -->
+        <div id="importMetaWrap" style="display:none" class="card-form">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap">
+            <div style="font-size:.9rem;color:var(--text-secondary)">Fonte: <strong id="importMetaSrcLbl">—</strong></div>
+            <button class="btn btn-g btn-xs" onclick="resetImportSource()">↺ Trocar fonte</button>
+          </div>
+          <div id="importMetaCartao" class="grid3" style="display:none">
+            <div class="field">
+              <label class="lbl">Cartão de crédito</label>
+              <select class="sel" id="impCartaoSel" onchange="onImpCartaoChange()"></select>
+            </div>
+            <div class="field" id="impCartaoNewWrap" style="display:none">
+              <label class="lbl">Nome do novo cartão</label>
+              <input class="inp" type="text" id="impCartaoNew" placeholder="Ex: Nubank Roxinho"/>
+            </div>
+            <div class="field">
+              <label class="lbl">Mês de pagamento da fatura</label>
+              <select class="sel" id="impMesPag">
+                <option value="JANEIRO">Janeiro</option><option value="FEVEREIRO">Fevereiro</option><option value="MARÇO">Março</option><option value="ABRIL">Abril</option><option value="MAIO">Maio</option><option value="JUNHO">Junho</option><option value="JULHO">Julho</option><option value="AGOSTO">Agosto</option><option value="SETEMBRO">Setembro</option><option value="OUTUBRO">Outubro</option><option value="NOVEMBRO">Novembro</option><option value="DEZEMBRO">Dezembro</option>
+              </select>
+            </div>
+          </div>
+          <div id="importMetaExtrato" class="grid3" style="display:none">
+            <div class="field">
+              <label class="lbl">Banco</label>
+              <select class="sel" id="impBanco">
+                <option>Bradesco</option><option>Nubank</option><option>Banco do Brasil</option><option>Caixa Econômica</option><option>Itaú</option><option>Santander</option><option>Inter</option><option>C6 Bank</option><option>Outro</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-footer">
+            <button class="btn btn-p" onclick="confirmImportMeta()">Continuar →</button>
+          </div>
+        </div>
+
+        <!-- Passo 3: Drop-zone -->
         <div id="importDropWrap" style="display:none">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap">
-            <div style="font-size:.85rem;color:var(--text-secondary)">Fonte: <strong id="importSourceLbl">—</strong></div>
+            <div style="font-size:.9rem;color:var(--text-secondary)">Fonte: <strong id="importSourceLbl">—</strong> · <span id="importMetaLbl"></span></div>
             <button class="btn btn-g btn-xs" onclick="resetImportSource()">↺ Trocar fonte</button>
           </div>
           <div class="import-drop" id="importDrop" onclick="document.getElementById('fileInput').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onFileDrop(event)">
@@ -730,13 +765,13 @@ img,svg{display:block;max-width:100%}
             <div class="import-preview">
               <div class="import-preview-hd">
                 <span class="import-preview-title" id="importFileName">Arquivo carregado</span>
-                <span style="font-size:.76rem;color:var(--text-muted)" id="importRowCount"></span>
+                <span style="font-size:.8rem;color:var(--text-muted)" id="importRowCount"></span>
               </div>
               <div style="padding:14px 16px">
-                <div class="info-box mb-12" style="margin-bottom:12px">Clique na célula da coluna <strong>Categoria</strong> para alterar. Revise os dados antes de enviar.</div>
+                <div class="info-box mb-12" style="margin-bottom:12px">Confira os lançamentos. Marque <strong>Parc.</strong> e informe o nº de parcelas para gerar a projeção. Lançamentos já importados anteriormente são <strong>ignorados automaticamente</strong>.</div>
                 <div class="tbl-wrap">
-                  <table class="tbl" id="importTable">
-                    <thead><tr><th>Data</th><th>Descrição</th><th>Valor (R$)</th><th>Categoria</th><th>Mês Comp.</th><th>✓</th></tr></thead>
+                  <table class="tbl" id="importTable" style="font-size:.95rem;color:var(--text-primary)">
+                    <thead><tr><th>Data</th><th>Descrição</th><th>Valor (R$)</th><th>Categoria</th><th>Mês Comp.</th><th title="Parcelado">Parc.</th><th title="Nº de parcelas">Nº</th><th>✓</th></tr></thead>
                     <tbody id="importTbody"></tbody>
                   </table>
                 </div>
