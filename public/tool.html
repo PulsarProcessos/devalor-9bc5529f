@@ -802,15 +802,23 @@ img,svg{display:block;max-width:100%}
                 <option value="JANEIRO">Janeiro</option><option value="FEVEREIRO">Fevereiro</option><option value="MARÇO">Março</option><option value="ABRIL">Abril</option><option value="MAIO">Maio</option><option value="JUNHO">Junho</option><option value="JULHO">Julho</option><option value="AGOSTO">Agosto</option><option value="SETEMBRO">Setembro</option><option value="OUTUBRO">Outubro</option><option value="NOVEMBRO">Novembro</option><option value="DEZEMBRO">Dezembro</option>
               </select>
             </div>
-            <div class="field"><label class="lbl">Origem</label>
-              <select class="sel" id="lancFiltroOrigem" onchange="renderDespesasLancadas()">
+            <div class="field"><label class="lbl">Categoria</label>
+              <select class="sel" id="lancFiltroCategoria" onchange="renderDespesasLancadas()">
                 <option value="">Todas</option>
-                <option value="manual">Manual</option>
-                <option value="import">Importação (extrato)</option>
-                <option value="import_cartao">Importação (cartão)</option>
               </select>
             </div>
-            <div class="field"><label class="lbl">Buscar descrição</label><input class="inp" type="text" id="lancFiltroDesc" oninput="renderDespesasLancadas()" placeholder="Ex: Mercado..."/></div>
+            <div class="field"><label class="lbl">Banco</label>
+              <select class="sel" id="lancFiltroBanco" onchange="renderDespesasLancadas()">
+                <option value="">Todos</option>
+              </select>
+            </div>
+            <div class="field"><label class="lbl">Forma de pagamento</label>
+              <select class="sel" id="lancFiltroFormaPag" onchange="renderDespesasLancadas()">
+                <option value="">Todas</option>
+                <option value="Cartão de Crédito">Cartão de Crédito</option>
+                <option value="Débito/Dinheiro/Pix">Débito/Dinheiro/Pix</option>
+              </select>
+            </div>
           </div>
           <div class="form-footer">
             <button class="btn btn-g" onclick="loadDespesasLancadas()">↻ Atualizar</button>
