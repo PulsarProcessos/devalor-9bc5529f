@@ -2943,6 +2943,25 @@ async function savePlanejamentoMes(){
 function buildExtraGrid(){ /* substituído por openPlanejamentoPanel */ }
 function saveExtraordinario(){ return savePlanejamentoMes(); }
 
+async function replicarPlanejamentoAnterior(){
+  const ms=gel('planMesSel'), as=gel('planAnoSel'); if(!ms||!as) return;
+  const mesAtual=ms.value, anoAtual=as.value;
+  let i=MES_NOMES.indexOf(mesAtual); let a=parseInt(anoAtual)||CFG.ANO;
+  i-=1; if(i<0){i=11;a-=1;}
+  const mesAnt=MES_NOMES[i], anoAnt=String(a);
+  if(!_planAllRows.length) await loadAllPlanejamento();
+  const prev=_planAllRows.filter(r=>String(r.mes||'').toUpperCase()===mesAnt && String(r.ano||'')===anoAnt);
+  if(!prev.length){ toast(`Não há planejamento em ${mesAnt[0]+mesAnt.slice(1).toLowerCase()}/${anoAnt} para replicar.`,'warning'); return; }
+  document.querySelectorAll('#planGroups [data-grupo]').forEach(inp=>{
+    const m=prev.find(r=>(r.grupo||'')===inp.dataset.grupo && (r.categoria||'')===inp.dataset.cat);
+    const v=m?Number(m.valor_planejado||0):0;
+    inp.value = v>0 ? fBRL(v).replace('R$','').trim() : '';
+  });
+  updatePlanTotal();
+  toast(`Valores de ${mesAnt[0]+mesAnt.slice(1).toLowerCase()}/${anoAnt} replicados. Ajuste e clique em Salvar mês.`,'success');
+}
+
+
 /* ═══════════════════════════════════════════
    PAINEL — MENSAL
 ═══════════════════════════════════════════ */
