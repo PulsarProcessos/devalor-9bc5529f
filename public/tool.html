@@ -1186,6 +1186,8 @@ function goPanel(id, btnEl){
   if(window.innerWidth<769) gel('appSidebar').classList.remove('open');
   if(id==='quitacao') loadQuitacao();
   if(id==='extraordinario') openPlanejamentoPanel();
+  if(id==='vencimentos'){ buildVencCategoriaSelect(); renderVencimentos(); }
+  if(id==='renda') loadRendaPanel();
 }
 
 function toggleNavGroup(name){
