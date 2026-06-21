@@ -474,6 +474,8 @@ img,svg{display:block;max-width:100%}
           <button class="nav-item" data-panel="sonhos" onclick="goPanel('sonhos',this)"><span class="nav-dot"></span><span class="nav-icon">✨</span>Sonhos & Objetivos</button>
           <button class="nav-item" data-panel="dividas" onclick="goPanel('dividas',this)"><span class="nav-dot"></span><span class="nav-icon">📋</span>Inventário de Dívidas</button>
           <button class="nav-item" data-panel="renda" onclick="goPanel('renda',this)"><span class="nav-dot"></span><span class="nav-icon">💰</span>Renda & Planejamento</button>
+          <button class="nav-item" data-panel="vencimentos" onclick="goPanel('vencimentos',this)"><span class="nav-dot"></span><span class="nav-icon">📆</span>Vencimentos de Contas</button>
+          <button class="nav-item" data-panel="__catsCad" onclick="openModal('modalCats');buildCatEditor()"><span class="nav-dot"></span><span class="nav-icon">🏷️</span>Categorias</button>
         </div>
       </div>
     </div>
@@ -485,7 +487,6 @@ img,svg{display:block;max-width:100%}
         <div class="nav-group-items">
           <button class="nav-item" data-panel="vidarica" onclick="goPanel('vidarica',this)"><span class="nav-dot"></span><span class="nav-icon">🌟</span>Vida Rica</button>
           <button class="nav-item" data-panel="planoacao" onclick="goPanel('planoacao',this)"><span class="nav-dot"></span><span class="nav-icon">✅</span>Plano de Ação</button>
-          <button class="nav-item" data-panel="reserva" onclick="goPanel('reserva',this)"><span class="nav-dot"></span><span class="nav-icon">🛡️</span>Reserva Ideal</button>
           <button class="nav-item" data-panel="quitacao" onclick="goPanel('quitacao',this)"><span class="nav-dot"></span><span class="nav-icon">🏦</span>Quitação de Dívidas</button>
           <button class="nav-item" data-panel="despesas" onclick="goPanel('despesas',this)"><span class="nav-dot"></span><span class="nav-icon">💳</span>Despesas</button>
           <button class="nav-item" data-panel="extraordinario" onclick="goPanel('extraordinario',this)"><span class="nav-dot"></span><span class="nav-icon">📅</span>Planejamento</button>
@@ -598,7 +599,8 @@ img,svg{display:block;max-width:100%}
       <div class="panel-hd"><h1 class="panel-title">Renda & Planejamento Extraordinário</h1><p class="panel-sub">Defina a base de receitas e os eventos financeiros anuais</p></div>
       <div class="card-form">
         <fieldset class="fset"><legend>Renda base mensal</legend>
-          <div class="grid2" style="margin-top:12px">
+          <div class="grid3" style="margin-top:12px">
+            <div class="field"><label class="lbl">Renda mensal recebida (R$)</label><input class="inp inp-money" type="text" id="rendaMensal" placeholder="0,00" data-money/><div style="font-size:.7rem;color:var(--text-muted);margin-top:4px">Quanto você efetivamente recebe por mês (comparado ao realizado no Painel Resumo)</div></div>
             <div class="field"><label class="lbl">Salário / Pró-labore (R$)</label><input class="inp inp-money" type="text" id="rendaSalario" placeholder="0,00" data-money/></div>
             <div class="field"><label class="lbl">Outras rendas (R$)</label><input class="inp inp-money" type="text" id="rendaOutras" placeholder="0,00" data-money/></div>
           </div>
@@ -656,17 +658,23 @@ img,svg{display:block;max-width:100%}
       <button class="btn btn-s mt16" onclick="saveAcoes()">✓ Salvar</button>
     </div>
 
-    <!-- ══ RESERVA IDEAL ════════════════════════════ -->
-    <div class="panel" id="panel-reserva">
-      <div class="sec-hd"><div><h2 class="sec-title">Reserva Ideal</h2><p class="sec-sub">Cálculo personalizado de segurança financeira</p></div></div>
-      <div class="res-panel">
-        <div class="res-qs">
-          <div class="res-q"><span style="font-size:.86rem;font-weight:500;color:var(--text-primary)">Possui carteira assinada (CLT)?</span><div class="radio-grp"><label class="radio-opt"><input type="radio" name="rClt" value="sim" onchange="calcReserveDash()"/> Sim</label><label class="radio-opt"><input type="radio" name="rClt" value="nao" checked onchange="calcReserveDash()"/> Não</label></div></div>
-          <div class="res-q"><span style="font-size:.86rem;font-weight:500;color:var(--text-primary)">Tem filhos?</span><div class="radio-grp"><label class="radio-opt"><input type="radio" name="rFilhos" value="sim" onchange="calcReserveDash()"/> Sim</label><label class="radio-opt"><input type="radio" name="rFilhos" value="nao" checked onchange="calcReserveDash()"/> Não</label></div></div>
-          <div class="res-q"><span style="font-size:.86rem;font-weight:500;color:var(--text-primary)">Tem a quem recorrer em emergência?</span><div class="radio-grp"><label class="radio-opt"><input type="radio" name="rRede" value="sim" checked onchange="calcReserveDash()"/> Sim</label><label class="radio-opt"><input type="radio" name="rRede" value="nao" onchange="calcReserveDash()"/> Não</label></div></div>
-          <div class="res-q"><label style="font-size:.86rem;font-weight:500;color:var(--text-primary)">Gastos fixos mensais (R$)</label><input class="inp inp-money inp-sm" type="text" id="rGastos" placeholder="0,00" data-money oninput="calcReserveDash()"/></div>
+    <!-- ══ VENCIMENTOS DE CONTAS ═══════════════════ -->
+    <div class="panel" id="panel-vencimentos">
+      <div class="panel-hd"><h1 class="panel-title">Vencimentos de Contas</h1><p class="panel-sub">Cadastre contas recorrentes para acompanhamento e lembrete</p></div>
+      <div class="card-form">
+        <div class="grid3">
+          <div class="field"><label class="lbl">Descrição</label><input class="inp" type="text" id="vencDesc" placeholder="Ex: Conta de luz"/></div>
+          <div class="field"><label class="lbl">Valor estimado (R$)</label><input class="inp inp-money" type="text" id="vencValor" placeholder="0,00" data-money/></div>
+          <div class="field"><label class="lbl">Dia do vencimento</label><input class="inp" type="number" id="vencDia" min="1" max="31" placeholder="10"/></div>
+          <div class="field"><label class="lbl">Categoria</label><select class="sel" id="vencCategoria"></select></div>
+          <div class="field"><label class="lbl">Observações</label><input class="inp" type="text" id="vencObs" placeholder="Opcional"/></div>
         </div>
-        <div><div class="res-card"><p style="font-size:.74rem;opacity:.65;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Sugerimos uma reserva de</p><div class="res-card__months"><span id="drMonths">—</span> meses</div><p style="font-size:.74rem;opacity:.55;margin:12px 0 6px;text-transform:uppercase;letter-spacing:.08em">equivalente a</p><div class="res-card__val" id="drAmount">R$ —</div></div></div>
+        <div class="form-footer">
+          <button class="btn btn-p" onclick="addVencimento()">+ Adicionar conta</button>
+        </div>
+      </div>
+      <div class="tbl-wrap mt16">
+        <table class="tbl" id="vencTable"><thead><tr><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Dia</th><th>Próx. venc.</th><th>Obs.</th><th></th></tr></thead><tbody id="vencTbody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:18px">Nenhuma conta cadastrada.</td></tr></tbody></table>
       </div>
     </div>
 
@@ -930,6 +938,37 @@ img,svg{display:block;max-width:100%}
             <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:1.05rem">💳 Cartões de crédito</h3>
             <span style="font-size:.78rem;color:var(--text-muted)">Fatura do mês selecionado</span>
           </div>
+        <!-- Reserva Ideal -->
+        <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:18px;margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">
+            <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:1.05rem">🛡️ Reserva Ideal</h3>
+            <span id="resMetaLbl" style="font-size:.78rem;color:var(--text-muted)">—</span>
+          </div>
+          <div id="resBarWrap">
+            <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:6px"><span style="color:var(--text-muted)">Acumulado</span><span class="mono" id="resAcumLbl" style="font-weight:700">R$ —</span></div>
+            <div style="height:14px;background:var(--bg-muted,#eef2f7);border-radius:99px;overflow:hidden"><div id="resBar" style="height:100%;width:0%;background:linear-gradient(90deg,#16a34a,#22c55e);transition:width .4s"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:.72rem;margin-top:4px;color:var(--text-muted)"><span id="resPctLbl">0%</span><span>Meta: <span class="mono" id="resMetaValLbl">R$ —</span></span></div>
+          </div>
+        </div>
+
+        <!-- Renda recebida vs realizado -->
+        <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:18px;margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">
+            <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:1.05rem">💵 Renda recebida vs. realizado</h3>
+            <span id="rendaDiffLbl" style="font-size:.78rem;font-weight:600;padding:4px 10px;border-radius:99px"></span>
+          </div>
+          <div id="rendaCompare" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+            <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:600">Renda informada</div><div class="mono" id="rendaInfo" style="font-size:1.2rem;font-weight:700;margin-top:4px">R$ —</div></div>
+            <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:600">Receitas realizadas (mês)</div><div class="mono" id="rendaReal" style="font-size:1.2rem;font-weight:700;margin-top:4px">R$ —</div></div>
+          </div>
+        </div>
+
+        <!-- Cartão de crédito -->
+        <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:18px;margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">
+            <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:1.05rem">💳 Cartões de crédito</h3>
+            <span style="font-size:.78rem;color:var(--text-muted)">Fatura do mês selecionado</span>
+          </div>
           <div id="cartoesResumo" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
             <div style="grid-column:1/-1;padding:18px;text-align:center;color:var(--text-muted);font-size:.85rem">Sem lançamentos no cartão neste mês.</div>
           </div>
@@ -1059,7 +1098,7 @@ const CFG = {
     'Obrigatórias Fixas':    ['Moradia','Transporte','Saúde','Educação','Outros Fixos'],
     'Obrigatórias Variáveis':['Alimentação','Farmácia','Manutenção','Outros Variáveis'],
     'Não Obrigatórias':      ['Lazer','Vestuário','Assinaturas','Outros'],
-    'Investimentos':         ['Aposentadoria','Reserva','Outros Invest.'],
+    'Investimentos':         ['Aposentadoria','Reserva','Reserva Ideal','Outros Invest.'],
   }
 };
 
@@ -1178,6 +1217,9 @@ function goPanel(id, btnEl){
   if(window.innerWidth<769) gel('appSidebar').classList.remove('open');
   if(id==='quitacao') loadQuitacao();
   if(id==='extraordinario') openPlanejamentoPanel();
+  if(id==='vencimentos'){ buildVencCategoriaSelect(); renderVencimentos(); }
+  if(id==='renda') loadRendaPanel();
+  if(id==='painel'){ loadRendaPanel().finally(()=>loadPainelData()); }
 }
 
 function toggleNavGroup(name){
@@ -1456,14 +1498,22 @@ function calcReserve(){
   gel('reserveResult')?.classList.remove('hidden');
 }
 function calcReserveDash(){
+  const drM=gel('drMonths'), drA=gel('drAmount');
+  if(!drM||!drA) return;
   const clt=document.querySelector('input[name="rClt"]:checked')?.value||'nao';
   const filhos=document.querySelector('input[name="rFilhos"]:checked')?.value||'nao';
   const rede=document.querySelector('input[name="rRede"]:checked')?.value||'sim';
   const g=pMoney(gel('rGastos')?.value);
   const m=calcLogic(clt,filhos,rede);
-  gel('drMonths').textContent=m;gel('drAmount').textContent=fBRL(m*g);
+  drM.textContent=m;drA.textContent=fBRL(m*g);
+}
+let _reservaMeta={meses:0,valor:0};
+function setReservaMeta(clt,filhos,rede,g){
+  const m=calcLogic(clt,filhos,rede);
+  _reservaMeta={meses:m,valor:m*g};
 }
 function syncReserve(clt,filhos,rede,g){
+  setReservaMeta(clt,filhos,rede,g);
   [['rClt',clt],['rFilhos',filhos],['rRede',rede]].forEach(([n,v])=>{
     const el=document.querySelector(`input[name="${n}"][value="${v}"]`);if(el)el.checked=true;
   });
@@ -1597,6 +1647,7 @@ function buildExtraOnboarding(){
 
 async function submitRenda(){
   const salario=pMoney(gel('rendaSalario')?.value),outras=pMoney(gel('rendaOutras')?.value);
+  const rendaMensal=pMoney(gel('rendaMensal')?.value);
   const extra=[];
   CFG.MESES.forEach(mes=>{
     CFG.CATS_EXTRA.forEach(cat=>{
@@ -1606,7 +1657,7 @@ async function submitRenda(){
   });
   const btn=document.querySelector('[onclick="submitRenda()"]');if(btn)btn.disabled=true;
   try{
-    await apiSaveRenda({salario,outras,extra,ano:CFG.ANO});
+    await apiSaveRenda({salario,outras,rendaMensal,extra,ano:CFG.ANO});
     if(extra.length)await apiRows(CFG.SH.EXTRA,extra.map(e=>[e.mes,e.cat,e.valor,CFG.ANO]));
     toast('Cadastro finalizado! 🎉','success');
     markNavDone('renda');
@@ -1614,6 +1665,90 @@ async function submitRenda(){
   }catch(e){toast('Erro: '+e.message,'error');}
   finally{if(btn)btn.disabled=false;}
 }
+
+/* ═══════════════════════════════════════════
+   RENDA — carregar valores existentes
+═══════════════════════════════════════════ */
+let _rendaMensalCache = 0;
+async function loadRendaPanel(){
+  try{
+    const r = await gGet('getRenda',{ano:CFG.ANO,clienteId:cid()});
+    const renda = r?.renda;
+    if(!renda) return;
+    const dt = renda.data || {};
+    const fillMoney = (id,v)=>{ const el=gel(id); if(el && v>0) el.value = Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); };
+    fillMoney('rendaSalario', renda.salario||0);
+    fillMoney('rendaOutras', renda.outras||0);
+    fillMoney('rendaMensal', dt.rendaMensal||0);
+    _rendaMensalCache = Number(dt.rendaMensal||0);
+  }catch{}
+}
+
+/* ═══════════════════════════════════════════
+   VENCIMENTOS DE CONTAS (localStorage por cliente)
+═══════════════════════════════════════════ */
+function vencKey(){ return 'dv_venc_'+(cid()||'anon'); }
+function getVencimentos(){
+  try{ return JSON.parse(localStorage.getItem(vencKey())||'[]'); }catch{ return []; }
+}
+function saveVencimentos(list){
+  try{ localStorage.setItem(vencKey(), JSON.stringify(list)); }catch{}
+}
+function buildVencCategoriaSelect(){
+  const sel=gel('vencCategoria'); if(!sel) return;
+  const cats=getCats(); sel.innerHTML='<option value="">— sem categoria —</option>';
+  Object.entries(cats).forEach(([grp,items])=>{
+    const og=document.createElement('optgroup'); og.label=grp;
+    items.forEach(item=>{
+      const o=document.createElement('option');
+      o.value=`${grp} · ${item}`; o.textContent=item;
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+}
+function nextVencDate(dia){
+  const d=parseInt(dia)||1, today=new Date();
+  let y=today.getFullYear(), m=today.getMonth();
+  if(today.getDate()>d){ m++; if(m>11){m=0;y++;} }
+  const dt=new Date(y,m,Math.min(d,28));
+  return dt.toLocaleDateString('pt-BR');
+}
+function addVencimento(){
+  const desc=gel('vencDesc')?.value.trim();
+  const valor=pMoney(gel('vencValor')?.value);
+  const dia=parseInt(gel('vencDia')?.value);
+  const cat=gel('vencCategoria')?.value||'';
+  const obs=gel('vencObs')?.value.trim()||'';
+  if(!desc||!dia){ toast('Informe descrição e dia.','error'); return; }
+  const list=getVencimentos();
+  list.push({id:Date.now(), desc, valor, dia, cat, obs});
+  saveVencimentos(list);
+  ['vencDesc','vencValor','vencDia','vencObs'].forEach(id=>{const e=gel(id);if(e)e.value='';});
+  renderVencimentos();
+  toast('Conta adicionada.','success');
+}
+function removeVencimento(id){
+  saveVencimentos(getVencimentos().filter(v=>v.id!==id));
+  renderVencimentos();
+}
+function renderVencimentos(){
+  const tb=gel('vencTbody'); if(!tb) return;
+  const list=getVencimentos();
+  if(!list.length){ tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:18px">Nenhuma conta cadastrada.</td></tr>'; return; }
+  tb.innerHTML=list.sort((a,b)=>a.dia-b.dia).map(v=>`
+    <tr>
+      <td>${esc(v.desc)}</td>
+      <td style="font-size:.82rem;color:var(--text-muted)">${esc(v.cat||'—')}</td>
+      <td class="mono">${fBRL(v.valor||0)}</td>
+      <td style="text-align:center">${v.dia}</td>
+      <td style="font-size:.82rem">${nextVencDate(v.dia)}</td>
+      <td style="font-size:.82rem;color:var(--text-muted)">${esc(v.obs||'')}</td>
+      <td><button class="btn btn-d btn-xs" onclick="removeVencimento(${v.id})">✕</button></td>
+    </tr>
+  `).join('');
+}
+
 
 /* ═══════════════════════════════════════════
    VIDA RICA
@@ -2694,6 +2829,45 @@ async function loadPainelData(){
     setCons('consDespesas', fBRL(groups[1].real+groups[2].real));
     setCons('consInvest', fBRL(groups[3].real));
     setCons('consSaldo', fBRL(sr));
+
+    // Reserva Ideal — acumulado (soma de despesas com categoria "Reserva Ideal" no ano)
+    try{
+      const despAll = (despR?.rows)||[];
+      const acumulado = despAll.filter(r=>{
+        const cat=String(r.categoria||r.cat||'').toLowerCase();
+        return cat.includes('reserva ideal') && String(r.ano||ano)===ano;
+      }).reduce((s,r)=>s+Number(r.valor||0),0);
+      const meta = Number(_reservaMeta.valor||0);
+      const pct = meta>0 ? Math.min(100, Math.round((acumulado/meta)*100)) : 0;
+      const setT=(id,v)=>{const e=gel(id);if(e)e.textContent=v;};
+      setT('resAcumLbl', fBRL(acumulado));
+      setT('resMetaValLbl', meta>0?fBRL(meta):'R$ — (defina no Perfil)');
+      setT('resMetaLbl', meta>0?`${_reservaMeta.meses} meses de gastos`:'Calcule no Perfil & Reserva');
+      setT('resPctLbl', pct+'% da meta');
+      const bar=gel('resBar'); if(bar){
+        bar.style.width=pct+'%';
+        const col = pct>=100?'#16a34a':(pct>=60?'#eab308':'#dc2626');
+        bar.style.background=`linear-gradient(90deg,${col},${col})`;
+      }
+    }catch{}
+
+    // Renda recebida vs realizado
+    try{
+      const rendaInfo = Number(_rendaMensalCache||0);
+      const rendaReal = groups[0].real;
+      const setT=(id,v)=>{const e=gel(id);if(e)e.textContent=v;};
+      setT('rendaInfo', rendaInfo>0?fBRL(rendaInfo):'R$ — (defina em Renda)');
+      setT('rendaReal', fBRL(rendaReal));
+      const lbl=gel('rendaDiffLbl');
+      if(lbl){
+        if(rendaInfo<=0){ lbl.textContent='Sem renda informada'; lbl.style.background='var(--bg-muted,#eef2f7)'; lbl.style.color='var(--text-muted)'; }
+        else {
+          const diff=rendaReal-rendaInfo;
+          if(diff>=0){ lbl.textContent=`▲ ${fBRL(diff)} acima`; lbl.style.background='rgba(22,163,74,.12)'; lbl.style.color='#16a34a'; }
+          else { lbl.textContent=`▼ ${fBRL(Math.abs(diff))} abaixo`; lbl.style.background='rgba(220,38,38,.12)'; lbl.style.color='#dc2626'; }
+        }
+      }
+    }catch{}
   }catch(e){toast('Erro: '+e.message,'error');}
 }
 
