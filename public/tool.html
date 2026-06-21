@@ -1463,14 +1463,22 @@ function calcReserve(){
   gel('reserveResult')?.classList.remove('hidden');
 }
 function calcReserveDash(){
+  const drM=gel('drMonths'), drA=gel('drAmount');
+  if(!drM||!drA) return;
   const clt=document.querySelector('input[name="rClt"]:checked')?.value||'nao';
   const filhos=document.querySelector('input[name="rFilhos"]:checked')?.value||'nao';
   const rede=document.querySelector('input[name="rRede"]:checked')?.value||'sim';
   const g=pMoney(gel('rGastos')?.value);
   const m=calcLogic(clt,filhos,rede);
-  gel('drMonths').textContent=m;gel('drAmount').textContent=fBRL(m*g);
+  drM.textContent=m;drA.textContent=fBRL(m*g);
+}
+let _reservaMeta={meses:0,valor:0};
+function setReservaMeta(clt,filhos,rede,g){
+  const m=calcLogic(clt,filhos,rede);
+  _reservaMeta={meses:m,valor:m*g};
 }
 function syncReserve(clt,filhos,rede,g){
+  setReservaMeta(clt,filhos,rede,g);
   [['rClt',clt],['rFilhos',filhos],['rRede',rede]].forEach(([n,v])=>{
     const el=document.querySelector(`input[name="${n}"][value="${v}"]`);if(el)el.checked=true;
   });
