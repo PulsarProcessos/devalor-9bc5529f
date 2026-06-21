@@ -938,6 +938,37 @@ img,svg{display:block;max-width:100%}
             <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:1.05rem">💳 Cartões de crédito</h3>
             <span style="font-size:.78rem;color:var(--text-muted)">Fatura do mês selecionado</span>
           </div>
+        <!-- Reserva Ideal -->
+        <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:18px;margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">
+            <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:1.05rem">🛡️ Reserva Ideal</h3>
+            <span id="resMetaLbl" style="font-size:.78rem;color:var(--text-muted)">—</span>
+          </div>
+          <div id="resBarWrap">
+            <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:6px"><span style="color:var(--text-muted)">Acumulado</span><span class="mono" id="resAcumLbl" style="font-weight:700">R$ —</span></div>
+            <div style="height:14px;background:var(--bg-muted,#eef2f7);border-radius:99px;overflow:hidden"><div id="resBar" style="height:100%;width:0%;background:linear-gradient(90deg,#16a34a,#22c55e);transition:width .4s"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:.72rem;margin-top:4px;color:var(--text-muted)"><span id="resPctLbl">0%</span><span>Meta: <span class="mono" id="resMetaValLbl">R$ —</span></span></div>
+          </div>
+        </div>
+
+        <!-- Renda recebida vs realizado -->
+        <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:18px;margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">
+            <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:1.05rem">💵 Renda recebida vs. realizado</h3>
+            <span id="rendaDiffLbl" style="font-size:.78rem;font-weight:600;padding:4px 10px;border-radius:99px"></span>
+          </div>
+          <div id="rendaCompare" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+            <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:600">Renda informada</div><div class="mono" id="rendaInfo" style="font-size:1.2rem;font-weight:700;margin-top:4px">R$ —</div></div>
+            <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:600">Receitas realizadas (mês)</div><div class="mono" id="rendaReal" style="font-size:1.2rem;font-weight:700;margin-top:4px">R$ —</div></div>
+          </div>
+        </div>
+
+        <!-- Cartão de crédito -->
+        <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:18px;margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">
+            <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:1.05rem">💳 Cartões de crédito</h3>
+            <span style="font-size:.78rem;color:var(--text-muted)">Fatura do mês selecionado</span>
+          </div>
           <div id="cartoesResumo" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
             <div style="grid-column:1/-1;padding:18px;text-align:center;color:var(--text-muted);font-size:.85rem">Sem lançamentos no cartão neste mês.</div>
           </div>
