@@ -1587,7 +1587,7 @@ function updateTipoPrazoBadge(){
 function addSonhoCategoria(obj){
   if(!obj) return;
   const cats=getCats(); if(!cats['Investimentos']) cats['Investimentos']=[];
-  if(!cats['Investimentos'].includes(obj)){ cats['Investimentos'].push(obj); saveCatsStore(); }
+  if(!cats['Investimentos'].includes(obj)){ cats['Investimentos'].push(obj); saveCatsStore(); refreshCatSelectors(); }
 }
 function renameSonhoCategoria(oldObj,newObj){
   if(!newObj) return;
@@ -1595,7 +1595,7 @@ function renameSonhoCategoria(oldObj,newObj){
   const cats=getCats(); if(!cats['Investimentos']) cats['Investimentos']=[];
   const i=cats['Investimentos'].indexOf(oldObj);
   if(i>=0) cats['Investimentos'][i]=newObj; else cats['Investimentos'].push(newObj);
-  saveCatsStore();
+  saveCatsStore(); refreshCatSelectors();
 }
 
 function addSonhoPreview(){
