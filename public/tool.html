@@ -2828,6 +2828,45 @@ async function loadPainelData(){
     setCons('consDespesas', fBRL(groups[1].real+groups[2].real));
     setCons('consInvest', fBRL(groups[3].real));
     setCons('consSaldo', fBRL(sr));
+
+    // Reserva Ideal — acumulado (soma de despesas com categoria "Reserva Ideal" no ano)
+    try{
+      const despAll = (despR?.rows)||[];
+      const acumulado = despAll.filter(r=>{
+        const cat=String(r.categoria||r.cat||'').toLowerCase();
+        return cat.includes('reserva ideal') && String(r.ano||ano)===ano;
+      }).reduce((s,r)=>s+Number(r.valor||0),0);
+      const meta = Number(_reservaMeta.valor||0);
+      const pct = meta>0 ? Math.min(100, Math.round((acumulado/meta)*100)) : 0;
+      const setT=(id,v)=>{const e=gel(id);if(e)e.textContent=v;};
+      setT('resAcumLbl', fBRL(acumulado));
+      setT('resMetaValLbl', meta>0?fBRL(meta):'R$ — (defina no Perfil)');
+      setT('resMetaLbl', meta>0?`${_reservaMeta.meses} meses de gastos`:'Calcule no Perfil & Reserva');
+      setT('resPctLbl', pct+'% da meta');
+      const bar=gel('resBar'); if(bar){
+        bar.style.width=pct+'%';
+        const col = pct>=100?'#16a34a':(pct>=60?'#eab308':'#dc2626');
+        bar.style.background=`linear-gradient(90deg,${col},${col})`;
+      }
+    }catch{}
+
+    // Renda recebida vs realizado
+    try{
+      const rendaInfo = Number(_rendaMensalCache||0);
+      const rendaReal = groups[0].real;
+      const setT=(id,v)=>{const e=gel(id);if(e)e.textContent=v;};
+      setT('rendaInfo', rendaInfo>0?fBRL(rendaInfo):'R$ — (defina em Renda)');
+      setT('rendaReal', fBRL(rendaReal));
+      const lbl=gel('rendaDiffLbl');
+      if(lbl){
+        if(rendaInfo<=0){ lbl.textContent='Sem renda informada'; lbl.style.background='var(--bg-muted,#eef2f7)'; lbl.style.color='var(--text-muted)'; }
+        else {
+          const diff=rendaReal-rendaInfo;
+          if(diff>=0){ lbl.textContent=`▲ ${fBRL(diff)} acima`; lbl.style.background='rgba(22,163,74,.12)'; lbl.style.color='#16a34a'; }
+          else { lbl.textContent=`▼ ${fBRL(Math.abs(diff))} abaixo`; lbl.style.background='rgba(220,38,38,.12)'; lbl.style.color='#dc2626'; }
+        }
+      }
+    }catch{}
   }catch(e){toast('Erro: '+e.message,'error');}
 }
 
