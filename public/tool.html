@@ -1635,6 +1635,90 @@ async function submitRenda(){
 }
 
 /* ═══════════════════════════════════════════
+   RENDA — carregar valores existentes
+═══════════════════════════════════════════ */
+let _rendaMensalCache = 0;
+async function loadRendaPanel(){
+  try{
+    const r = await gGet('getRenda',{ano:CFG.ANO,clienteId:cid()});
+    const renda = r?.renda;
+    if(!renda) return;
+    const dt = renda.data || {};
+    const fillMoney = (id,v)=>{ const el=gel(id); if(el && v>0) el.value = Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); };
+    fillMoney('rendaSalario', renda.salario||0);
+    fillMoney('rendaOutras', renda.outras||0);
+    fillMoney('rendaMensal', dt.rendaMensal||0);
+    _rendaMensalCache = Number(dt.rendaMensal||0);
+  }catch{}
+}
+
+/* ═══════════════════════════════════════════
+   VENCIMENTOS DE CONTAS (localStorage por cliente)
+═══════════════════════════════════════════ */
+function vencKey(){ return 'dv_venc_'+(cid()||'anon'); }
+function getVencimentos(){
+  try{ return JSON.parse(localStorage.getItem(vencKey())||'[]'); }catch{ return []; }
+}
+function saveVencimentos(list){
+  try{ localStorage.setItem(vencKey(), JSON.stringify(list)); }catch{}
+}
+function buildVencCategoriaSelect(){
+  const sel=gel('vencCategoria'); if(!sel) return;
+  const cats=getCats(); sel.innerHTML='<option value="">— sem categoria —</option>';
+  Object.entries(cats).forEach(([grp,items])=>{
+    const og=document.createElement('optgroup'); og.label=grp;
+    items.forEach(item=>{
+      const o=document.createElement('option');
+      o.value=`${grp} · ${item}`; o.textContent=item;
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+}
+function nextVencDate(dia){
+  const d=parseInt(dia)||1, today=new Date();
+  let y=today.getFullYear(), m=today.getMonth();
+  if(today.getDate()>d){ m++; if(m>11){m=0;y++;} }
+  const dt=new Date(y,m,Math.min(d,28));
+  return dt.toLocaleDateString('pt-BR');
+}
+function addVencimento(){
+  const desc=gel('vencDesc')?.value.trim();
+  const valor=pMoney(gel('vencValor')?.value);
+  const dia=parseInt(gel('vencDia')?.value);
+  const cat=gel('vencCategoria')?.value||'';
+  const obs=gel('vencObs')?.value.trim()||'';
+  if(!desc||!dia){ toast('Informe descrição e dia.','error'); return; }
+  const list=getVencimentos();
+  list.push({id:Date.now(), desc, valor, dia, cat, obs});
+  saveVencimentos(list);
+  ['vencDesc','vencValor','vencDia','vencObs'].forEach(id=>{const e=gel(id);if(e)e.value='';});
+  renderVencimentos();
+  toast('Conta adicionada.','success');
+}
+function removeVencimento(id){
+  saveVencimentos(getVencimentos().filter(v=>v.id!==id));
+  renderVencimentos();
+}
+function renderVencimentos(){
+  const tb=gel('vencTbody'); if(!tb) return;
+  const list=getVencimentos();
+  if(!list.length){ tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:18px">Nenhuma conta cadastrada.</td></tr>'; return; }
+  tb.innerHTML=list.sort((a,b)=>a.dia-b.dia).map(v=>`
+    <tr>
+      <td>${esc(v.desc)}</td>
+      <td style="font-size:.82rem;color:var(--text-muted)">${esc(v.cat||'—')}</td>
+      <td class="mono">${fBRL(v.valor||0)}</td>
+      <td style="text-align:center">${v.dia}</td>
+      <td style="font-size:.82rem">${nextVencDate(v.dia)}</td>
+      <td style="font-size:.82rem;color:var(--text-muted)">${esc(v.obs||'')}</td>
+      <td><button class="btn btn-d btn-xs" onclick="removeVencimento(${v.id})">✕</button></td>
+    </tr>
+  `).join('');
+}
+
+
+/* ═══════════════════════════════════════════
    VIDA RICA
 ═══════════════════════════════════════════ */
 let _dreamsCache=[];
