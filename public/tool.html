@@ -751,22 +751,26 @@ img,svg{display:block;max-width:100%}
       <!-- Importar -->
       <div class="desp-panel" id="desp-importar">
         <!-- Passo 1: Fonte -->
-        <div id="importSourcePicker" style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;padding:24px 12px">
-          <button class="btn btn-g" style="min-width:240px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportSource('cartao')">
-            <span style="font-size:2rem">💳</span>
-            <span style="font-weight:600">Fatura de cartão de crédito</span>
-            <span style="font-size:.75rem;color:var(--text-muted)">Todos os lançamentos da fatura viram despesa</span>
-          </button>
-          <button class="btn btn-g" style="min-width:240px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportSource('extrato')">
-            <span style="font-size:2rem">🏦</span>
-            <span style="font-weight:600">Extrato bancário</span>
-            <span style="font-size:.75rem;color:var(--text-muted)">Apenas saídas / débitos são importados</span>
-          </button>
+        <div id="importSourcePicker">
+          <div class="imp-step-hd"><span class="imp-step-badge">1</span><span>Escolha a fonte do arquivo</span></div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;padding:12px">
+            <button class="btn btn-g" style="min-width:240px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportSource('cartao')">
+              <span style="font-size:2rem">💳</span>
+              <span style="font-weight:600">Fatura de cartão de crédito</span>
+              <span style="font-size:.75rem;color:var(--text-muted)">Todos os lançamentos da fatura viram despesa</span>
+            </button>
+            <button class="btn btn-g" style="min-width:240px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportSource('extrato')">
+              <span style="font-size:2rem">🏦</span>
+              <span style="font-weight:600">Extrato bancário</span>
+              <span style="font-size:.75rem;color:var(--text-muted)">Apenas saídas / débitos são importados</span>
+            </button>
+          </div>
         </div>
 
         <!-- Passo 2: Metadados -->
         <div id="importMetaWrap" style="display:none" class="card-form">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap">
+          <div class="imp-step-hd"><span class="imp-step-badge">2</span><span>Confirme os dados da fonte</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0;gap:8px;flex-wrap:wrap">
             <div style="font-size:.9rem;color:var(--text-secondary)">Fonte: <strong id="importMetaSrcLbl">—</strong></div>
             <button class="btn btn-g btn-xs" onclick="resetImportSource()">↺ Trocar fonte</button>
           </div>
@@ -799,16 +803,17 @@ img,svg{display:block;max-width:100%}
           </div>
         </div>
 
-        <!-- Passo 3: Drop-zone -->
-        <div id="importDropWrap" style="display:none">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap">
-            <div style="font-size:.9rem;color:var(--text-secondary)">Fonte: <strong id="importSourceLbl">—</strong> · <span id="importMetaLbl"></span></div>
-            <button class="btn btn-g btn-xs" onclick="resetImportSource()">↺ Trocar fonte</button>
+        <!-- Passo 3: Drop-zone (sempre visível, bloqueado até confirmar) -->
+        <div id="importDropWrap" class="imp-locked">
+          <div class="imp-step-hd"><span class="imp-step-badge">3</span><span>Envie o arquivo</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0;gap:8px;flex-wrap:wrap">
+            <div style="font-size:.9rem;color:var(--text-secondary)">Fonte: <strong id="importSourceLbl">—</strong> · <span id="importMetaLbl">aguardando confirmação</span></div>
+            <button class="btn btn-g btn-xs" onclick="resetImportSource()" id="impResetBtn3" style="display:none">↺ Trocar fonte</button>
           </div>
-          <div class="import-drop" id="importDrop" onclick="document.getElementById('fileInput').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onFileDrop(event)">
-            <div class="import-drop__icon">📂</div>
-            <div class="import-drop__title">Arraste ou clique para selecionar o arquivo</div>
-            <div class="import-drop__sub" id="importDropSub">Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong></div>
+          <div class="import-drop" id="importDrop" onclick="onImportDropClick()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onFileDrop(event)">
+            <div class="import-drop__icon" id="importDropIcon">🔒</div>
+            <div class="import-drop__title" id="importDropTitle">Confirme a fonte acima para liberar</div>
+            <div class="import-drop__sub" id="importDropSub">Complete os passos 1 e 2 para habilitar o envio</div>
           </div>
           <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.pdf" style="display:none" onchange="handleFileSelect(this.files[0])"/>
           <div id="importPreviewWrap" class="hidden mt16">
