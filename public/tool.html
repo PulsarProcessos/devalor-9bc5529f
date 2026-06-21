@@ -1215,7 +1215,7 @@ function showCliente(user){
   if(_user?.perfil!=='consultor'){
     [nEl,eEl].forEach(el=>{if(el){el.readOnly=true;el.style.opacity='.72';el.style.cursor='default';el.title='Preenchido automaticamente do seu cadastro';}});
   }
-  buildCatSelect();
+  buildCatSelect();fillBancoSelect();onDespFormaPagChange();
   loadSonhosFromSheets();
   goPanel('perfil');
 }
