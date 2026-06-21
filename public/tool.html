@@ -2193,45 +2193,48 @@ function handleFileSelect(file){
 
 /* Parser tolerante: detecta cabeçalho mesmo em faturas de cartão.
    Fallback: se não achar cabeçalho, varre como linhas livres com regex de data. */
+const _SKIP_LINE_RE = /(total\s+da\s+fatura|pagamento\s+recebido|saldo\s+anterior|subtotal|saldo\s+atual|limite\s+(?:dispon|de\s+cr)|pr[óo]xima\s+fatura|encargos|juros\s+rotativ)/i;
+
 function processImportSheet(aoa,fname){
   if(!aoa||!aoa.length){toast('Arquivo vazio.','error');return;}
   const isCartao = _importSource==='cartao';
 
   // 1) Tenta detectar cabeçalho
   let hdrIdx=-1, hdr=null;
-  for(let i=0;i<Math.min(aoa.length,50);i++){
+  for(let i=0;i<Math.min(aoa.length,60);i++){
     const cells=(aoa[i]||[]).map(c=>String(c||'').toLowerCase().trim());
     const hasData=cells.some(c=>/^data\b|^date\b|dt\.?\s*compra|dt\.?\s*lan[çc]/.test(c));
-    const hasMov =cells.some(c=>/sa[íi]da|d[ée]bito|debit|^valor|amount|^vl|montante|total|r\$/.test(c));
-    const hasDesc=cells.some(c=>/descri|hist[óo]rico|lan[çc]amento|t[íi]tulo|memo|estabelecimento|fornecedor/.test(c));
-    if(hasData&&hasMov&&(hasDesc||isCartao)){hdrIdx=i;hdr=cells;break;}
+    const hasMov =cells.some(c=>/sa[íi]da|d[ée]bito|debit|^valor\b|amount|^vl\b|montante|^total\b|r\$/.test(c));
+    const hasDesc=cells.some(c=>/descri|hist[óo]rico|lan[çc]amento|t[íi]tulo|memo|estabelecimento|fornecedor|merchant/.test(c));
+    // Para cartão, descrição é opcional (alguns formatos só têm Data+Valor+Categoria)
+    if(hasData && (hasMov||isCartao) && (hasDesc||isCartao)){hdrIdx=i;hdr=cells;break;}
   }
 
   const rows=[];
   if(hdrIdx>=0){
     const idxOf=(re)=>hdr.findIndex(c=>re.test(c));
     const iData =idxOf(/^data\b|^date\b|dt\.?\s*compra|dt\.?\s*lan[çc]/);
-    let iDesc  = idxOf(/descri|hist[óo]rico|lan[çc]amento|t[íi]tulo|memo|estabelecimento|fornecedor/);
+    let iDesc  = idxOf(/descri|hist[óo]rico|lan[çc]amento|t[íi]tulo|memo|estabelecimento|fornecedor|merchant/);
     if(iDesc<0) iDesc = iData+1;
     const iSaida=idxOf(/sa[íi]da/);
     const iDeb  =idxOf(/d[ée]bito|debit/);
     const iEnt  =idxOf(/entrada|cr[ée]dito|credit/);
-    // valor R$ preferencial sobre valor US$
     const iValBr= hdr.findIndex(c=>/valor.*(r\$|brl|reais)/.test(c));
-    const iVal  = iValBr>=0 ? iValBr : idxOf(/^valor|^vl|amount|montante|^total/);
+    const iVal  = iValBr>=0 ? iValBr : idxOf(/^valor\b|^vl\b|amount|montante|^total\b/);
 
     for(let i=hdrIdx+1;i<aoa.length;i++){
       const r=aoa[i]||[];
       const dt=String(r[iData]||'').trim();
       if(!dt||!/\d/.test(dt))continue;
       const desc=String(r[iDesc]||'').trim();
+      if(desc && _SKIP_LINE_RE.test(desc)) continue;
       let valor=0;
       if(isCartao){
         const v = iVal>=0 ? pMoney(r[iVal])
                : iDeb>=0 ? pMoney(r[iDeb])
                : iSaida>=0 ? pMoney(r[iSaida]) : 0;
         if(v===0)continue;
-        if(v<0)continue; // pagamento/estorno
+        if(v<0)continue;
         valor=Math.abs(v);
       } else if(iSaida>=0){
         const s=pMoney(r[iSaida]); if(s>0)valor=s; else continue;
@@ -2243,47 +2246,53 @@ function processImportSheet(aoa,fname){
         else if(iEnt<0)valor=Math.abs(v);
         else continue;
       } else continue;
-      if(valor<=0||!desc)continue;
-      rows.push({data:dt,desc,valor});
+      if(valor<=0)continue;
+      if(!desc && !isCartao)continue;
+      rows.push({data:dt,desc:desc||'Lançamento',valor});
     }
   }
 
-  // 2) Fallback heurístico: percorre linhas e identifica padrão data/descr/valor
+  // 2) Fallback heurístico
   if(!rows.length){
     const dateRe=/^\d{1,2}[\/\-\.]\d{1,2}([\/\-\.]\d{2,4})?$/;
+    // Aceita 1234,56 / 1.234,56 / 1234.56 / 1,234.56 / R$ ...
     const valRe =/^-?(r\$\s*)?[\d\.\,]+$/i;
     for(const r0 of aoa){
       const r=(r0||[]).map(c=>String(c==null?'':c).trim());
       if(r.length<2)continue;
-      // acha célula de data
+      const joined = r.join(' ');
+      if(_SKIP_LINE_RE.test(joined))continue;
       const di=r.findIndex(c=>dateRe.test(c));
       if(di<0)continue;
-      // acha última célula numérica como valor
       let vi=-1;
-      for(let j=r.length-1;j>=0;j--){if(valRe.test(r[j].replace(/\s+/g,''))){vi=j;break;}}
+      for(let j=r.length-1;j>=0;j--){if(valRe.test(r[j].replace(/\s+/g,''))&&/\d/.test(r[j])){vi=j;break;}}
       if(vi<0||vi===di)continue;
       const val=pMoney(r[vi]);
+      if(!val)continue;
       if(isCartao){if(val<=0)continue;}
       else {if(val>=0)continue;}
       const desc=r.filter((_,k)=>k!==di&&k!==vi).join(' ').replace(/\s+/g,' ').trim();
-      if(!desc)continue;
-      rows.push({data:r[di],desc,valor:Math.abs(val)});
+      if(!desc && !isCartao)continue;
+      rows.push({data:r[di],desc:desc||'Lançamento',valor:Math.abs(val)});
     }
   }
 
   finishImportRows(rows,fname);
 }
 
-/* PDF: regex por linha — formato típico "dd/mm/aaaa  descrição ...  -1.234,56" */
+/* PDF: regex por linha — aceita data dd/mm[/aaaa] e valor com ou sem vírgula */
 function processImportPdfLines(lines,fname){
   const rows=[];
-  const dateRe=/^(\d{2}\/\d{2}\/\d{2,4})\s+(.+?)\s+(-?(?:r\$\s*)?[\d\.]+,\d{2})(?:\s+(-?(?:r\$\s*)?[\d\.]+,\d{2}))?\s*$/i;
+  const dateRe=/^(\d{2}\/\d{2}(?:\/\d{2,4})?)\s+(.+?)\s+(-?(?:r\$\s*)?[\d\.]+(?:,\d{2})?)(?:\s+(-?(?:r\$\s*)?[\d\.]+(?:,\d{2})?))?\s*$/i;
   const isCartao = _importSource==='cartao';
   for(const ln of lines){
+    if(_SKIP_LINE_RE.test(ln))continue;
     const m=ln.match(dateRe);
     if(!m)continue;
-    const dt=m[1], desc=m[2].trim();
+    let dt=m[1], desc=m[2].trim();
+    if(!/\/\d{2,4}$/.test(dt)){ dt = dt + '/' + (CFG.ANO||new Date().getFullYear()); }
     const lanc=pMoney(m[3]);
+    if(!lanc)continue;
     if(isCartao){
       if(lanc<=0)continue;
       if(/pagamento.*efetuado|cr[ée]dito.*pagto|estorno/i.test(desc))continue;
