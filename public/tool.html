@@ -2450,8 +2450,13 @@ function processImportPdfLines(lines,fname){
   const rows=[];
   const dateRe=/^(\d{2}\/\d{2}(?:\/\d{2,4})?)\s+(.+?)\s+(-?(?:r\$\s*)?[\d\.]+(?:,\d{2})?)(?:\s+(-?(?:r\$\s*)?[\d\.]+(?:,\d{2})?))?\s*$/i;
   const isCartao = _importSource==='cartao';
-  for(const ln of lines){
+  for(const lnRaw of lines){
+    let ln = _normalizePdfDate(lnRaw);
     if(_SKIP_LINE_RE.test(ln))continue;
+    // Detectar sufixo D/C de extratos (BB/Bradesco)
+    let dcFlag = null;
+    const mDC = ln.match(/^(.*?\d[\d\.,]*)\s+([DC])\s*$/);
+    if(mDC){ ln = mDC[1]; dcFlag = mDC[2].toUpperCase(); }
     const m=ln.match(dateRe);
     if(!m)continue;
     let dt=m[1], desc=m[2].trim();
@@ -2463,7 +2468,8 @@ function processImportPdfLines(lines,fname){
       if(/pagamento.*efetuado|cr[ée]dito.*pagto|estorno/i.test(desc))continue;
       rows.push({data:dt,desc,valor:Math.abs(lanc)});
     } else {
-      const isDebito=lanc<0||/pagamento|d[ée]bito|saque|pix enviado|compra|tarifa|envi[ao]/i.test(desc);
+      if(dcFlag==='C') continue; // crédito/entrada não importa
+      const isDebito = dcFlag==='D' || lanc<0 || /pagamento|d[ée]bito|saque|pix enviado|compra|tarifa|envi[ao]/i.test(desc);
       if(!isDebito)continue;
       rows.push({data:dt,desc,valor:Math.abs(lanc)});
     }
