@@ -1623,7 +1623,7 @@ async function submitRenda(){
   });
   const btn=document.querySelector('[onclick="submitRenda()"]');if(btn)btn.disabled=true;
   try{
-    await apiSaveRenda({salario,outras,extra,ano:CFG.ANO});
+    await apiSaveRenda({salario,outras,rendaMensal,extra,ano:CFG.ANO});
     if(extra.length)await apiRows(CFG.SH.EXTRA,extra.map(e=>[e.mes,e.cat,e.valor,CFG.ANO]));
     toast('Cadastro finalizado! 🎉','success');
     markNavDone('renda');
