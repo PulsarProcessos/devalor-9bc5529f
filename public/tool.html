@@ -1755,14 +1755,16 @@ async function loadQuitacao(){
   }
 }
 
-async function openPagamentoDivida(id,credor,sugestao){
+async function openPagamentoDivida(idx){
+  const d=_dividasCache[idx]; if(!d) return;
+  const sugestao=Number(d.valor_parcela||0);
   const def = sugestao>0 ? String(sugestao).replace('.',',') : '';
-  const v = prompt(`Registrar pagamento — ${credor}\n\nValor pago (R$):`, def);
+  const v = prompt(`Registrar pagamento — ${d.credor||''}\n\nValor pago (R$):`, def);
   if(v==null) return;
   const valor = pMoney(v);
   if(!(valor>0)){toast('Valor inválido.','error');return;}
   try{
-    const r=await gPost('registerDividaPagamento',{id,valor});
+    const r=await gPost('registerDividaPagamento',{id:d.id,valor});
     if(r?.error){toast('Erro: '+r.error,'error');return;}
     toast(r?.status==='quitada'?'Dívida quitada! 🎉':'Pagamento registrado.','success');
     await loadQuitacao();
