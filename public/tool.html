@@ -621,6 +621,28 @@ img,svg{display:block;max-width:100%}
       <div class="dreams-grid" id="dreamsGrid"><div style="grid-column:1/-1;padding:48px;text-align:center;color:var(--text-muted)"><span style="font-size:2.5rem;opacity:.25;display:block;margin-bottom:10px">◈</span>Nenhum sonho cadastrado ainda.</div></div>
     </div>
 
+    <!-- Edit Sonho Modal -->
+    <div id="editSonhoModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;padding:20px">
+      <div style="background:var(--bg-elev,#fff);color:var(--text-primary);border-radius:14px;max-width:520px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.4);max-height:90vh;overflow:auto">
+        <h3 style="margin:0 0 16px;font-family:'Playfair Display',serif">Editar Sonho</h3>
+        <input type="hidden" id="editSonhoId"/><input type="hidden" id="editSonhoOldObj"/>
+        <div class="field"><label class="lbl">Quem <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label><input class="inp" type="text" id="editSonhoQuem"/></div>
+        <div class="field"><label class="lbl">Objetivo / Sonho</label><input class="inp" type="text" id="editSonhoObj"/></div>
+        <div class="field"><label class="lbl">Motivo</label><input class="inp" type="text" id="editSonhoMotivo"/></div>
+        <div class="field"><label class="lbl">Valor total (R$)</label><input class="inp inp-money" type="text" id="editSonhoValor" data-money/></div>
+        <div class="field"><label class="lbl">Prazo (data limite)</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input class="inp" type="date" id="editSonhoPrazo" oninput="updateEditTipoBadge()" style="flex:1"/>
+            <span id="editSonhoTipoBadge" style="display:inline-flex;padding:6px 12px;border-radius:99px;font-size:.72rem;font-weight:700;text-transform:uppercase;background:var(--success-bg);color:var(--success);white-space:nowrap">Curto</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
+          <button class="btn btn-s" onclick="closeEditSonho()">Cancelar</button>
+          <button class="btn btn-p" onclick="saveEditSonho()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ══ PLANO DE AÇÃO ═══════════════════════════ -->
     <div class="panel" id="panel-planoacao">
       <div class="sec-hd">
