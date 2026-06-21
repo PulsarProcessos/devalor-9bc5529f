@@ -2673,6 +2673,8 @@ function renderDespesasLancadas(){
   const fCat=gel('lancFiltroCategoria')?.value||'';
   const fBanco=gel('lancFiltroBanco')?.value||'';
   const fFormaPag=gel('lancFiltroFormaPag')?.value||'';
+  const hideProj=gel('lancHideProj')?.checked||false;
+  const now=new Date(); const curMesIdx0=now.getMonth(); const curAno0=now.getFullYear();
   const filtered=_lancRows.filter(r=>{
     if(fMes && String(r.mes||'').toUpperCase()!==fMes)return false;
     if(fCat){
@@ -2681,8 +2683,15 @@ function renderDespesasLancadas(){
     }
     if(fBanco && !(r.banco===fBanco || r.cartao===fBanco))return false;
     if(fFormaPag && String(r.forma_pagamento||'')!==fFormaPag)return false;
+    if(hideProj){
+      const mi=CFG.MESES.indexOf(String(r.mes||'').toUpperCase());
+      const ay=parseInt(r.ano||curAno0,10);
+      const isFut = !(r.pago===true) && mi>=0 && (ay>curAno0 || (ay===curAno0 && mi>curMesIdx0));
+      if(isFut)return false;
+    }
     return true;
   });
+
   if(!filtered.length){
     tb.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:20px">Nenhuma despesa encontrada.</td></tr>';
     gel('lancTotal').textContent='Total: '+fBRL(0);
