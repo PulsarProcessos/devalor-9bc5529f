@@ -724,7 +724,7 @@ img,svg{display:block;max-width:100%}
           </div>
           <div class="parcel-row">
             <label class="toggle-lbl"><input type="checkbox" id="chkParcelado" onchange="toggleParcelado(this.checked)"/><span class="toggle-sl"></span>Despesa parcelada</label>
-            <div class="parcel-fields hidden" id="parcelFields"><div class="field"><label class="lbl">Nº total de parcelas</label><input class="inp inp-sm" type="number" id="despNParcelas" min="2" max="120" placeholder="Ex: 12" oninput="genPreview()"/></div></div>
+            <div class="parcel-fields hidden" id="parcelFields"><div class="field"><label class="lbl">Nº total de parcelas</label><input class="inp inp-sm" type="number" id="despNParcelas" min="2" max="120" placeholder="Ex: 12" oninput="schedulePreview()"/></div></div>
           </div>
           <div class="form-footer">
             <button class="btn btn-g" onclick="clearDespForm()">Limpar</button>
