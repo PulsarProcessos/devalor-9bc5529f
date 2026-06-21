@@ -285,6 +285,10 @@ img,svg{display:block;max-width:100%}
 .import-drop:hover,.import-drop.drag{border-color:var(--brand);background:var(--gold-pale)}
 .import-drop__icon{font-size:2.2rem;margin-bottom:10px;opacity:.4}
 .import-drop__title{font-size:.9rem;font-weight:600;color:var(--text-secondary);margin-bottom:4px}
+.imp-locked .import-drop{opacity:.5;cursor:not-allowed;background:repeating-linear-gradient(45deg,var(--bg-body),var(--bg-body) 10px,rgba(0,0,0,.03) 10px,rgba(0,0,0,.03) 20px);border-style:dashed;border-color:var(--border-default)}
+.imp-locked .import-drop:hover{border-color:var(--border-default);background:repeating-linear-gradient(45deg,var(--bg-body),var(--bg-body) 10px,rgba(0,0,0,.03) 10px,rgba(0,0,0,.03) 20px)}
+.imp-step-hd{display:flex;align-items:center;gap:10px;font-weight:600;color:var(--text-primary);font-size:.95rem;margin-bottom:6px}
+.imp-step-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;font-size:.9rem;flex-shrink:0}
 .import-drop__sub{font-size:.78rem;color:var(--text-muted)}
 .import-preview{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--rl);margin-top:18px}
 .import-preview-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border-subtle)}
