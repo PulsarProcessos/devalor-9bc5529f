@@ -887,7 +887,7 @@ img,svg{display:block;max-width:100%}
     <!-- ══ PAINEL ══════════════════════════════════ -->
     <div class="panel" id="panel-painel">
       <div class="sec-hd">
-        <div><h2 class="sec-title">Painel Comparativo</h2><p class="sec-sub">Planejado vs. Realizado</p></div>
+        <div><h2 class="sec-title">Painel Resumo</h2><p class="sec-sub">Visão completa do mês — planejado, realizado e tendências</p></div>
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <div class="painel-toggle">
             <button class="painel-toggle-btn active" id="btnViewMensal" onclick="switchPainelView('mensal',this)">Mensal</button>
@@ -904,16 +904,44 @@ img,svg{display:block;max-width:100%}
 
       <!-- Mensal -->
       <div id="viewMensal">
-        <div class="painel-grid">
-          <div class="painel-card pc-rec"><div class="pc-lbl">Receitas</div><div class="pc-row">Planejado<strong id="pcRPlan">R$ —</strong></div><div class="pc-row">Realizado<strong id="pcRReal">R$ —</strong></div><div class="pc-diff" id="pcRDiff">—</div></div>
-          <div class="painel-card pc-obl"><div class="pc-lbl">Obrigatórias</div><div class="pc-row">Planejado<strong id="pcOPlan">R$ —</strong></div><div class="pc-row">Realizado<strong id="pcOReal">R$ —</strong></div><div class="pc-diff" id="pcODiff">—</div></div>
-          <div class="painel-card pc-noo"><div class="pc-lbl">Não Obrigatórias</div><div class="pc-row">Planejado<strong id="pcNPlan">R$ —</strong></div><div class="pc-row">Realizado<strong id="pcNReal">R$ —</strong></div><div class="pc-diff" id="pcNDiff">—</div></div>
-          <div class="painel-card pc-inv"><div class="pc-lbl">Investimentos</div><div class="pc-row">Planejado<strong id="pcIPlan">R$ —</strong></div><div class="pc-row">Realizado<strong id="pcIReal">R$ —</strong></div><div class="pc-diff" id="pcIDiff">—</div></div>
+        <!-- Cards por grupo -->
+        <div id="painelGroupsGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:20px"></div>
+
+        <!-- Realizado vs Projetado (despesas) -->
+        <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:18px;margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+            <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:1.05rem">Realizado vs. Projetado</h3>
+            <span id="rvpStatus" style="font-size:.78rem;font-weight:600;padding:4px 10px;border-radius:99px"></span>
+          </div>
+          <div id="rvpBars" style="display:flex;flex-direction:column;gap:10px"></div>
         </div>
-        <div class="saldo-bar">
-          <div class="saldo-item"><span class="saldo-lbl">Saldo planejado</span><span class="saldo-val" id="saldoPlan">R$ —</span></div>
-          <div class="saldo-item"><span class="saldo-lbl">Saldo realizado</span><span class="saldo-val" id="saldoReal">R$ —</span></div>
-          <div class="saldo-item"><span class="saldo-lbl">Diferença</span><span class="saldo-val" id="saldoDiff">R$ —</span></div>
+
+        <!-- Saldo (receitas - despesas) -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px">
+          <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:16px"><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:600">Saldo planejado</div><div class="mono" id="saldoPlan" style="font-size:1.35rem;font-weight:700;margin-top:4px">R$ —</div><div style="font-size:.72rem;color:var(--text-muted);margin-top:2px">Receitas plan. − Despesas plan.</div></div>
+          <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:16px"><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:600">Saldo realizado</div><div class="mono" id="saldoReal" style="font-size:1.35rem;font-weight:700;margin-top:4px">R$ —</div><div style="font-size:.72rem;color:var(--text-muted);margin-top:2px">Receitas real. − Despesas real.</div></div>
+          <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:16px"><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:600">Despesas: real vs. plan</div><div class="mono" id="despDiff" style="font-size:1.35rem;font-weight:700;margin-top:4px">R$ —</div><div id="despDiffSub" style="font-size:.72rem;margin-top:2px"></div></div>
+          <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:16px"><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:600">Diferença de saldo</div><div class="mono" id="saldoDiff" style="font-size:1.35rem;font-weight:700;margin-top:4px">R$ —</div><div style="font-size:.72rem;color:var(--text-muted);margin-top:2px">Realizado − Planejado</div></div>
+        </div>
+
+        <!-- Cartão de crédito -->
+        <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:18px;margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">
+            <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:1.05rem">💳 Cartões de crédito</h3>
+            <span style="font-size:.78rem;color:var(--text-muted)">Fatura do mês selecionado</span>
+          </div>
+          <div id="cartoesResumo" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
+            <div style="grid-column:1/-1;padding:18px;text-align:center;color:var(--text-muted);font-size:.85rem">Sem lançamentos no cartão neste mês.</div>
+          </div>
+        </div>
+
+        <!-- Consolidado geral -->
+        <div style="background:linear-gradient(135deg,var(--brand,#7c3aed),#1e293b);color:#fff;border-radius:16px;padding:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:18px">
+          <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;opacity:.7;font-weight:600">Consolidado do mês</div><div id="consMes" style="font-family:'Playfair Display',serif;font-size:1.4rem;margin-top:4px">—</div></div>
+          <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;opacity:.7;font-weight:600">Receitas</div><div class="mono" id="consReceitas" style="font-size:1.15rem;font-weight:700;margin-top:4px">R$ —</div></div>
+          <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;opacity:.7;font-weight:600">Despesas totais</div><div class="mono" id="consDespesas" style="font-size:1.15rem;font-weight:700;margin-top:4px">R$ —</div></div>
+          <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;opacity:.7;font-weight:600">Investimentos</div><div class="mono" id="consInvest" style="font-size:1.15rem;font-weight:700;margin-top:4px">R$ —</div></div>
+          <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;opacity:.7;font-weight:600">Saldo final</div><div class="mono" id="consSaldo" style="font-size:1.4rem;font-weight:700;margin-top:4px">R$ —</div></div>
         </div>
       </div>
 
