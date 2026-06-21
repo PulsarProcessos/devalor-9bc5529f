@@ -1702,7 +1702,7 @@ async function loadQuitacao(){
       return;
     }
     let totOrig=0,totPago=0,totSaldo=0,quitCount=0;
-    grid.innerHTML=list.map(d=>{
+    grid.innerHTML=list.map((d,idx)=>{
       const orig=Number(d.valor_original||0) || (Number(d.saldo_devedor||0)+Number(d.total_pago||0));
       const pago=Number(d.total_pago||0);
       const saldo=Number(d.saldo_devedor||0);
