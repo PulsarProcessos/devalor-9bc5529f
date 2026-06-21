@@ -1670,17 +1670,22 @@ async function submitRenda(){
    RENDA — carregar valores existentes
 ═══════════════════════════════════════════ */
 let _rendaMensalCache = 0;
-async function loadRendaPanel(){
+let _rendaLoadedFor = null; // evita re-fetch que limpa o que o usuário digitou
+async function loadRendaPanel(force){
+  const key = cid()+'|'+CFG.ANO;
+  if(!force && _rendaLoadedFor===key) return;
   try{
     const r = await gGet('getRenda',{ano:CFG.ANO,clienteId:cid()});
     const renda = r?.renda;
-    if(!renda) return;
+    if(!renda){ _rendaLoadedFor=key; return; }
     const dt = renda.data || {};
-    const fillMoney = (id,v)=>{ const el=gel(id); if(el && v>0) el.value = Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); };
+    // Só preenche inputs que estão VAZIOS — nunca sobrescreve o que o usuário digitou
+    const fillMoney = (id,v)=>{ const el=gel(id); if(el && v>0 && !el.value.trim() && document.activeElement!==el) el.value = Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); };
     fillMoney('rendaSalario', renda.salario||0);
     fillMoney('rendaOutras', renda.outras||0);
     fillMoney('rendaMensal', dt.rendaMensal||0);
     _rendaMensalCache = Number(dt.rendaMensal||0);
+    _rendaLoadedFor = key;
   }catch{}
 }
 
