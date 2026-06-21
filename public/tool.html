@@ -716,7 +716,7 @@ img,svg{display:block;max-width:100%}
       <div class="desp-panel active" id="desp-manual">
         <div class="card-form">
           <div class="grid3">
-            <div class="field"><label class="lbl">Forma de pagamento</label><select class="sel" id="despFormaPag" onchange="onDespFormaPagChange()"><option value="Cartão de Crédito">Cartão de Crédito</option><option value="Débito/Dinheiro/Pix">Débito / Dinheiro / Pix</option></select></div>
+            <div class="field"><label class="lbl">Forma de pagamento</label><select class="sel" id="despFormaPag" onchange="onDespFormaPagChange()"></select></div>
             <div class="field">
               <label class="lbl">Banco</label>
               <div style="display:flex;gap:6px">
@@ -728,7 +728,7 @@ img,svg{display:block;max-width:100%}
             <div class="field field-full"><label class="lbl">Descrição</label><input class="inp" type="text" id="despDesc" placeholder="Ex: Mercado, Escola, Netflix..."/></div>
             <div class="field"><label class="lbl">Valor da parcela (R$)</label><input class="inp inp-money" type="text" id="despValorParc" placeholder="0,00" data-money/></div>
             <div class="field"><label class="lbl">Categoria</label><select class="sel" id="despCategoria"></select></div>
-            <div class="field"><label class="lbl">Data de pagamento <span style="color:var(--text-muted);font-weight:400;font-size:.7rem">(mês do desembolso real / fatura)</span></label>
+            <div class="field"><label class="lbl">Data de pagamento</label>
               <select class="sel" id="despMesComp"><option value="JANEIRO">Janeiro</option><option value="FEVEREIRO">Fevereiro</option><option value="MARÇO">Março</option><option value="ABRIL">Abril</option><option value="MAIO">Maio</option><option value="JUNHO">Junho</option><option value="JULHO">Julho</option><option value="AGOSTO">Agosto</option><option value="SETEMBRO">Setembro</option><option value="OUTUBRO">Outubro</option><option value="NOVEMBRO">Novembro</option><option value="DEZEMBRO">Dezembro</option></select>
             </div>
           </div>
@@ -1344,7 +1344,7 @@ function showCliente(user){
   if(_user?.perfil!=='consultor'){
     [nEl,eEl].forEach(el=>{if(el){el.readOnly=true;el.style.opacity='.72';el.style.cursor='default';el.title='Preenchido automaticamente do seu cadastro';}});
   }
-  buildCatSelect();fillBancoSelect();onDespFormaPagChange();
+  buildCatSelect();fillBancoSelect();fillFormaPagSelect();onDespFormaPagChange();
   loadSonhosFromSheets();
   goPanel('perfil');
 }
@@ -1786,6 +1786,7 @@ function renderCartoes(){
       </td>
     </tr>
   `).join('');
+  try{ fillFormaPagSelect(); }catch{}
 }
 
 /* ═══════════════════════════════════════════
@@ -2169,7 +2170,21 @@ function addBancoPrompt(){
   list.push(name);saveBancos(list);fillBancoSelect(name);toast('Banco adicionado.','success');
 }
 
-function isAVista(){return (gel('despFormaPag')?.value||'')==='Débito/Dinheiro/Pix';}
+function fillFormaPagSelect(selected){
+  const sel=gel('despFormaPag');if(!sel)return;
+  const prev=selected||sel.value||'';
+  const cartoes=loadCartoes();
+  const opts=[`<option value="Débito/Dinheiro/Pix">Débito / Dinheiro / Pix</option>`];
+  if(cartoes.length){
+    cartoes.forEach(c=>opts.push(`<option value="CARTAO::${esc(c)}">💳 ${esc(c)}</option>`));
+  }else{
+    opts.push(`<option value="Cartão de Crédito">Cartão de Crédito</option>`);
+  }
+  sel.innerHTML=opts.join('');
+  if(prev && [...sel.options].some(o=>o.value===prev))sel.value=prev;
+}
+function despCartaoFromFP(fp){return String(fp||'').startsWith('CARTAO::')?String(fp).slice(8):null;}
+function isAVista(){const v=gel('despFormaPag')?.value||'';return v==='Débito/Dinheiro/Pix';}
 function syncMesFromData(){
   const dt=gel('despData')?.value;if(!dt)return;
   const mes = mesFromISO(dt);
@@ -2212,7 +2227,8 @@ function renderPrev(rows){
   t.classList.remove('hidden');tbl.classList.remove('hidden');tb.innerHTML='';
   rows.forEach(r=>{
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${r.fp}</td><td>${r.bco}</td><td>${fDate(r.dt)}</td><td>${esc(r.desc)}</td><td class="mono" style="text-align:right">${fBRL(r.vp)}</td><td>${r.cat}</td><td class="mono">${r.mes}</td>`;
+    const cn=despCartaoFromFP(r.fp); const fpLbl = cn?('Cartão: '+cn):r.fp;
+    tr.innerHTML=`<td>${esc(fpLbl)}</td><td>${r.bco}</td><td>${fDate(r.dt)}</td><td>${esc(r.desc)}</td><td class="mono" style="text-align:right">${fBRL(r.vp)}</td><td>${r.cat}</td><td class="mono">${r.mes}</td>`;
     tb.appendChild(tr);
   });
 }
@@ -2234,12 +2250,14 @@ async function submitDespesas(){
     const grp = parcN>1 ? uuid() : null;
     const recs = rows.map((r,i)=>{
       const [grupo,categoria] = String(r.cat||'').split('·').map(s=>s.trim());
-      const isCartao = r.fp==='Cartão de Crédito';
+      const cartaoNome = despCartaoFromFP(r.fp);
+      const isCartao = !!cartaoNome || r.fp==='Cartão de Crédito';
+      const fpLabel = isCartao ? 'Cartão de Crédito' : r.fp;
       return {
         data: isoBase || r.dt || null,
         descricao: r.desc, valor: r.vp,
         categoria: categoria||r.cat||null, grupo: grupo||null,
-        forma_pagamento: r.fp, banco: r.bco, cartao: null,
+        forma_pagamento: fpLabel, banco: r.bco, cartao: cartaoNome,
         mes: r.mes, mes_pagamento: isCartao ? r.mes : null,
         ano: String(r.ano||CFG.ANO), origem: 'manual',
         parcela_n: parcN>1 ? i+1 : null,
