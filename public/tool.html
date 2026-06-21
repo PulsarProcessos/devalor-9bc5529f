@@ -551,12 +551,16 @@ img,svg{display:block;max-width:100%}
       <div class="panel-hd"><h1 class="panel-title">Sonhos & Objetivos de Vida</h1><p class="panel-sub">Cadastre os objetivos que dão sentido ao planejamento</p></div>
       <div class="card-form">
         <div class="grid2">
-          <div class="field"><label class="lbl">Quem</label><input class="inp" type="text" id="sonhoQuem" placeholder="Ex: Família toda"/></div>
+          <div class="field"><label class="lbl">Quem <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label><input class="inp" type="text" id="sonhoQuem" placeholder="Ex: Família toda"/></div>
           <div class="field"><label class="lbl">Objetivo / Sonho</label><input class="inp" type="text" id="sonhoObj" placeholder="Ex: Casa própria"/></div>
           <div class="field"><label class="lbl">Motivo</label><input class="inp" type="text" id="sonhoMotivo" placeholder="Por que é importante?"/></div>
           <div class="field"><label class="lbl">Valor total (R$)</label><input class="inp inp-money" type="text" id="sonhoValor" placeholder="0,00" data-money/></div>
-          <div class="field"><label class="lbl">Prazo (data limite)</label><input class="inp" type="date" id="sonhoPrazo"/></div>
-          <div class="field"><label class="lbl">Tipo de prazo</label><select class="sel" id="sonhoTipo"><option value="Curto">Curto (até 2 anos)</option><option value="Médio">Médio (2–5 anos)</option><option value="Longo">Longo (acima de 5 anos)</option></select></div>
+          <div class="field"><label class="lbl">Prazo (data limite)</label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input class="inp" type="date" id="sonhoPrazo" oninput="updateTipoPrazoBadge()" style="flex:1"/>
+              <span id="sonhoTipoBadge" style="display:inline-flex;padding:6px 12px;border-radius:99px;font-size:.72rem;font-weight:700;text-transform:uppercase;background:var(--success-bg);color:var(--success);white-space:nowrap">Curto</span>
+            </div>
+          </div>
         </div>
         <div class="form-footer">
           <button class="btn btn-s" onclick="addSonhoPreview()">+ Adicionar à lista</button>
