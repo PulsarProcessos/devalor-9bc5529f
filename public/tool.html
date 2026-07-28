@@ -740,7 +740,7 @@ img,svg{display:block;max-width:100%}
             <div class="field">
               <label class="lbl">Banco</label>
               <div style="display:flex;gap:6px">
-                <select class="sel" id="despBanco" style="flex:1"></select>
+                <select class="sel" id="despBanco" style="flex:1" onchange="onBancoSelectChange(this)" onfocus="_bancoPrevValue=this.value"></select>
                 <button type="button" class="btn btn-g btn-xs" onclick="addBancoPrompt()" title="Adicionar banco">＋</button>
               </div>
             </div>
@@ -794,7 +794,7 @@ img,svg{display:block;max-width:100%}
             <div class="field">
               <label class="lbl">Banco</label>
               <div style="display:flex;gap:6px">
-                <select class="sel" id="impBanco" style="flex:1" onchange="onImportBancoChange()"></select>
+                <select class="sel" id="impBanco" style="flex:1" onchange="onBancoSelectChange(this)" onfocus="_bancoPrevValue=this.value"></select>
                 <button type="button" class="btn btn-g btn-xs" onclick="addBancoImportPrompt()" title="Adicionar banco">＋</button>
               </div>
             </div>
@@ -924,99 +924,21 @@ img,svg{display:block;max-width:100%}
     <!-- ══ PAINEL ══════════════════════════════════ -->
     <div class="panel" id="panel-painel">
       <div class="sec-hd">
-        <div><h2 class="sec-title">Painel Resumo</h2><p class="sec-sub">Visão completa do mês — planejado, realizado e tendências</p></div>
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <div class="painel-toggle">
-            <button class="painel-toggle-btn active" id="btnViewMensal" onclick="switchPainelView('mensal',this)">Mensal</button>
-            <button class="painel-toggle-btn" id="btnViewAnual" onclick="switchPainelView('anual',this)">Anual</button>
-          </div>
-          <div id="painelMesWrap" style="display:flex;align-items:center;gap:8px">
-            <label class="lbl">Mês</label>
-            <select class="sel sel-sm" id="painelMes" onchange="loadPainelData()">
-              <option value="JANEIRO">Janeiro</option><option value="FEVEREIRO">Fevereiro</option><option value="MARÇO">Março</option><option value="ABRIL">Abril</option><option value="MAIO">Maio</option><option value="JUNHO">Junho</option><option value="JULHO">Julho</option><option value="AGOSTO">Agosto</option><option value="SETEMBRO">Setembro</option><option value="OUTUBRO">Outubro</option><option value="NOVEMBRO">Novembro</option><option value="DEZEMBRO">Dezembro</option>
-            </select>
-          </div>
-        </div>
+        <div><h2 class="sec-title">Painel Anual</h2>
+          <p class="sec-sub">Visão consolidada do ano — planejado × realizado por mês</p></div>
+        <button class="btn btn-g btn-sm" onclick="loadPainelAnual()">↻ Atualizar</button>
       </div>
 
-      <!-- Mensal -->
-      <div id="viewMensal">
-        <!-- Cards por grupo -->
-        <div id="painelGroupsGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:20px"></div>
+      <div class="painel-grid" id="painelDestaques" style="margin-bottom:20px"></div>
 
-        <!-- Realizado vs Projetado (despesas) -->
-        <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:18px;margin-bottom:20px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-            <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:1.05rem">Realizado vs. Projetado</h3>
-            <span id="rvpStatus" style="font-size:.78rem;font-weight:600;padding:4px 10px;border-radius:99px"></span>
-          </div>
-          <div id="rvpBars" style="display:flex;flex-direction:column;gap:10px"></div>
-        </div>
-
-        <!-- Saldo (receitas - despesas) -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px">
-          <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:16px"><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:600">Saldo planejado</div><div class="mono" id="saldoPlan" style="font-size:1.35rem;font-weight:700;margin-top:4px">R$ —</div><div style="font-size:.72rem;color:var(--text-muted);margin-top:2px">Receitas plan. − Despesas plan.</div></div>
-          <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:16px"><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:600">Saldo realizado</div><div class="mono" id="saldoReal" style="font-size:1.35rem;font-weight:700;margin-top:4px">R$ —</div><div style="font-size:.72rem;color:var(--text-muted);margin-top:2px">Receitas real. − Despesas real.</div></div>
-          <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:16px"><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:600">Despesas: real vs. plan</div><div class="mono" id="despDiff" style="font-size:1.35rem;font-weight:700;margin-top:4px">R$ —</div><div id="despDiffSub" style="font-size:.72rem;margin-top:2px"></div></div>
-          <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:16px"><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:600">Diferença de saldo</div><div class="mono" id="saldoDiff" style="font-size:1.35rem;font-weight:700;margin-top:4px">R$ —</div><div style="font-size:.72rem;color:var(--text-muted);margin-top:2px">Realizado − Planejado</div></div>
-        </div>
-
-        <!-- Reserva Ideal -->
-
-        <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:18px;margin-bottom:20px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">
-            <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:1.05rem">🛡️ Reserva Ideal</h3>
-            <span id="resMetaLbl" style="font-size:.78rem;color:var(--text-muted)">—</span>
-          </div>
-          <div id="resBarWrap">
-            <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:6px"><span style="color:var(--text-muted)">Acumulado</span><span class="mono" id="resAcumLbl" style="font-weight:700">R$ —</span></div>
-            <div style="height:14px;background:var(--bg-muted,#eef2f7);border-radius:99px;overflow:hidden"><div id="resBar" style="height:100%;width:0%;background:linear-gradient(90deg,#16a34a,#22c55e);transition:width .4s"></div></div>
-            <div style="display:flex;justify-content:space-between;font-size:.72rem;margin-top:4px;color:var(--text-muted)"><span id="resPctLbl">0%</span><span>Meta: <span class="mono" id="resMetaValLbl">R$ —</span></span></div>
-          </div>
-        </div>
-
-        <!-- Renda recebida vs realizado -->
-        <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:18px;margin-bottom:20px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">
-            <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:1.05rem">💵 Renda recebida vs. realizado</h3>
-            <span id="rendaDiffLbl" style="font-size:.78rem;font-weight:600;padding:4px 10px;border-radius:99px"></span>
-          </div>
-          <div id="rendaCompare" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
-            <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:600">Renda informada</div><div class="mono" id="rendaInfo" style="font-size:1.2rem;font-weight:700;margin-top:4px">R$ —</div></div>
-            <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:600">Receitas realizadas (mês)</div><div class="mono" id="rendaReal" style="font-size:1.2rem;font-weight:700;margin-top:4px">R$ —</div></div>
-          </div>
-        </div>
-
-        <!-- Cartão de crédito -->
-        <div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:18px;margin-bottom:20px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">
-            <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:1.05rem">💳 Cartões de crédito</h3>
-            <span style="font-size:.78rem;color:var(--text-muted)">Fatura do mês selecionado</span>
-          </div>
-          <div id="cartoesResumo" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
-            <div style="grid-column:1/-1;padding:18px;text-align:center;color:var(--text-muted);font-size:.85rem">Sem lançamentos no cartão neste mês.</div>
-          </div>
-        </div>
-
-        <!-- Consolidado geral -->
-        <div style="background:linear-gradient(135deg,var(--brand,#7c3aed),#1e293b);color:#fff;border-radius:16px;padding:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:18px">
-          <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;opacity:.7;font-weight:600">Consolidado do mês</div><div id="consMes" style="font-family:'Playfair Display',serif;font-size:1.4rem;margin-top:4px">—</div></div>
-          <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;opacity:.7;font-weight:600">Receitas</div><div class="mono" id="consReceitas" style="font-size:1.15rem;font-weight:700;margin-top:4px">R$ —</div></div>
-          <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;opacity:.7;font-weight:600">Despesas totais</div><div class="mono" id="consDespesas" style="font-size:1.15rem;font-weight:700;margin-top:4px">R$ —</div></div>
-          <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;opacity:.7;font-weight:600">Investimentos</div><div class="mono" id="consInvest" style="font-size:1.15rem;font-weight:700;margin-top:4px">R$ —</div></div>
-          <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;opacity:.7;font-weight:600">Saldo final</div><div class="mono" id="consSaldo" style="font-size:1.4rem;font-weight:700;margin-top:4px">R$ —</div></div>
-        </div>
-      </div>
-
-      <!-- Anual -->
-      <div id="viewAnual" class="hidden">
-        <div class="info-box" style="margin-bottom:20px">Visão anual — todos os meses com dados de Receitas, Obrigatórias, Não Obrigatórias, Investimentos e Saldo.</div>
-        <div class="annual-tbl-wrap">
-          <table class="annual-tbl" id="annualTbl">
-            <thead><tr><th>Mês</th><th>Receitas Plan.</th><th>Receitas Real.</th><th>Obrig. Plan.</th><th>Obrig. Real.</th><th>Não Obl. Plan.</th><th>Não Obl. Real.</th><th>Invest. Plan.</th><th>Invest. Real.</th><th>Saldo Plan.</th><th>Saldo Real.</th></tr></thead>
-            <tbody id="annualTbody"></tbody>
-          </table>
-        </div>
+      <div class="annual-tbl-wrap">
+        <table class="annual-tbl" id="annualTbl">
+          <thead><tr>
+            <th>Mês</th><th>Renda</th><th>Despesa Plan.</th><th>Despesa Real.</th>
+            <th>Desvio</th><th>Saldo Plan.</th><th>Saldo Real.</th>
+          </tr></thead>
+          <tbody id="annualTbody"></tbody>
+        </table>
       </div>
     </div>
 
@@ -1250,7 +1172,7 @@ function goPanel(id, btnEl){
   if(id==='extraordinario'){ openPlanejamentoPanel(); renderVencimentosPlano(); }
   if(id==='vencimentos'){ buildVencCategoriaSelect(); renderVencimentos(); }
   if(id==='renda') loadRendaPanel();
-  if(id==='painel'){ loadRendaPanel().finally(()=>loadPainelData()); }
+  if(id==='painel'){ loadPainelAnual(); }
   if(id==='cartoes') renderCartoes();
 }
 
@@ -2173,16 +2095,27 @@ function fillImpBancoSelect(selected){
   const prev=selected||sel.value||'';
   let list=loadBancos();
   if(!Array.isArray(list)||!list.length)list=BANCOS_DEFAULT.slice();
-  sel.innerHTML=list.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');
+  sel.innerHTML=list.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('')
+    +`<option value="__novo__">+ Novo banco…</option>`;
   if(prev && [...sel.options].some(o=>o.value===prev))sel.value=prev;
+  if(sel.value==='__novo__')sel.selectedIndex=0;
+  _bancoPrevValue=sel.value;
 }
 let _bancoTargetSelect=null, _bancoPrevValue=null;
 function openNovoBancoModal(targetSelId){
   _bancoTargetSelect = gel(targetSelId)||null;
-  _bancoPrevValue = _bancoTargetSelect?.value || null;
+  if(_bancoTargetSelect && _bancoTargetSelect.value==='__novo__' && _bancoPrevValue==='__novo__') _bancoPrevValue=null;
   const inp=gel('nbInput'); if(inp){ inp.value=''; setTimeout(()=>inp.focus(),60); }
   const err=gel('nbErr'); if(err) err.classList.remove('show');
   openModal('modalNovoBanco');
+}
+function onBancoSelectChange(sel){
+  if(sel.value==='__novo__'){
+    openNovoBancoModal(sel.id);
+  }else{
+    _bancoPrevValue=sel.value;
+    if(sel.id==='impBanco') onImportBancoChange();
+  }
 }
 function confirmNovoBanco(){
   const inp=gel('nbInput'), err=gel('nbErr');
@@ -2204,9 +2137,14 @@ function confirmNovoBanco(){
   toast(exists?'Banco já existia — selecionado.':'Banco adicionado!','success');
 }
 function cancelNovoBanco(){
-  if(_bancoTargetSelect && _bancoPrevValue &&
-     [..._bancoTargetSelect.options].some(o=>o.value===_bancoPrevValue)){
-    _bancoTargetSelect.value=_bancoPrevValue;
+  if(_bancoTargetSelect){
+    if(_bancoPrevValue && _bancoPrevValue!=='__novo__' &&
+       [..._bancoTargetSelect.options].some(o=>o.value===_bancoPrevValue)){
+      _bancoTargetSelect.value=_bancoPrevValue;
+    }else if(_bancoTargetSelect.value==='__novo__'){
+      _bancoTargetSelect.selectedIndex=0;
+    }
+    if(_bancoTargetSelect.id==='impBanco') onImportBancoChange();
   }
   closeModal('modalNovoBanco');
 }
@@ -2280,8 +2218,10 @@ function saveBancos(arr){localStorage.setItem(BANCOS_KEY(),JSON.stringify(arr));
 function fillBancoSelect(selected){
   const sel=gel('despBanco');if(!sel)return;
   const list=loadBancos();
-  sel.innerHTML=list.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');
-  if(selected)sel.value=selected;
+  sel.innerHTML=list.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('')
+    +`<option value="__novo__">+ Novo banco…</option>`;
+  if(selected && [...sel.options].some(o=>o.value===selected))sel.value=selected;
+  if(sel.value==='__novo__')sel.selectedIndex=0;
 }
 function addBancoPrompt(){ openNovoBancoModal('despBanco'); }
 
@@ -3077,235 +3017,79 @@ async function replicarPlanejamentoAnterior(){
 
 
 /* ═══════════════════════════════════════════
-   PAINEL — MENSAL
-═══════════════════════════════════════════ */
-function switchPainelView(view,btn){
-  document.querySelectorAll('.painel-toggle-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  if(view==='mensal'){
-    gel('viewMensal').classList.remove('hidden');gel('viewAnual').classList.add('hidden');
-    gel('painelMesWrap').style.display='flex';
-  } else {
-    gel('viewMensal').classList.add('hidden');gel('viewAnual').classList.remove('hidden');
-    gel('painelMesWrap').style.display='none';
-    loadPainelAnual();
-  }
-}
-
-async function loadPainelData(){
-  const mes=gel('painelMes')?.value;if(!mes)return;
-  const ano=String(CFG.ANO);
-  try{
-    const [data,despR]=await Promise.all([
-      apiGetPainel(mes).catch(()=>null),
-      gPost('getDespesas',{}).catch(()=>({rows:[]})),
-    ]);
-    const d=data||{};
-    const rec=d.receitas||{}, obl=d.obrigatorias||{}, noo=d.naoobl||{}, inv=d.invest||{};
-    const groups=[
-      {key:'rec', lbl:'Receitas',          icon:'📈', plan:Number(rec.planejado||0), real:Number(rec.realizado||0), positive:true},
-      {key:'obl', lbl:'Obrigatórias',      icon:'🏠', plan:Number(obl.planejado||0), real:Number(obl.realizado||0), positive:false},
-      {key:'noo', lbl:'Não Obrigatórias',  icon:'🎯', plan:Number(noo.planejado||0), real:Number(noo.realizado||0), positive:false},
-      {key:'inv', lbl:'Investimentos',     icon:'💎', plan:Number(inv.planejado||0), real:Number(inv.realizado||0), positive:true},
-    ];
-
-    // 4 cards de grupo
-    const grid=gel('painelGroupsGrid');
-    if(grid){
-      grid.innerHTML=groups.map(g=>{
-        // Para receitas/invest, "bom" = realizado >= planejado. Para despesas, "bom" = realizado <= planejado.
-        const diff = g.real - g.plan;
-        const isGood = g.positive ? diff>=0 : diff<=0;
-        const pct = g.plan>0 ? Math.round((g.real/g.plan)*100) : (g.real>0?100:0);
-        const arrow = diff===0?'→':(diff>0?'▲':'▼');
-        const color = isGood ? '#16a34a' : '#dc2626';
-        const bg = isGood ? 'rgba(22,163,74,.08)' : 'rgba(220,38,38,.08)';
-        const sinal = diff>0?'+':(diff<0?'−':'');
-        const barColor = g.positive
-          ? (pct>=100?'#16a34a':(pct>=70?'#eab308':'#dc2626'))
-          : (pct<=70?'#16a34a':(pct<=100?'#eab308':'#dc2626'));
-        return `<article style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden">
-          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${barColor}"></div>
-          <div style="display:flex;justify-content:space-between;align-items:start">
-            <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:600">${g.icon} ${g.lbl}</div></div>
-            <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:.72rem;font-weight:700;background:${bg};color:${color}">${arrow} ${sinal}${fBRL(Math.abs(diff))}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:.78rem"><span style="color:var(--text-muted)">Planejado</span><span class="mono" style="font-weight:600">${fBRL(g.plan)}</span></div>
-          <div style="display:flex;justify-content:space-between;font-size:.78rem"><span style="color:var(--text-muted)">Realizado</span><span class="mono" style="font-weight:700;color:${color}">${fBRL(g.real)}</span></div>
-          <div style="height:6px;background:var(--bg-muted,#eef2f7);border-radius:99px;overflow:hidden"><div style="height:100%;width:${Math.min(150,pct)}%;background:${barColor};transition:width .4s"></div></div>
-          <div style="font-size:.7rem;color:var(--text-muted);text-align:right">${pct}% do planejado</div>
-        </article>`;
-      }).join('');
-    }
-
-    // Saldo (receitas - despesas)
-    const despPlan = groups[1].plan + groups[2].plan + groups[3].plan;
-    const despReal = groups[1].real + groups[2].real + groups[3].real;
-    const sp = groups[0].plan - despPlan;
-    const sr = groups[0].real - despReal;
-    const sDiff = sr - sp;
-    const setTxt=(id,v,clr)=>{const e=gel(id);if(e){e.textContent=fBRL(v); if(clr) e.style.color=clr;}};
-    setTxt('saldoPlan', sp, sp>=0?'#16a34a':'#dc2626');
-    setTxt('saldoReal', sr, sr>=0?'#16a34a':'#dc2626');
-    setTxt('saldoDiff', sDiff, sDiff>=0?'#16a34a':'#dc2626');
-    const despDiff = despReal - despPlan; // positivo = gastou mais que planejou (ruim)
-    setTxt('despDiff', despDiff, despDiff<=0?'#16a34a':'#dc2626');
-    const ds=gel('despDiffSub');
-    if(ds){
-      ds.textContent = despDiff===0?'No alvo'
-        : despDiff>0 ? `▲ ${fBRL(despDiff)} acima do planejado`
-                     : `▼ ${fBRL(Math.abs(despDiff))} abaixo do planejado`;
-      ds.style.color = despDiff<=0?'#16a34a':'#dc2626';
-    }
-
-    // Realizado vs Projetado (despesas totais)
-    const rvpBars=gel('rvpBars');
-    if(rvpBars){
-      const maxV = Math.max(despPlan, despReal, 1);
-      const pctReal = Math.round((despReal/maxV)*100);
-      const pctPlan = Math.round((despPlan/maxV)*100);
-      rvpBars.innerHTML=`
-        <div><div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:4px"><span style="color:var(--text-muted)">Projetado (despesas)</span><span class="mono" style="font-weight:600">${fBRL(despPlan)}</span></div><div style="height:14px;background:var(--bg-muted,#eef2f7);border-radius:99px;overflow:hidden"><div style="height:100%;width:${pctPlan}%;background:linear-gradient(90deg,#64748b,#94a3b8)"></div></div></div>
-        <div><div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:4px"><span style="color:var(--text-muted)">Realizado (despesas)</span><span class="mono" style="font-weight:700;color:${despDiff>0?'#dc2626':'#16a34a'}">${fBRL(despReal)}</span></div><div style="height:14px;background:var(--bg-muted,#eef2f7);border-radius:99px;overflow:hidden"><div style="height:100%;width:${pctReal}%;background:linear-gradient(90deg,${despDiff>0?'#dc2626,#f97316':'#16a34a,#22c55e'})"></div></div></div>`;
-      const st=gel('rvpStatus');
-      if(st){
-        if(despPlan===0){ st.textContent='Sem planejamento'; st.style.background='var(--bg-muted,#eef2f7)'; st.style.color='var(--text-muted)'; }
-        else if(despDiff>0){ st.textContent=`▲ ${Math.round((despDiff/despPlan)*100)}% acima`; st.style.background='rgba(220,38,38,.12)'; st.style.color='#dc2626'; }
-        else if(despDiff<0){ st.textContent=`▼ ${Math.round((Math.abs(despDiff)/despPlan)*100)}% abaixo`; st.style.background='rgba(22,163,74,.12)'; st.style.color='#16a34a'; }
-        else { st.textContent='No alvo'; st.style.background='rgba(22,163,74,.12)'; st.style.color='#16a34a'; }
-      }
-    }
-
-    // Resumo cartões — agrupa despesas do mês com cartao preenchido (ou forma_pagamento=Cartão de Crédito)
-    const cartoesBox=gel('cartoesResumo');
-    if(cartoesBox){
-      const despAll = despR?.rows || [];
-      const isCard = (r)=> (r.cartao && String(r.cartao).trim()) || /cart[ãa]o/i.test(String(r.forma_pagamento||''));
-      const ofMonth = despAll.filter(r=>{
-        if(!isCard(r)) return false;
-        const m = String(r.mes_pagamento||r.mes||'').toUpperCase();
-        const a = String(r.ano||'');
-        return m===mes && (!a || a===ano);
-      });
-      if(!ofMonth.length){
-        cartoesBox.innerHTML=`<div style="grid-column:1/-1;padding:18px;text-align:center;color:var(--text-muted);font-size:.85rem">Sem lançamentos no cartão neste mês.</div>`;
-      } else {
-        const byCard={};
-        ofMonth.forEach(r=>{
-          const key=String(r.cartao||'Cartão').trim()||'Cartão';
-          if(!byCard[key]) byCard[key]={total:0,count:0,pagos:0};
-          byCard[key].total += Number(r.valor||0);
-          byCard[key].count += 1;
-          if(r.pago) byCard[key].pagos += 1;
-        });
-        const totalFatura=Object.values(byCard).reduce((s,c)=>s+c.total,0);
-        cartoesBox.innerHTML=Object.entries(byCard).map(([nome,c])=>`
-          <div style="background:var(--bg-muted,#f5f7fa);border-radius:12px;padding:14px">
-            <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-weight:600">💳 ${esc(nome)}</div>
-            <div class="mono" style="font-size:1.15rem;font-weight:700;margin-top:4px">${fBRL(c.total)}</div>
-            <div style="font-size:.72rem;color:var(--text-muted);margin-top:4px">${c.count} lançamento(s) · ${c.pagos} pago(s)</div>
-          </div>
-        `).join('') + `<div style="grid-column:1/-1;padding-top:8px;border-top:1px dashed var(--border-subtle);display:flex;justify-content:space-between;font-weight:700"><span>Fatura total do mês</span><span class="mono" style="color:var(--brand,#7c3aed)">${fBRL(totalFatura)}</span></div>`;
-      }
-    }
-
-    // Consolidado geral
-    const setCons=(id,v)=>{const e=gel(id);if(e)e.textContent=v;};
-    setCons('consMes', mes[0]+mes.slice(1).toLowerCase()+'/'+ano);
-    setCons('consReceitas', fBRL(groups[0].real));
-    setCons('consDespesas', fBRL(groups[1].real+groups[2].real));
-    setCons('consInvest', fBRL(groups[3].real));
-    setCons('consSaldo', fBRL(sr));
-
-    // Reserva Ideal — acumulado (soma de despesas com categoria "Reserva Ideal" no ano)
-    try{
-      const despAll = (despR?.rows)||[];
-      const acumulado = despAll.filter(r=>{
-        const cat=String(r.categoria||r.cat||'').toLowerCase();
-        return cat.includes('reserva ideal') && String(r.ano||ano)===ano;
-      }).reduce((s,r)=>s+Number(r.valor||0),0);
-      const meta = Number(_reservaMeta.valor||0);
-      const pct = meta>0 ? Math.min(100, Math.round((acumulado/meta)*100)) : 0;
-      const setT=(id,v)=>{const e=gel(id);if(e)e.textContent=v;};
-      setT('resAcumLbl', fBRL(acumulado));
-      setT('resMetaValLbl', meta>0?fBRL(meta):'R$ — (defina no Perfil)');
-      setT('resMetaLbl', meta>0?`${_reservaMeta.meses} meses de gastos`:'Calcule no Perfil & Reserva');
-      setT('resPctLbl', pct+'% da meta');
-      const bar=gel('resBar'); if(bar){
-        bar.style.width=pct+'%';
-        const col = pct>=100?'#16a34a':(pct>=60?'#eab308':'#dc2626');
-        bar.style.background=`linear-gradient(90deg,${col},${col})`;
-      }
-    }catch{}
-
-    // Renda recebida vs realizado
-    try{
-      const rendaInfo = Number(_rendaMensalCache||0);
-      const rendaReal = groups[0].real;
-      const setT=(id,v)=>{const e=gel(id);if(e)e.textContent=v;};
-      setT('rendaInfo', rendaInfo>0?fBRL(rendaInfo):'R$ — (defina em Renda)');
-      setT('rendaReal', fBRL(rendaReal));
-      const lbl=gel('rendaDiffLbl');
-      if(lbl){
-        if(rendaInfo<=0){ lbl.textContent='Sem renda informada'; lbl.style.background='var(--bg-muted,#eef2f7)'; lbl.style.color='var(--text-muted)'; }
-        else {
-          const diff=rendaReal-rendaInfo;
-          if(diff>=0){ lbl.textContent=`▲ ${fBRL(diff)} acima`; lbl.style.background='rgba(22,163,74,.12)'; lbl.style.color='#16a34a'; }
-          else { lbl.textContent=`▼ ${fBRL(Math.abs(diff))} abaixo`; lbl.style.background='rgba(220,38,38,.12)'; lbl.style.color='#dc2626'; }
-        }
-      }
-    }catch{}
-  }catch(e){toast('Erro: '+e.message,'error');}
-}
-
-/* ═══════════════════════════════════════════
    PAINEL — ANUAL
 ═══════════════════════════════════════════ */
 async function loadPainelAnual(){
   const tb=gel('annualTbody');if(!tb)return;
-  tb.innerHTML=`<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-muted)">Carregando dados anuais...</td></tr>`;
+  tb.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:22px;color:var(--text-muted)">Carregando ano...</td></tr>`;
 
   const results=[];
   for(const mes of CFG.MESES){
-    try{
-      const data=await apiGetPainel(mes);
-      results.push({mes,data:data||{}});
-    }catch{
-      results.push({mes,data:{}});
-    }
+    try{ results.push({mes,data:(await apiGetPainel(mes))||{}}); }
+    catch{ results.push({mes,data:{}}); }
   }
 
-  let totalRP=0,totalRR=0,totalOP=0,totalOR=0,totalNP=0,totalNR=0,totalIP=0,totalIR=0;
+  function somaPlanReal(d){
+    const rec=d.receitas||{},obl=d.obrigatorias||{},noo=d.naoobl||{},inv=d.invest||{};
+    const renda=Number(rec.realizado||0)||Number(rec.planejado||0);
+    const despPlan=Number(obl.planejado||0)+Number(noo.planejado||0)+Number(inv.planejado||0);
+    const despReal=Number(obl.realizado||0)+Number(noo.realizado||0)+Number(inv.realizado||0);
+    return {renda,despPlan,despReal};
+  }
 
-  tb.innerHTML=results.map(({mes,data})=>{
-    const rec=data.receitas||{},obl=data.obrigatorias||{},noo=data.naoobl||{},inv=data.invest||{};
-    const rp=Number(rec.planejado||0),rr=Number(rec.realizado||0);
-    const op=Number(obl.planejado||0),or=Number(obl.realizado||0);
-    const np=Number(noo.planejado||0),nr=Number(noo.realizado||0);
-    const ip=Number(inv.planejado||0),ir=Number(inv.realizado||0);
-    const sp=rp-op-np-ip,sr=rr-or-nr-ir;
-    totalRP+=rp;totalRR+=rr;totalOP+=op;totalOR+=or;totalNP+=np;totalNR+=nr;totalIP+=ip;totalIR+=ir;
-    return`<tr>
-      <td style="font-weight:600">${mes.charAt(0)+mes.slice(1).toLowerCase()}</td>
-      <td>${fBRL(rp)}</td><td>${fBRL(rr)}</td>
-      <td>${fBRL(op)}</td><td>${fBRL(or)}</td>
-      <td>${fBRL(np)}</td><td>${fBRL(nr)}</td>
-      <td>${fBRL(ip)}</td><td>${fBRL(ir)}</td>
-      <td style="color:${sp>=0?'var(--success)':'var(--danger)'}">${fBRL(sp)}</td>
-      <td style="color:${sr>=0?'var(--success)':'var(--danger)'}">${fBRL(sr)}</td>
+  let tRenda=0,tPlan=0,tReal=0;
+  const rows=results.map(({mes,data})=>{
+    const {renda,despPlan,despReal}=somaPlanReal(data);
+    const saldoPlan=renda-despPlan, saldoReal=renda-despReal;
+    tRenda+=renda;tPlan+=despPlan;tReal+=despReal;
+    const nomeMes=mes.charAt(0)+mes.slice(1).toLowerCase();
+    return `<tr>
+      <td style="font-weight:600">${nomeMes}</td>
+      <td>${fBRL(renda)}</td>
+      <td>${fBRL(despPlan)}</td>
+      <td>${fBRL(despReal)}</td>
+      <td style="color:${despReal-despPlan<=0?'var(--success)':'var(--danger)'}">${fBRL(despReal-despPlan)}</td>
+      <td style="color:${saldoPlan>=0?'var(--success)':'var(--danger)'}">${fBRL(saldoPlan)}</td>
+      <td style="color:${saldoReal>=0?'var(--success)':'var(--danger)'}">${fBRL(saldoReal)}</td>
     </tr>`;
-  }).join('');
+  });
 
-  const sp=totalRP-totalOP-totalNP-totalIP,sr=totalRR-totalOR-totalNR-totalIR;
-  tb.innerHTML+=`<tr>
-    <td style="font-weight:700">TOTAL ANO</td>
-    <td>${fBRL(totalRP)}</td><td>${fBRL(totalRR)}</td>
-    <td>${fBRL(totalOP)}</td><td>${fBRL(totalOR)}</td>
-    <td>${fBRL(totalNP)}</td><td>${fBRL(totalNR)}</td>
-    <td>${fBRL(totalIP)}</td><td>${fBRL(totalIR)}</td>
-    <td style="color:${sp>=0?'var(--success)':'var(--danger)'};font-weight:700">${fBRL(sp)}</td>
-    <td style="color:${sr>=0?'var(--success)':'var(--danger)'};font-weight:700">${fBRL(sr)}</td>
-  </tr>`;
+  const tSaldoPlan=tRenda-tPlan, tSaldoReal=tRenda-tReal;
+  rows.push(`<tr style="font-weight:700;background:var(--gold-pale)">
+    <td>TOTAL ANO</td>
+    <td>${fBRL(tRenda)}</td>
+    <td>${fBRL(tPlan)}</td>
+    <td>${fBRL(tReal)}</td>
+    <td style="color:${tReal-tPlan<=0?'var(--success)':'var(--danger)'}">${fBRL(tReal-tPlan)}</td>
+    <td style="color:${tSaldoPlan>=0?'var(--success)':'var(--danger)'}">${fBRL(tSaldoPlan)}</td>
+    <td style="color:${tSaldoReal>=0?'var(--success)':'var(--danger)'}">${fBRL(tSaldoReal)}</td>
+  </tr>`);
+
+  tb.innerHTML=rows.join('');
+  renderPainelDestaques(results,somaPlanReal,tRenda,tPlan,tReal);
+}
+
+function renderPainelDestaques(results,somaFn,tRenda,tPlan,tReal){
+  const box=gel('painelDestaques');if(!box)return;
+  let melhor=null,pior=null;
+  results.forEach(({mes,data})=>{
+    const {renda,despReal}=somaFn(data);
+    if(renda===0&&despReal===0)return;
+    const saldo=renda-despReal;
+    if(!melhor||saldo>melhor.saldo)melhor={mes,saldo};
+    if(!pior||saldo<pior.saldo)pior={mes,saldo};
+  });
+  const aderencia=tPlan>0?Math.round((tReal/tPlan)*100):0;
+  const nm=m=>m?m.charAt(0)+m.slice(1).toLowerCase():'—';
+  box.innerHTML=`
+    <div class="painel-card pc-rec"><div class="pc-lbl">Melhor saldo</div>
+      <div class="pc-row">${nm(melhor?.mes)}<strong>${melhor?fBRL(melhor.saldo):'R$ —'}</strong></div></div>
+    <div class="painel-card pc-obl"><div class="pc-lbl">Pior saldo</div>
+      <div class="pc-row">${nm(pior?.mes)}<strong>${pior?fBRL(pior.saldo):'R$ —'}</strong></div></div>
+    <div class="painel-card pc-inv"><div class="pc-lbl">Aderência ao planejado</div>
+      <div class="pc-row">Realizado / Planejado<strong>${aderencia}%</strong></div></div>
+    <div class="painel-card pc-noo"><div class="pc-lbl">Total gasto no ano</div>
+      <div class="pc-row">Realizado<strong>${fBRL(tReal)}</strong></div></div>`;
 }
 
 /* ═══════════════════════════════════════════
@@ -3470,7 +3254,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   buildExtraOnboarding();
   buildExtraGrid();
 
-  const pm=gel('painelMes');if(pm)pm.selectedIndex=new Date().getMonth();
 
   const dd=gel('despData');if(dd&&!dd.value)dd.value=new Date().toISOString().split('T')[0];
   const dm=gel('despMesComp');if(dm){const cur=CFG.MESES[new Date().getMonth()];[...dm.options].forEach(o=>{if(o.value===cur)o.selected=true;});}
