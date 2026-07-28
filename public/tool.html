@@ -2311,26 +2311,37 @@ function onFileDrop(e){e.preventDefault();gel('importDrop').classList.remove('dr
 
 function parseImportFile(file){
   if(!file)return;
-  if(!_importBanco||!_importSource){toast('Selecione o banco e o tipo do arquivo antes.','error');return;}
+  if(!_importTipo){toast('Escolha a fonte do arquivo (passo 1).','error');return;}
+  if(!_importBanco){toast('Selecione o banco (passo 2).','error');return;}
 
-  const ext=file.name.split('.').pop().toLowerCase();
+  const ext=String(file.name||'').split('.').pop().toLowerCase();
   if(ext==='csv'){
+    if(!window['Papa']){toast('Leitor de CSV indisponível. Recarregue a página.','error');return;}
     const reader=new FileReader();
+    reader.onerror=()=>toast('Não foi possível ler o arquivo.','error');
     reader.onload=e=>{
-      const txt=e.target.result;
-      const ar=Papa.parse(txt,{header:false,skipEmptyLines:true});
-      processImportSheet(ar.data||[],file.name);
+      try{
+        const txt=e.target.result;
+        const ar=Papa.parse(txt,{header:false,skipEmptyLines:true});
+        processImportSheet(ar.data||[],file.name);
+      }catch(err){toast('Erro ao ler CSV: '+(err&&err.message||err),'error');}
     };
     reader.readAsText(file,'UTF-8');
   } else if(ext==='xlsx'||ext==='xls'){
+    if(!window['XLSX']){toast('Leitor de planilhas indisponível. Recarregue a página.','error');return;}
     const reader=new FileReader();
+    reader.onerror=()=>toast('Não foi possível ler o arquivo.','error');
     reader.onload=e=>{
-      const wb=XLSX.read(e.target.result,{type:'array'});
-      const ws=wb.Sheets[wb.SheetNames[0]];
-      const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      processImportSheet(aoa,file.name);
+      try{
+        const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        if(!ws){toast('A planilha está vazia.','error');return;}
+        const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+        processImportSheet(aoa,file.name);
+      }catch(err){toast('Erro ao ler planilha: '+(err&&err.message||err),'error');}
     };
     reader.readAsArrayBuffer(file);
+  } else if(ext==='pdf'){
   } else if(ext==='pdf'){
     if(!window['pdfjsLib']){toast('Leitor de PDF indisponível. Recarregue a página.','error');return;}
     const reader=new FileReader();
