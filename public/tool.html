@@ -454,6 +454,7 @@ img,svg{display:block;max-width:100%}
       <button class="btn btn-g" onclick="closeModal('modalCats')">Fechar</button>
       <button class="btn btn-p" onclick="saveCats()">✓ Salvar categorias</button>
     </div>
+  </div>
 </div>
 
 <!-- Modal: novo banco -->
@@ -470,7 +471,23 @@ img,svg{display:block;max-width:100%}
     </div>
   </div>
 </div>
+
+<!-- Modal: registrar pagamento de dívida -->
+<div class="modal-ov" id="modalPagDivida">
+  <div class="modal-box" style="max-width:440px">
+    <p class="modal-title">Registrar pagamento</p>
+    <div id="pagDivInfo" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"></div>
+    <div class="field"><label class="lbl">Valor pago (R$)</label>
+      <input class="inp inp-money" type="text" id="pagDivValor" placeholder="0,00" data-money
+        onkeydown="if(event.key==='Enter')confirmPagamentoDivida()"/></div>
+    <div class="auth-err" id="pagDivErr"></div>
+    <div class="modal-footer">
+      <button class="btn btn-g" onclick="closeModal('modalPagDivida')">Cancelar</button>
+      <button class="btn btn-p" id="pagDivBtn" onclick="confirmPagamentoDivida()">✓ Confirmar pagamento</button>
+    </div>
+  </div>
 </div>
+
 
 <!-- ══ TOPBAR ══════════════════════════════════════════════ -->
 <header class="topbar" id="topbar" style="display:none">
@@ -762,7 +779,7 @@ img,svg{display:block;max-width:100%}
 
         <!-- Passo 2: Banco -->
         <div id="importBancoWrap" class="card-form mt16" style="display:none">
-          <div class="imp-step-hd"><span class="imp-step-badge">2</span><span>Selecione o banco</span></div>
+          <div class="imp-step-hd"><span class="imp-step-badge">2</span><span id="impStep2Ttl">Selecione o banco</span></div>
           <div class="grid3">
             <div class="field">
               <label class="lbl">Banco</label>
@@ -771,7 +788,12 @@ img,svg{display:block;max-width:100%}
                 <button type="button" class="btn btn-g btn-xs" onclick="addBancoImportPrompt()" title="Adicionar banco">＋</button>
               </div>
             </div>
+            <div class="field" id="impMesPagWrap" style="display:none">
+              <label class="lbl">Mês de pagamento da fatura</label>
+              <select class="sel" id="impMesPag" onchange="onImportMesPagChange()"></select>
+            </div>
           </div>
+
         </div>
 
         <!-- Passo 3: Arquivo -->
@@ -923,15 +945,16 @@ img,svg{display:block;max-width:100%}
     <div class="modal-ov" id="modalReplicar">
       <div class="modal-box" style="max-width:420px">
         <p class="modal-title">Replicar planejamento</p>
-        <p style="font-size:.84rem;color:var(--text-secondary);margin-bottom:12px">Escolha o mês de origem. Os valores serão copiados para o mês aberto.</p>
-        <div style="display:flex;gap:10px">
-          <select class="sel" id="repMesSel" style="flex:1"></select>
-          <select class="sel" id="repAnoSel" style="width:110px"></select>
+        <p style="font-size:.84rem;color:var(--text-secondary);margin-bottom:12px">Escolha um mês já planejado. Os valores serão copiados para o mês aberto.</p>
+        <div class="field"><label class="lbl">Mês de origem</label>
+          <select class="sel" id="repMesSel"></select>
         </div>
+        <div class="auth-err" id="repErr"></div>
         <div class="modal-footer">
           <button class="btn btn-g" onclick="closeModal('modalReplicar')">Cancelar</button>
-          <button class="btn btn-p" onclick="confirmReplicarMes()">Replicar</button>
+          <button class="btn btn-p" id="repBtn" onclick="confirmReplicarMes()">Replicar</button>
         </div>
+
       </div>
     </div>
 
@@ -2053,21 +2076,48 @@ async function loadQuitacao(){
   }
 }
 
-async function openPagamentoDivida(idx){
+let _pagDivIdx=null;
+function openPagamentoDivida(idx){
   const d=_dividasCache[idx]; if(!d) return;
+  _pagDivIdx=idx;
   const sugestao=Number(d.valor_parcela||0);
-  const def = sugestao>0 ? String(sugestao).replace('.',',') : '';
-  const v = prompt(`Registrar pagamento — ${d.credor||''}\n\nValor pago (R$):`, def);
-  if(v==null) return;
-  const valor = pMoney(v);
-  if(!(valor>0)){toast('Valor inválido.','error');return;}
+  const saldo=Number(d.saldo_devedor||0);
+  const pago=Number(d.total_pago||0);
+  const info=gel('pagDivInfo');
+  const cell=(t,v,color)=>`<div style="background:var(--bg-soft,#faf8f5);border:1px solid var(--border-subtle);border-radius:10px;padding:10px"><div style="font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)">${t}</div><div class="mono" style="font-size:.95rem;font-weight:700${color?';color:'+color:''}">${v}</div></div>`;
+  if(info){
+    info.innerHTML =
+      cell('Credor', esc(d.credor||'—')) +
+      cell('Tipo', esc(d.tipo||'—')) +
+      cell('Saldo devedor', fBRL(saldo), 'var(--danger,#dc2626)') +
+      cell('Total pago', fBRL(pago), '#16a34a');
+  }
+  const inp=gel('pagDivValor');
+  if(inp){ inp.value = sugestao>0 ? fBRL(sugestao).replace('R$','').trim() : ''; setTimeout(()=>{inp.focus();inp.select();},60); }
+  const err=gel('pagDivErr'); if(err){ err.textContent=''; err.classList.remove('show'); }
+  const btn=gel('pagDivBtn'); if(btn) btn.disabled=false;
+  openModal('modalPagDivida');
+}
+async function confirmPagamentoDivida(){
+  const d=_dividasCache[_pagDivIdx]; if(!d) return;
+  const err=gel('pagDivErr'), btn=gel('pagDivBtn');
+  const valor=pMoney(gel('pagDivValor')?.value||'');
+  if(!(valor>0)){ if(err){ err.textContent='Informe um valor válido maior que zero.'; err.classList.add('show'); } return; }
+  if(err){ err.textContent=''; err.classList.remove('show'); }
+  if(btn){ btn.disabled=true; btn.textContent='Salvando…'; }
   try{
     const r=await gPost('registerDividaPagamento',{id:d.id,valor});
-    if(r?.error){toast('Erro: '+r.error,'error');return;}
+    if(r?.error){ if(err){ err.textContent=r.error; err.classList.add('show'); } return; }
+    closeModal('modalPagDivida');
     toast(r?.status==='quitada'?'Dívida quitada! 🎉':'Pagamento registrado.','success');
     await loadQuitacao();
-  }catch(e){toast('Erro: '+e.message,'error');}
+  }catch(e){
+    if(err){ err.textContent=e.message; err.classList.add('show'); }
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='✓ Confirmar pagamento'; }
+  }
 }
+
 
 async function deleteDivida(id){
   if(!confirm('Excluir esta dívida?')) return;
@@ -2093,6 +2143,7 @@ function switchDespTab(id,btn){
 let _importSource = null;    // 'cartao' | 'extrato'
 let _importTipo = null;      // 'fatura' | 'extrato'
 let _importBanco = null;
+let _importMesPag = null, _importAnoPag = null;
 let _pendingFile = null;
 
 const CARTOES_KEY = ()=>`dv_cartoes_${cid()||'_'}`;
@@ -2165,9 +2216,36 @@ function chooseImportTipo(t){
   gel('impSrcFatura')?.classList.toggle('selected', _importTipo==='fatura');
   gel('impSrcExtrato')?.classList.toggle('selected', _importTipo==='extrato');
   const bw=gel('importBancoWrap'); if(bw) bw.style.display='';
+  const st=gel('impStep2Ttl');
+  if(st) st.textContent = _importTipo==='fatura' ? 'Selecione o banco e o mês de pagamento' : 'Selecione o banco';
   fillImpBancoSelect(_importBanco||undefined);
+  fillImpMesPagSelect();
   onImportBancoChange();
   setTimeout(()=>bw?.scrollIntoView({behavior:'smooth',block:'center'}),50);
+}
+/* Mês de pagamento da fatura — sempre a partir do mês atual */
+function fillImpMesPagSelect(){
+  const wrap=gel('impMesPagWrap'), sel=gel('impMesPag');
+  if(!wrap||!sel) return;
+  if(_importTipo!=='fatura'){ wrap.style.display='none'; _importMesPag=null; _importAnoPag=null; return; }
+  wrap.style.display='';
+  const now=new Date();
+  const opts=[];
+  for(let k=0;k<12;k++){
+    const d=new Date(now.getFullYear(), now.getMonth()+k, 1);
+    const m=CFG.MESES[d.getMonth()], a=String(d.getFullYear());
+    opts.push({m,a});
+  }
+  const prev=sel.value;
+  sel.innerHTML=opts.map(o=>`<option value="${o.m}|${o.a}">${o.m[0]+o.m.slice(1).toLowerCase()}${o.a!==String(now.getFullYear())?'/'+o.a:''}</option>`).join('');
+  if(prev && [...sel.options].some(o=>o.value===prev)) sel.value=prev;
+  onImportMesPagChange();
+}
+function onImportMesPagChange(){
+  const v=String(gel('impMesPag')?.value||'');
+  if(v.includes('|')){ const [m,a]=v.split('|'); _importMesPag=m; _importAnoPag=a; }
+  else { _importMesPag=null; _importAnoPag=null; }
+  refreshImportDropState();
 }
 /* Passo 2 — banco */
 function onImportBancoChange(){
@@ -2175,9 +2253,11 @@ function onImportBancoChange(){
   refreshImportDropState();
 }
 function refreshImportDropState(){
-  const ready = !!(_importTipo && _importBanco);
+  const needMes = _importTipo==='fatura';
+  const ready = !!(_importTipo && _importBanco && (!needMes || _importMesPag));
   const dw=gel('importDropWrap'); if(dw) dw.classList.toggle('imp-locked', !ready);
-  const lbl=gel('importBancoLbl'); if(lbl) lbl.textContent=_importBanco||'—';
+  const lbl=gel('importBancoLbl');
+  if(lbl) lbl.textContent = (_importBanco||'—') + (needMes && _importMesPag ? ` · ${_importMesPag[0]+_importMesPag.slice(1).toLowerCase()}/${_importAnoPag}` : '');
   const rb=gel('impResetBtn3'); if(rb) rb.style.display = (_importTipo||_importBanco) ? '' : 'none';
   if(ready){
     gel('importDropIcon').textContent='📂';
@@ -2192,17 +2272,20 @@ function refreshImportDropState(){
   }
 }
 function resetImportSource(){
-  _importSource=null;_importTipo=null;_importBanco=null;_pendingFile=null;
+  _importSource=null;_importTipo=null;_importBanco=null;_pendingFile=null;_importMesPag=null;_importAnoPag=null;
   clearImport();
   gel('impSrcFatura')?.classList.remove('selected');
   gel('impSrcExtrato')?.classList.remove('selected');
   const bw=gel('importBancoWrap'); if(bw) bw.style.display='none';
+  const mw=gel('impMesPagWrap'); if(mw) mw.style.display='none';
   const fi=gel('fileInput'); if(fi) fi.value='';
   refreshImportDropState();
 }
+
 function onImportDropClick(){
   if(!_importTipo){ toast('Escolha a fonte do arquivo (passo 1).','error'); return; }
   if(!_importBanco){ toast('Selecione o banco (passo 2) antes de enviar o arquivo.','error'); return; }
+  if(_importTipo==='fatura' && !_importMesPag){ toast('Selecione o mês de pagamento da fatura (passo 2).','error'); return; }
   document.getElementById('fileInput').click();
 }
 function handleFileSelect(file){
@@ -2217,9 +2300,15 @@ function handleFileSelect(file){
 
 /* Bancos persistidos por cliente */
 const BANCOS_KEY = ()=>`dv_bancos_${cid()||'_'}`;
-const BANCOS_DEFAULT = ['Bradesco','Nubank','Banco do Brasil','Caixa Econômica','Itaú','Santander','Inter','C6 Bank','Outro'];
+const BANCOS_DEFAULT = ['Bradesco','Nubank','Banco do Brasil','Caixa Econômica','Itaú','Santander','Inter','C6 Bank'];
 function loadBancos(){
-  try{const a=JSON.parse(localStorage.getItem(BANCOS_KEY())||'null');if(Array.isArray(a)&&a.length)return a;}catch{}
+  try{
+    const a=JSON.parse(localStorage.getItem(BANCOS_KEY())||'null');
+    if(Array.isArray(a)&&a.length){
+      const f=a.filter(b=>String(b||'').trim().toLowerCase()!=='outro');
+      if(f.length) return f;
+    }
+  }catch{}
   return BANCOS_DEFAULT.slice();
 }
 function saveBancos(arr){localStorage.setItem(BANCOS_KEY(),JSON.stringify(arr));}
@@ -2556,11 +2645,11 @@ function finishImportRows(rows,fname){
   const cats=getCats();
   const allCats=Object.entries(cats).flatMap(([grp,items])=>items.map(i=>`${grp} · ${i}`));
   const now=new Date();
-  const mesVigente=CFG.MESES[now.getMonth()];
-  const anoVigente=String(now.getFullYear());
+  const mesVigente=(_importTipo==='fatura' && _importMesPag) ? _importMesPag : CFG.MESES[now.getMonth()];
+  const anoVigente=(_importTipo==='fatura' && _importAnoPag) ? _importAnoPag : String(now.getFullYear());
   _importMesVigente=mesVigente;_importAnoVigente=anoVigente;
   const cl=gel('importCompetLbl');
-  if(cl)cl.textContent=`Competência: ${mesVigente.charAt(0)+mesVigente.slice(1).toLowerCase()} / ${anoVigente} · ${_importSource==='cartao'?'💳 Fatura':'🏦 Extrato'} · ${_importBanco}`;
+  if(cl)cl.textContent=`${_importSource==='cartao'?'Mês de pagamento da fatura':'Competência'}: ${mesVigente.charAt(0)+mesVigente.slice(1).toLowerCase()} / ${anoVigente} · ${_importSource==='cartao'?'💳 Fatura':'🏦 Extrato'} · ${_importBanco}`;
   _importRows=rows.map((r,i)=>({
     id:i,data:r.data,desc:r.desc,valor:r.valor,
     cat:allCats[0]||'',
@@ -3024,22 +3113,39 @@ async function savePlanejamentoMes(){
 function buildExtraGrid(){ /* substituído por openPlanejamentoPanel */ }
 function saveExtraordinario(){ return savePlanejamentoMes(); }
 
-function openReplicarModal(){
+async function openReplicarModal(){
   const ms=gel('planMesSel'), as=gel('planAnoSel');
-  const rm=gel('repMesSel'), ra=gel('repAnoSel');
-  if(!rm||!ra||!ms||!as) return;
-  rm.innerHTML=MES_NOMES.map(m=>`<option value="${m}">${m[0]+m.slice(1).toLowerCase()}</option>`).join('');
-  ra.innerHTML=[...as.options].map(o=>`<option value="${o.value}">${o.textContent}</option>`).join('');
-  let i=MES_NOMES.indexOf(ms.value); let a=parseInt(as.value)||CFG.ANO;
-  i-=1; if(i<0){i=11;a-=1;}
-  rm.value=MES_NOMES[i];
-  if([...ra.options].some(o=>o.value===String(a))) ra.value=String(a); else ra.value=as.value;
+  const rm=gel('repMesSel'), err=gel('repErr'), btn=gel('repBtn');
+  if(!rm||!ms||!as) return;
+  if(err){ err.textContent=''; err.classList.remove('show'); }
+  if(!_planAllRows.length) await loadAllPlanejamento();
+  const seen=new Map();
+  _planAllRows.forEach(r=>{
+    const m=String(r.mes||'').toUpperCase(), a=String(r.ano||'');
+    if(!m||!a) return;
+    if(Number(r.valor_planejado||0)<=0) return;
+    if(m===String(ms.value).toUpperCase() && a===String(as.value)) return; // exclui o mês aberto
+    seen.set(`${m}|${a}`,{m,a});
+  });
+  const opts=[...seen.values()].sort((x,y)=>(Number(y.a)-Number(x.a))||(MES_NOMES.indexOf(y.m)-MES_NOMES.indexOf(x.m)));
+  if(!opts.length){
+    rm.innerHTML=`<option value="">— nenhum mês planejado —</option>`;
+    rm.disabled=true; if(btn) btn.disabled=true;
+    if(err){ err.textContent='Nenhum outro mês possui planejamento salvo para replicar.'; err.classList.add('show'); }
+  }else{
+    rm.disabled=false; if(btn) btn.disabled=false;
+    rm.innerHTML=opts.map(o=>`<option value="${o.m}|${o.a}">${o.m[0]+o.m.slice(1).toLowerCase()}/${o.a}</option>`).join('');
+  }
   openModal('modalReplicar');
 }
 async function confirmReplicarMes(){
+  const v=String(gel('repMesSel')?.value||'');
+  if(!v.includes('|')) return;
+  const [mes,ano]=v.split('|');
   closeModal('modalReplicar');
-  await replicarPlanejamentoAnterior(gel('repMesSel')?.value, gel('repAnoSel')?.value);
+  await replicarPlanejamentoAnterior(mes,ano);
 }
+
 async function replicarPlanejamentoAnterior(mesOrigem,anoOrigem){
   const ms=gel('planMesSel'), as=gel('planAnoSel'); if(!ms||!as) return;
   let mesAnt, anoAnt;
