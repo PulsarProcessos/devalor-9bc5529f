@@ -287,6 +287,7 @@ img,svg{display:block;max-width:100%}
 .import-drop__title{font-size:.9rem;font-weight:600;color:var(--text-secondary);margin-bottom:4px}
 .imp-locked .import-drop{opacity:.5;cursor:not-allowed;background:repeating-linear-gradient(45deg,var(--bg-body),var(--bg-body) 10px,rgba(0,0,0,.03) 10px,rgba(0,0,0,.03) 20px);border-style:dashed;border-color:var(--border-default)}
 .imp-locked .import-drop:hover{border-color:var(--border-default);background:repeating-linear-gradient(45deg,var(--bg-body),var(--bg-body) 10px,rgba(0,0,0,.03) 10px,rgba(0,0,0,.03) 20px)}
+.imp-src-card.selected{border-color:var(--brand,#16a34a)!important;box-shadow:0 0 0 2px rgba(22,163,74,.18);background:rgba(22,163,74,.06)}
 .imp-step-hd{display:flex;align-items:center;gap:10px;font-weight:600;color:var(--text-primary);font-size:.95rem;margin-bottom:6px}
 .imp-step-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;font-size:.9rem;flex-shrink:0}
 .import-drop__sub{font-size:.78rem;color:var(--text-muted)}
@@ -754,55 +755,51 @@ img,svg{display:block;max-width:100%}
 
       <!-- Importar -->
       <div class="desp-panel" id="desp-importar">
-        <!-- Passo 1: Banco -->
-        <div id="importBancoWrap" class="card-form">
-          <div class="imp-step-hd"><span class="imp-step-badge">1</span><span>Selecione o banco do arquivo</span></div>
+        <!-- Passo 1: Fonte do arquivo -->
+        <div id="importSourceWrap" class="card-form">
+          <div class="imp-step-hd"><span class="imp-step-badge">1</span><span>Escolha a fonte do arquivo</span></div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;padding:8px">
+            <button class="btn btn-g imp-src-card" id="impSrcFatura" style="min-width:250px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportTipo('fatura')">
+              <span style="font-size:2rem">💳</span>
+              <span style="font-weight:600">Fatura de cartão de crédito</span>
+              <span style="font-size:.75rem;color:var(--text-muted)">Todos os lançamentos da fatura viram despesa</span>
+            </button>
+            <button class="btn btn-g imp-src-card" id="impSrcExtrato" style="min-width:250px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportTipo('extrato')">
+              <span style="font-size:2rem">🏦</span>
+              <span style="font-weight:600">Extrato bancário</span>
+              <span style="font-size:.75rem;color:var(--text-muted)">Apenas saídas / débitos são importados</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Passo 2: Banco -->
+        <div id="importBancoWrap" class="card-form mt16" style="display:none">
+          <div class="imp-step-hd"><span class="imp-step-badge">2</span><span>Selecione o banco</span></div>
           <div class="grid3">
             <div class="field">
               <label class="lbl">Banco</label>
               <div style="display:flex;gap:6px">
-                <select class="sel" id="impBanco" style="flex:1"></select>
+                <select class="sel" id="impBanco" style="flex:1" onchange="onImportBancoChange()"></select>
                 <button type="button" class="btn btn-g btn-xs" onclick="addBancoImportPrompt()" title="Adicionar banco">＋</button>
               </div>
             </div>
           </div>
-          <div class="form-footer">
-            <button class="btn btn-p" onclick="confirmImportBanco()">Continuar →</button>
-          </div>
         </div>
 
-        <!-- Passo 2: Arquivo -->
-        <div id="importDropWrap" class="imp-locked">
-          <div class="imp-step-hd"><span class="imp-step-badge">2</span><span>Envie o arquivo</span></div>
+        <!-- Passo 3: Arquivo -->
+        <div id="importDropWrap" class="imp-locked mt16">
+          <div class="imp-step-hd"><span class="imp-step-badge">3</span><span>Envie o arquivo</span></div>
           <div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0;gap:8px;flex-wrap:wrap">
             <div style="font-size:.9rem;color:var(--text-secondary)">Banco: <strong id="importBancoLbl">—</strong></div>
-            <button class="btn btn-g btn-xs" onclick="resetImportSource()" id="impResetBtn3" style="display:none">↺ Trocar banco</button>
+            <button class="btn btn-g btn-xs" onclick="resetImportSource()" id="impResetBtn3" style="display:none">↺ Recomeçar</button>
           </div>
           <div class="import-drop" id="importDrop" onclick="onImportDropClick()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onFileDrop(event)">
             <div class="import-drop__icon" id="importDropIcon">🔒</div>
-            <div class="import-drop__title" id="importDropTitle">Selecione o banco acima para liberar</div>
-            <div class="import-drop__sub" id="importDropSub">Complete o passo 1 para habilitar o envio</div>
+            <div class="import-drop__title" id="importDropTitle">Escolha a fonte e o banco para liberar</div>
+            <div class="import-drop__sub" id="importDropSub">Complete os passos 1 e 2 para habilitar o envio</div>
           </div>
           <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.pdf" style="display:none" onchange="handleFileSelect(this.files[0])"/>
 
-          <!-- Passo 3: Tipo do arquivo -->
-          <div id="importTipoWrap" class="card-form mt16" style="display:none">
-            <div class="imp-step-hd"><span class="imp-step-badge">3</span><span>Que tipo de arquivo é este?</span></div>
-            <div style="font-size:.85rem;color:var(--text-muted);margin:4px 0 10px">Arquivo: <strong id="importTipoFileName">—</strong></div>
-            <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;padding:8px">
-              <button class="btn btn-g" style="min-width:250px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportTipo('fatura')">
-                <span style="font-size:2rem">💳</span>
-                <span style="font-weight:600">Fatura de cartão de crédito</span>
-                <span style="font-size:.75rem;color:var(--text-muted)">Todos os lançamentos viram despesa</span>
-              </button>
-              <button class="btn btn-g" style="min-width:250px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportTipo('extrato')">
-                <span style="font-size:2rem">🏦</span>
-                <span style="font-weight:600">Extrato bancário</span>
-                <span style="font-size:.75rem;color:var(--text-muted)">Apenas saídas / débitos são importados</span>
-              </button>
-            </div>
-            <div class="form-footer"><button class="btn btn-g btn-xs" onclick="cancelImportTipo()">Cancelar arquivo</button></div>
-          </div>
 
           <div id="importPreviewWrap" class="hidden mt16">
             <div class="import-preview">
@@ -2088,8 +2085,9 @@ function switchDespTab(id,btn){
   if(id==='importar')fillImpBancoSelect();
 }
 
-/* Importação: banco (passo 1) + tipo de arquivo (passo 3) */
+/* Importação: fonte (passo 1) + banco (passo 2) + arquivo (passo 3) */
 let _importSource = null;    // 'cartao' | 'extrato'
+let _importTipo = null;      // 'fatura' | 'extrato'
 let _importBanco = null;
 let _pendingFile = null;
 
@@ -2116,54 +2114,61 @@ function addBancoImportPrompt(){
   fillImpBancoSelect(name);fillBancoSelect(gel('despBanco')?.value);
   toast('Banco adicionado.','success');
 }
-function confirmImportBanco(){
-  const banco=gel('impBanco')?.value;
-  if(!banco){toast('Selecione o banco.','error');return;}
-  _importBanco=banco;
-  gel('importBancoLbl').textContent=banco;
-  const dw=gel('importDropWrap'); if(dw) dw.classList.remove('imp-locked');
-  gel('importDropIcon').textContent='📂';
-  gel('importDropTitle').textContent='Arraste ou clique para selecionar o arquivo';
-  gel('importDropSub').innerHTML='Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong>';
-  const rb=gel('impResetBtn3'); if(rb) rb.style.display='';
+/* Passo 1 — fonte do arquivo */
+function chooseImportTipo(t){
+  _importTipo = (t==='fatura') ? 'fatura' : 'extrato';
+  _importSource = (t==='fatura') ? 'cartao' : 'extrato';
+  gel('impSrcFatura')?.classList.toggle('selected', _importTipo==='fatura');
+  gel('impSrcExtrato')?.classList.toggle('selected', _importTipo==='extrato');
+  const bw=gel('importBancoWrap'); if(bw) bw.style.display='';
+  fillImpBancoSelect(_importBanco||undefined);
+  onImportBancoChange();
+  setTimeout(()=>bw?.scrollIntoView({behavior:'smooth',block:'center'}),50);
+}
+/* Passo 2 — banco */
+function onImportBancoChange(){
+  _importBanco = gel('impBanco')?.value || null;
+  refreshImportDropState();
+}
+function refreshImportDropState(){
+  const ready = !!(_importTipo && _importBanco);
+  const dw=gel('importDropWrap'); if(dw) dw.classList.toggle('imp-locked', !ready);
+  const lbl=gel('importBancoLbl'); if(lbl) lbl.textContent=_importBanco||'—';
+  const rb=gel('impResetBtn3'); if(rb) rb.style.display = (_importTipo||_importBanco) ? '' : 'none';
+  if(ready){
+    gel('importDropIcon').textContent='📂';
+    gel('importDropTitle').textContent='Arraste ou clique para selecionar o arquivo';
+    gel('importDropSub').innerHTML = _importTipo==='fatura'
+      ? 'Fatura de cartão · Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong>'
+      : 'Extrato bancário (apenas saídas) · Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong>';
+  }else{
+    gel('importDropIcon').textContent='🔒';
+    gel('importDropTitle').textContent='Escolha a fonte e o banco para liberar';
+    gel('importDropSub').textContent='Complete os passos 1 e 2 para habilitar o envio';
+  }
 }
 function resetImportSource(){
-  _importSource=null;_importBanco=null;_pendingFile=null;
+  _importSource=null;_importTipo=null;_importBanco=null;_pendingFile=null;
   clearImport();
-  const dw=gel('importDropWrap'); if(dw) dw.classList.add('imp-locked');
-  const tw=gel('importTipoWrap'); if(tw) tw.style.display='none';
-  fillImpBancoSelect();
-  gel('importBancoLbl').textContent='—';
-  gel('importDropIcon').textContent='🔒';
-  gel('importDropTitle').textContent='Selecione o banco acima para liberar';
-  gel('importDropSub').textContent='Complete o passo 1 para habilitar o envio';
-  const rb=gel('impResetBtn3'); if(rb) rb.style.display='none';
+  gel('impSrcFatura')?.classList.remove('selected');
+  gel('impSrcExtrato')?.classList.remove('selected');
+  const bw=gel('importBancoWrap'); if(bw) bw.style.display='none';
+  const fi=gel('fileInput'); if(fi) fi.value='';
+  refreshImportDropState();
 }
 function onImportDropClick(){
-  if(!_importBanco){ toast('Selecione o banco (passo 1) antes de enviar o arquivo.','error'); return; }
+  if(!_importTipo){ toast('Escolha a fonte do arquivo (passo 1).','error'); return; }
+  if(!_importBanco){ toast('Selecione o banco (passo 2) antes de enviar o arquivo.','error'); return; }
   document.getElementById('fileInput').click();
 }
-/* Passo 3 — confirmar o tipo do arquivo antes de processar */
 function handleFileSelect(file){
   if(!file)return;
-  if(!_importBanco){toast('Selecione o banco antes do arquivo.','error');return;}
+  if(!_importTipo||!_importBanco){toast('Escolha a fonte e o banco antes do arquivo.','error');return;}
   _pendingFile=file;
   gel('importPreviewWrap')?.classList.add('hidden');
-  const tw=gel('importTipoWrap'); if(tw) tw.style.display='';
-  const fn=gel('importTipoFileName'); if(fn) fn.textContent=file.name;
-  setTimeout(()=>tw?.scrollIntoView({behavior:'smooth',block:'center'}),50);
+  parseImportFile(file);
 }
-function chooseImportTipo(t){
-  if(!_pendingFile){toast('Selecione o arquivo novamente.','error');return;}
-  _importSource = t==='fatura' ? 'cartao' : 'extrato';
-  const tw=gel('importTipoWrap'); if(tw) tw.style.display='none';
-  parseImportFile(_pendingFile);
-}
-function cancelImportTipo(){
-  _pendingFile=null;_importSource=null;
-  const tw=gel('importTipoWrap'); if(tw) tw.style.display='none';
-  const fi=gel('fileInput'); if(fi) fi.value='';
-}
+
 
 
 /* Bancos persistidos por cliente */
@@ -2634,7 +2639,7 @@ async function submitImport(){
     const isCartao = _importSource==='cartao';
     const origem = isCartao ? 'import_cartao' : 'import';
     const banco = _importBanco;
-    const fp = (isCartao ? 'Cartão de Crédito' : 'Débito/Dinheiro/Pix') + ' · ' + banco;
+    const fp = isCartao ? ('Cartão de Crédito · ' + banco) : banco;
     const cartao = isCartao ? banco : null;
 
     // Competência sempre o mês/ano vigente
@@ -2693,7 +2698,7 @@ async function submitImport(){
 function clearImport(){
   _importRows=[];_importPage=1;_pendingFile=null;
   gel('importPreviewWrap')?.classList.add('hidden');
-  const tw=gel('importTipoWrap');if(tw)tw.style.display='none';
+  
   const fi=gel('fileInput');if(fi)fi.value='';
   const tb=gel('importTbody');if(tb)tb.innerHTML='';
   const pg=gel('importPager');if(pg)pg.innerHTML='';
