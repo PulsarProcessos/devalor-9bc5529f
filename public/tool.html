@@ -2244,8 +2244,7 @@ function renderPrev(rows){
   t.classList.remove('hidden');tbl.classList.remove('hidden');tb.innerHTML='';
   rows.forEach(r=>{
     const tr=document.createElement('tr');
-    const cn=despCartaoFromFP(r.fp); const fpLbl = cn?('Cartão: '+cn):r.fp;
-    tr.innerHTML=`<td>${esc(fpLbl)}</td><td>${r.bco}</td><td>${fDate(r.dt)}</td><td>${esc(r.desc)}</td><td class="mono" style="text-align:right">${fBRL(r.vp)}</td><td>${r.cat}</td><td class="mono">${r.mes}</td>`;
+    tr.innerHTML=`<td>${esc(despTagFP(r.fp,r.bco))}</td><td>${esc(r.bco||'')}</td><td>${fDate(r.dt)}</td><td>${esc(r.desc)}</td><td class="mono" style="text-align:right">${fBRL(r.vp)}</td><td>${r.cat}</td><td class="mono">${r.mes}</td>`;
     tb.appendChild(tr);
   });
 }
@@ -2267,20 +2266,18 @@ async function submitDespesas(){
     const grp = parcN>1 ? uuid() : null;
     const recs = rows.map((r,i)=>{
       const [grupo,categoria] = String(r.cat||'').split('·').map(s=>s.trim());
-      const cartaoNome = despCartaoFromFP(r.fp);
-      const isCartao = !!cartaoNome || r.fp==='Cartão de Crédito';
-      const fpLabel = isCartao ? 'Cartão de Crédito' : r.fp;
+      const isCartao = r.fp==='Cartão de Crédito';
       return {
         data: isoBase || r.dt || null,
         descricao: r.desc, valor: r.vp,
         categoria: categoria||r.cat||null, grupo: grupo||null,
-        forma_pagamento: fpLabel, banco: r.bco, cartao: cartaoNome,
+        forma_pagamento: despTagFP(r.fp,r.bco), banco: r.bco,
+        cartao: isCartao ? r.bco : null,
         mes: r.mes, mes_pagamento: isCartao ? r.mes : null,
         ano: String(r.ano||CFG.ANO), origem: 'manual',
         parcela_n: parcN>1 ? i+1 : null,
         parcela_total: parcN>1 ? parcN : null,
-        parcela_grupo_id: grp,
-        pago: false
+        parcela_grupo_id: grp
       };
     });
     await gPost('addDespesas',{rows:recs,clienteId:cid()});
@@ -2289,6 +2286,7 @@ async function submitDespesas(){
   }catch(e){toast('Erro: '+e.message,'error');}
   finally{if(btn)btn.disabled=false;}
 }
+
 function clearDespForm(){
   ['despDesc','despValorParc','despData','despNParcelas'].forEach(id=>{const el=gel(id);if(el)el.value='';});
   const c=gel('chkParcelado');if(c){c.checked=false;toggleParcelado(false);}
