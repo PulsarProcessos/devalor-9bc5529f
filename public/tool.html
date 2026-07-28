@@ -2084,8 +2084,9 @@ function switchDespTab(id,btn){
   if(id==='importar')fillImpBancoSelect();
 }
 
-/* Importação: banco (passo 1) + tipo de arquivo (passo 3) */
+/* Importação: fonte (passo 1) + banco (passo 2) + arquivo (passo 3) */
 let _importSource = null;    // 'cartao' | 'extrato'
+let _importTipo = null;      // 'fatura' | 'extrato'
 let _importBanco = null;
 let _pendingFile = null;
 
