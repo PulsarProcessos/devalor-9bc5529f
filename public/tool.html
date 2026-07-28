@@ -2500,17 +2500,24 @@ function finishImportRows(rows,fname){
   gel('importPreviewWrap').classList.remove('hidden');
   const cats=getCats();
   const allCats=Object.entries(cats).flatMap(([grp,items])=>items.map(i=>`${grp} · ${i}`));
-  const isCartao = _importSource==='cartao';
-  const defMes = isCartao ? (_importMeta?.mesPag || CFG.MESES[new Date().getMonth()]) : null;
+  const now=new Date();
+  const mesVigente=CFG.MESES[now.getMonth()];
+  const anoVigente=String(now.getFullYear());
+  _importMesVigente=mesVigente;_importAnoVigente=anoVigente;
+  const cl=gel('importCompetLbl');
+  if(cl)cl.textContent=`Competência: ${mesVigente.charAt(0)+mesVigente.slice(1).toLowerCase()} / ${anoVigente} · ${_importSource==='cartao'?'💳 Fatura':'🏦 Extrato'} · ${_importBanco}`;
   _importRows=rows.map((r,i)=>({
     id:i,data:r.data,desc:r.desc,valor:r.valor,
     cat:allCats[0]||'',
-    mes: defMes || inferMes(r.data) || CFG.MESES[new Date().getMonth()],
+    mes: mesVigente,
     parc:false, parcN:1,
     selected:true
   }));
+  _importPage=1;
   renderImportTable();
+  setTimeout(()=>gel('importPreviewWrap')?.scrollIntoView({behavior:'smooth',block:'start'}),60);
 }
+
 
 function processImportData(data,fname){
   if(!data||!data.length){toast('Arquivo vazio.','error');return;}
