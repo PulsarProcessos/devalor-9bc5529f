@@ -607,26 +607,10 @@ img,svg{display:block;max-width:100%}
       <div class="tbl-wrap"><table class="tbl hidden" id="dividasTable"><thead><tr><th>Credor</th><th>Descrição</th><th>Saldo</th><th>Parcela</th><th>Juros %</th><th></th></tr></thead><tbody id="dividasTbody"></tbody></table></div>
     </div>
 
-    <!-- ══ RENDA ════════════════════════════════════ -->
-    <div class="panel" id="panel-renda">
-      <div class="panel-hd"><h1 class="panel-title">Renda</h1><p class="panel-sub">Cadastre todas as fontes de renda recebidas mensalmente</p></div>
-      <div class="card-form">
-        <fieldset class="fset"><legend>Fontes de renda mensal</legend>
-          <div id="rendaFontes" style="display:flex;flex-direction:column;gap:10px;margin-top:12px"></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap;gap:10px">
-            <button type="button" class="btn btn-g btn-sm" onclick="addRendaFonte()">+ Adicionar renda</button>
-            <div style="font-size:.95rem;color:var(--text-secondary)">Total mensal: <strong id="rendaTotalLbl" style="color:var(--brand);font-family:'DM Mono',monospace">R$ 0,00</strong></div>
-          </div>
-        </fieldset>
-        <!-- inputs ocultos preservando compat com submitRenda antigo -->
-        <input type="hidden" id="rendaSalario" value=""/>
-        <input type="hidden" id="rendaOutras" value=""/>
-        <input type="hidden" id="rendaMensal" value=""/>
-        <div class="form-footer">
-          <button class="btn btn-p" onclick="submitRenda()">Salvar renda ✓</button>
-        </div>
-      </div>
-    </div>
+    <!-- Renda migrada para dentro do painel Planejamento -->
+    <input type="hidden" id="rendaSalario" value=""/>
+    <input type="hidden" id="rendaOutras" value=""/>
+    <input type="hidden" id="rendaMensal" value=""/>
 
     <!-- ══ VIDA RICA ═══════════════════════════════ -->
     <div class="panel" id="panel-vidarica">
