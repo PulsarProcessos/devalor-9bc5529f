@@ -932,19 +932,18 @@ img,svg{display:block;max-width:100%}
 
     <!-- Modal replicar mês -->
     <div class="modal-ov" id="modalReplicar">
-      <div class="modal">
-        <h3 class="modal-ttl">Replicar planejamento</h3>
+      <div class="modal-box" style="max-width:420px">
+        <p class="modal-title">Replicar planejamento</p>
         <p style="font-size:.84rem;color:var(--text-secondary);margin-bottom:12px">Escolha o mês de origem. Os valores serão copiados para o mês aberto.</p>
         <div style="display:flex;gap:10px">
           <select class="sel" id="repMesSel" style="flex:1"></select>
           <select class="sel" id="repAnoSel" style="width:110px"></select>
         </div>
-        <div class="modal-ft" style="margin-top:16px">
-          <button class="btn btn-s" onclick="closeModal('modalReplicar')">Cancelar</button>
+        <div class="modal-footer">
+          <button class="btn btn-g" onclick="closeModal('modalReplicar')">Cancelar</button>
           <button class="btn btn-p" onclick="confirmReplicarMes()">Replicar</button>
         </div>
       </div>
-    </div>
     </div>
 
     <!-- ══ PAINEL ══════════════════════════════════ -->
