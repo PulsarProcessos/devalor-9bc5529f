@@ -2279,13 +2279,8 @@ function fillBancoSelect(selected){
   sel.innerHTML=list.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');
   if(selected)sel.value=selected;
 }
-function addBancoPrompt(){
-  const name=(prompt('Nome do novo banco:')||'').trim();
-  if(!name)return;
-  const list=loadBancos();
-  if(list.some(b=>b.toLowerCase()===name.toLowerCase())){toast('Banco já existe.','info');gel('despBanco').value=list.find(b=>b.toLowerCase()===name.toLowerCase());return;}
-  list.push(name);saveBancos(list);fillBancoSelect(name);toast('Banco adicionado.','success');
-}
+function addBancoPrompt(){ openNovoBancoModal('despBanco'); }
+
 
 function fillFormaPagSelect(selected){
   const sel=gel('despFormaPag');if(!sel)return;
