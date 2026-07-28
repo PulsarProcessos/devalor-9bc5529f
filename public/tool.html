@@ -2172,14 +2172,42 @@ function fillImpBancoSelect(selected){
   sel.innerHTML=list.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');
   if(prev && [...sel.options].some(o=>o.value===prev))sel.value=prev;
 }
-function addBancoImportPrompt(){
-  const name=(prompt('Nome do novo banco:')||'').trim();
-  if(!name)return;
-  const list=loadBancos();
-  if(!list.some(b=>b.toLowerCase()===name.toLowerCase())){list.push(name);saveBancos(list);}
-  fillImpBancoSelect(name);fillBancoSelect(gel('despBanco')?.value);
-  toast('Banco adicionado.','success');
+let _bancoTargetSelect=null, _bancoPrevValue=null;
+function openNovoBancoModal(targetSelId){
+  _bancoTargetSelect = gel(targetSelId)||null;
+  _bancoPrevValue = _bancoTargetSelect?.value || null;
+  const inp=gel('nbInput'); if(inp){ inp.value=''; setTimeout(()=>inp.focus(),60); }
+  const err=gel('nbErr'); if(err) err.classList.remove('show');
+  openModal('modalNovoBanco');
 }
+function confirmNovoBanco(){
+  const inp=gel('nbInput'), err=gel('nbErr');
+  const nome=String(inp?.value||'').trim();
+  if(!nome){ if(err){ err.textContent='Informe o nome do banco.'; err.classList.add('show'); } return; }
+  const list=loadBancos();
+  const exists=list.find(b=>b.toLowerCase()===nome.toLowerCase());
+  const saved=exists||nome;
+  if(!exists){ list.push(nome); saveBancos(list); }
+  fillImpBancoSelect(gel('impBanco')?.value||undefined);
+  fillBancoSelect(gel('despBanco')?.value||undefined);
+  if(_bancoTargetSelect){
+    const opt=[..._bancoTargetSelect.options].find(o=>o.value===saved);
+    if(opt) _bancoTargetSelect.value=saved;
+    _bancoPrevValue=saved;
+    if(_bancoTargetSelect.id==='impBanco') onImportBancoChange();
+  }
+  closeModal('modalNovoBanco');
+  toast(exists?'Banco já existia — selecionado.':'Banco adicionado!','success');
+}
+function cancelNovoBanco(){
+  if(_bancoTargetSelect && _bancoPrevValue &&
+     [..._bancoTargetSelect.options].some(o=>o.value===_bancoPrevValue)){
+    _bancoTargetSelect.value=_bancoPrevValue;
+  }
+  closeModal('modalNovoBanco');
+}
+function addBancoImportPrompt(){ openNovoBancoModal('impBanco'); }
+
 /* Passo 1 — fonte do arquivo */
 function chooseImportTipo(t){
   _importTipo = (t==='fatura') ? 'fatura' : 'extrato';
