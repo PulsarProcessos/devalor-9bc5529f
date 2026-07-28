@@ -891,9 +891,34 @@ img,svg{display:block;max-width:100%}
         <select class="sel sel-sm" id="planMesSel" onchange="loadPlanejamentoMes()" style="min-width:140px"></select>
         <select class="sel sel-sm" id="planAnoSel" onchange="loadPlanejamentoMes()" style="width:100px"></select>
         <button class="btn btn-s btn-sm" onclick="planNavMes(1)">→</button>
-        <button class="btn btn-g btn-sm" onclick="replicarPlanejamentoAnterior()" title="Copia os valores do mês anterior para o mês atual">⎘ Replicar mês anterior</button>
+        <button class="btn btn-g btn-sm" onclick="openReplicarModal()" title="Escolha o mês de origem para copiar os valores">⎘ Replicar mês…</button>
         <span id="planStatus" style="margin-left:auto;font-size:.78rem;color:var(--text-muted)"></span>
       </div>
+
+      <!-- Consolidado do mês -->
+      <div class="consol-bar" id="planConsol">
+        <div class="consol-cell"><span class="consol-lbl">Consolidado do mês</span><strong class="consol-mes" id="consolMes">—</strong></div>
+        <div class="consol-cell"><span class="consol-lbl">Receitas</span><strong class="consol-val mono" id="consolReceitas">R$ 0,00</strong></div>
+        <div class="consol-cell"><span class="consol-lbl">Despesas totais</span><strong class="consol-val mono" id="consolDespesas">R$ 0,00</strong></div>
+        <div class="consol-cell"><span class="consol-lbl">Investimentos</span><strong class="consol-val mono" id="consolInvest">R$ 0,00</strong></div>
+        <div class="consol-cell"><span class="consol-lbl">Saldo final</span><strong class="consol-val mono" id="consolSaldo">R$ 0,00</strong></div>
+      </div>
+
+      <!-- Renda do mês -->
+      <div style="margin-bottom:18px;background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:12px;overflow:hidden">
+        <div style="padding:10px 14px;background:var(--bg-muted,#f5f7fa);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary)">Renda do mês</div>
+        <div style="padding:12px 14px">
+          <div id="rendaFontes" style="display:flex;flex-direction:column;gap:10px"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap">
+            <div style="display:flex;gap:8px">
+              <button type="button" class="btn btn-g btn-sm" onclick="addRendaFonte()">+ Adicionar renda</button>
+              <button type="button" class="btn btn-p btn-sm" onclick="submitRenda()">Salvar renda ✓</button>
+            </div>
+            <div style="font-size:.95rem;color:var(--text-secondary)">Total mensal: <strong id="rendaTotalLbl" style="color:var(--brand);font-family:'DM Mono',monospace">R$ 0,00</strong></div>
+          </div>
+        </div>
+      </div>
+
       <div style="margin-bottom:18px">
         <div class="preview-ttl" style="padding:0 0 8px">Contas a vencer neste mês</div>
         <div class="tbl-wrap" id="planVencList"></div>
@@ -903,6 +928,23 @@ img,svg{display:block;max-width:100%}
         <span style="font-size:.84rem;color:var(--text-secondary)">Total planejado para o mês</span>
         <span id="planTotal" class="mono" style="font-size:1.25rem;font-weight:700;color:var(--brand)">R$ 0,00</span>
       </div>
+    </div>
+
+    <!-- Modal replicar mês -->
+    <div class="modal-ov" id="modalReplicar">
+      <div class="modal">
+        <h3 class="modal-ttl">Replicar planejamento</h3>
+        <p style="font-size:.84rem;color:var(--text-secondary);margin-bottom:12px">Escolha o mês de origem. Os valores serão copiados para o mês aberto.</p>
+        <div style="display:flex;gap:10px">
+          <select class="sel" id="repMesSel" style="flex:1"></select>
+          <select class="sel" id="repAnoSel" style="width:110px"></select>
+        </div>
+        <div class="modal-ft" style="margin-top:16px">
+          <button class="btn btn-s" onclick="closeModal('modalReplicar')">Cancelar</button>
+          <button class="btn btn-p" onclick="confirmReplicarMes()">Replicar</button>
+        </div>
+      </div>
+    </div>
     </div>
 
     <!-- ══ PAINEL ══════════════════════════════════ -->
