@@ -2112,54 +2112,61 @@ function addBancoImportPrompt(){
   fillImpBancoSelect(name);fillBancoSelect(gel('despBanco')?.value);
   toast('Banco adicionado.','success');
 }
-function confirmImportBanco(){
-  const banco=gel('impBanco')?.value;
-  if(!banco){toast('Selecione o banco.','error');return;}
-  _importBanco=banco;
-  gel('importBancoLbl').textContent=banco;
-  const dw=gel('importDropWrap'); if(dw) dw.classList.remove('imp-locked');
-  gel('importDropIcon').textContent='📂';
-  gel('importDropTitle').textContent='Arraste ou clique para selecionar o arquivo';
-  gel('importDropSub').innerHTML='Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong>';
-  const rb=gel('impResetBtn3'); if(rb) rb.style.display='';
+/* Passo 1 — fonte do arquivo */
+function chooseImportTipo(t){
+  _importTipo = (t==='fatura') ? 'fatura' : 'extrato';
+  _importSource = (t==='fatura') ? 'cartao' : 'extrato';
+  gel('impSrcFatura')?.classList.toggle('selected', _importTipo==='fatura');
+  gel('impSrcExtrato')?.classList.toggle('selected', _importTipo==='extrato');
+  const bw=gel('importBancoWrap'); if(bw) bw.style.display='';
+  fillImpBancoSelect(_importBanco||undefined);
+  onImportBancoChange();
+  setTimeout(()=>bw?.scrollIntoView({behavior:'smooth',block:'center'}),50);
+}
+/* Passo 2 — banco */
+function onImportBancoChange(){
+  _importBanco = gel('impBanco')?.value || null;
+  refreshImportDropState();
+}
+function refreshImportDropState(){
+  const ready = !!(_importTipo && _importBanco);
+  const dw=gel('importDropWrap'); if(dw) dw.classList.toggle('imp-locked', !ready);
+  const lbl=gel('importBancoLbl'); if(lbl) lbl.textContent=_importBanco||'—';
+  const rb=gel('impResetBtn3'); if(rb) rb.style.display = (_importTipo||_importBanco) ? '' : 'none';
+  if(ready){
+    gel('importDropIcon').textContent='📂';
+    gel('importDropTitle').textContent='Arraste ou clique para selecionar o arquivo';
+    gel('importDropSub').innerHTML = _importTipo==='fatura'
+      ? 'Fatura de cartão · Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong>'
+      : 'Extrato bancário (apenas saídas) · Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong>';
+  }else{
+    gel('importDropIcon').textContent='🔒';
+    gel('importDropTitle').textContent='Escolha a fonte e o banco para liberar';
+    gel('importDropSub').textContent='Complete os passos 1 e 2 para habilitar o envio';
+  }
 }
 function resetImportSource(){
-  _importSource=null;_importBanco=null;_pendingFile=null;
+  _importSource=null;_importTipo=null;_importBanco=null;_pendingFile=null;
   clearImport();
-  const dw=gel('importDropWrap'); if(dw) dw.classList.add('imp-locked');
-  const tw=gel('importTipoWrap'); if(tw) tw.style.display='none';
-  fillImpBancoSelect();
-  gel('importBancoLbl').textContent='—';
-  gel('importDropIcon').textContent='🔒';
-  gel('importDropTitle').textContent='Selecione o banco acima para liberar';
-  gel('importDropSub').textContent='Complete o passo 1 para habilitar o envio';
-  const rb=gel('impResetBtn3'); if(rb) rb.style.display='none';
+  gel('impSrcFatura')?.classList.remove('selected');
+  gel('impSrcExtrato')?.classList.remove('selected');
+  const bw=gel('importBancoWrap'); if(bw) bw.style.display='none';
+  const fi=gel('fileInput'); if(fi) fi.value='';
+  refreshImportDropState();
 }
 function onImportDropClick(){
-  if(!_importBanco){ toast('Selecione o banco (passo 1) antes de enviar o arquivo.','error'); return; }
+  if(!_importTipo){ toast('Escolha a fonte do arquivo (passo 1).','error'); return; }
+  if(!_importBanco){ toast('Selecione o banco (passo 2) antes de enviar o arquivo.','error'); return; }
   document.getElementById('fileInput').click();
 }
-/* Passo 3 — confirmar o tipo do arquivo antes de processar */
 function handleFileSelect(file){
   if(!file)return;
-  if(!_importBanco){toast('Selecione o banco antes do arquivo.','error');return;}
+  if(!_importTipo||!_importBanco){toast('Escolha a fonte e o banco antes do arquivo.','error');return;}
   _pendingFile=file;
   gel('importPreviewWrap')?.classList.add('hidden');
-  const tw=gel('importTipoWrap'); if(tw) tw.style.display='';
-  const fn=gel('importTipoFileName'); if(fn) fn.textContent=file.name;
-  setTimeout(()=>tw?.scrollIntoView({behavior:'smooth',block:'center'}),50);
+  parseImportFile(file);
 }
-function chooseImportTipo(t){
-  if(!_pendingFile){toast('Selecione o arquivo novamente.','error');return;}
-  _importSource = t==='fatura' ? 'cartao' : 'extrato';
-  const tw=gel('importTipoWrap'); if(tw) tw.style.display='none';
-  parseImportFile(_pendingFile);
-}
-function cancelImportTipo(){
-  _pendingFile=null;_importSource=null;
-  const tw=gel('importTipoWrap'); if(tw) tw.style.display='none';
-  const fi=gel('fileInput'); if(fi) fi.value='';
-}
+
 
 
 /* Bancos persistidos por cliente */
