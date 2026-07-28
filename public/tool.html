@@ -2215,9 +2215,36 @@ function chooseImportTipo(t){
   gel('impSrcFatura')?.classList.toggle('selected', _importTipo==='fatura');
   gel('impSrcExtrato')?.classList.toggle('selected', _importTipo==='extrato');
   const bw=gel('importBancoWrap'); if(bw) bw.style.display='';
+  const st=gel('impStep2Ttl');
+  if(st) st.textContent = _importTipo==='fatura' ? 'Selecione o banco e o mês de pagamento' : 'Selecione o banco';
   fillImpBancoSelect(_importBanco||undefined);
+  fillImpMesPagSelect();
   onImportBancoChange();
   setTimeout(()=>bw?.scrollIntoView({behavior:'smooth',block:'center'}),50);
+}
+/* Mês de pagamento da fatura — sempre a partir do mês atual */
+function fillImpMesPagSelect(){
+  const wrap=gel('impMesPagWrap'), sel=gel('impMesPag');
+  if(!wrap||!sel) return;
+  if(_importTipo!=='fatura'){ wrap.style.display='none'; _importMesPag=null; _importAnoPag=null; return; }
+  wrap.style.display='';
+  const now=new Date();
+  const opts=[];
+  for(let k=0;k<12;k++){
+    const d=new Date(now.getFullYear(), now.getMonth()+k, 1);
+    const m=CFG.MESES[d.getMonth()], a=String(d.getFullYear());
+    opts.push({m,a});
+  }
+  const prev=sel.value;
+  sel.innerHTML=opts.map(o=>`<option value="${o.m}|${o.a}">${o.m[0]+o.m.slice(1).toLowerCase()}${o.a!==String(now.getFullYear())?'/'+o.a:''}</option>`).join('');
+  if(prev && [...sel.options].some(o=>o.value===prev)) sel.value=prev;
+  onImportMesPagChange();
+}
+function onImportMesPagChange(){
+  const v=String(gel('impMesPag')?.value||'');
+  if(v.includes('|')){ const [m,a]=v.split('|'); _importMesPag=m; _importAnoPag=a; }
+  else { _importMesPag=null; _importAnoPag=null; }
+  refreshImportDropState();
 }
 /* Passo 2 — banco */
 function onImportBancoChange(){
@@ -2225,9 +2252,11 @@ function onImportBancoChange(){
   refreshImportDropState();
 }
 function refreshImportDropState(){
-  const ready = !!(_importTipo && _importBanco);
+  const needMes = _importTipo==='fatura';
+  const ready = !!(_importTipo && _importBanco && (!needMes || _importMesPag));
   const dw=gel('importDropWrap'); if(dw) dw.classList.toggle('imp-locked', !ready);
-  const lbl=gel('importBancoLbl'); if(lbl) lbl.textContent=_importBanco||'—';
+  const lbl=gel('importBancoLbl');
+  if(lbl) lbl.textContent = (_importBanco||'—') + (needMes && _importMesPag ? ` · ${_importMesPag[0]+_importMesPag.slice(1).toLowerCase()}/${_importAnoPag}` : '');
   const rb=gel('impResetBtn3'); if(rb) rb.style.display = (_importTipo||_importBanco) ? '' : 'none';
   if(ready){
     gel('importDropIcon').textContent='📂';
@@ -2242,14 +2271,16 @@ function refreshImportDropState(){
   }
 }
 function resetImportSource(){
-  _importSource=null;_importTipo=null;_importBanco=null;_pendingFile=null;
+  _importSource=null;_importTipo=null;_importBanco=null;_pendingFile=null;_importMesPag=null;_importAnoPag=null;
   clearImport();
   gel('impSrcFatura')?.classList.remove('selected');
   gel('impSrcExtrato')?.classList.remove('selected');
   const bw=gel('importBancoWrap'); if(bw) bw.style.display='none';
+  const mw=gel('impMesPagWrap'); if(mw) mw.style.display='none';
   const fi=gel('fileInput'); if(fi) fi.value='';
   refreshImportDropState();
 }
+
 function onImportDropClick(){
   if(!_importTipo){ toast('Escolha a fonte do arquivo (passo 1).','error'); return; }
   if(!_importBanco){ toast('Selecione o banco (passo 2) antes de enviar o arquivo.','error'); return; }
