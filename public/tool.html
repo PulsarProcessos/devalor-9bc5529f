@@ -1353,7 +1353,7 @@ function showCliente(user){
     [nEl,eEl].forEach(el=>{if(el){el.readOnly=true;el.style.opacity='.72';el.style.cursor='default';el.title='Preenchido automaticamente do seu cadastro';}});
   }
   resetCatsCache();
-  buildCatSelect();fillBancoSelect();fillFormaPagSelect();onDespFormaPagChange();
+  buildCatSelect();fillBancoSelect();fillImpBancoSelect();fillFormaPagSelect();onDespFormaPagChange();
   try{ buildVencCategoriaSelect(); }catch{}
   loadSonhosFromSheets();
   goPanel('perfil');
