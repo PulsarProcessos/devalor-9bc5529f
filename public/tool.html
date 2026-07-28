@@ -754,55 +754,51 @@ img,svg{display:block;max-width:100%}
 
       <!-- Importar -->
       <div class="desp-panel" id="desp-importar">
-        <!-- Passo 1: Banco -->
-        <div id="importBancoWrap" class="card-form">
-          <div class="imp-step-hd"><span class="imp-step-badge">1</span><span>Selecione o banco do arquivo</span></div>
+        <!-- Passo 1: Fonte do arquivo -->
+        <div id="importSourceWrap" class="card-form">
+          <div class="imp-step-hd"><span class="imp-step-badge">1</span><span>Escolha a fonte do arquivo</span></div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;padding:8px">
+            <button class="btn btn-g imp-src-card" id="impSrcFatura" style="min-width:250px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportTipo('fatura')">
+              <span style="font-size:2rem">💳</span>
+              <span style="font-weight:600">Fatura de cartão de crédito</span>
+              <span style="font-size:.75rem;color:var(--text-muted)">Todos os lançamentos da fatura viram despesa</span>
+            </button>
+            <button class="btn btn-g imp-src-card" id="impSrcExtrato" style="min-width:250px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportTipo('extrato')">
+              <span style="font-size:2rem">🏦</span>
+              <span style="font-weight:600">Extrato bancário</span>
+              <span style="font-size:.75rem;color:var(--text-muted)">Apenas saídas / débitos são importados</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Passo 2: Banco -->
+        <div id="importBancoWrap" class="card-form mt16" style="display:none">
+          <div class="imp-step-hd"><span class="imp-step-badge">2</span><span>Selecione o banco</span></div>
           <div class="grid3">
             <div class="field">
               <label class="lbl">Banco</label>
               <div style="display:flex;gap:6px">
-                <select class="sel" id="impBanco" style="flex:1"></select>
+                <select class="sel" id="impBanco" style="flex:1" onchange="onImportBancoChange()"></select>
                 <button type="button" class="btn btn-g btn-xs" onclick="addBancoImportPrompt()" title="Adicionar banco">＋</button>
               </div>
             </div>
           </div>
-          <div class="form-footer">
-            <button class="btn btn-p" onclick="confirmImportBanco()">Continuar →</button>
-          </div>
         </div>
 
-        <!-- Passo 2: Arquivo -->
-        <div id="importDropWrap" class="imp-locked">
-          <div class="imp-step-hd"><span class="imp-step-badge">2</span><span>Envie o arquivo</span></div>
+        <!-- Passo 3: Arquivo -->
+        <div id="importDropWrap" class="imp-locked mt16">
+          <div class="imp-step-hd"><span class="imp-step-badge">3</span><span>Envie o arquivo</span></div>
           <div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0;gap:8px;flex-wrap:wrap">
             <div style="font-size:.9rem;color:var(--text-secondary)">Banco: <strong id="importBancoLbl">—</strong></div>
-            <button class="btn btn-g btn-xs" onclick="resetImportSource()" id="impResetBtn3" style="display:none">↺ Trocar banco</button>
+            <button class="btn btn-g btn-xs" onclick="resetImportSource()" id="impResetBtn3" style="display:none">↺ Recomeçar</button>
           </div>
           <div class="import-drop" id="importDrop" onclick="onImportDropClick()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onFileDrop(event)">
             <div class="import-drop__icon" id="importDropIcon">🔒</div>
-            <div class="import-drop__title" id="importDropTitle">Selecione o banco acima para liberar</div>
-            <div class="import-drop__sub" id="importDropSub">Complete o passo 1 para habilitar o envio</div>
+            <div class="import-drop__title" id="importDropTitle">Escolha a fonte e o banco para liberar</div>
+            <div class="import-drop__sub" id="importDropSub">Complete os passos 1 e 2 para habilitar o envio</div>
           </div>
           <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.pdf" style="display:none" onchange="handleFileSelect(this.files[0])"/>
 
-          <!-- Passo 3: Tipo do arquivo -->
-          <div id="importTipoWrap" class="card-form mt16" style="display:none">
-            <div class="imp-step-hd"><span class="imp-step-badge">3</span><span>Que tipo de arquivo é este?</span></div>
-            <div style="font-size:.85rem;color:var(--text-muted);margin:4px 0 10px">Arquivo: <strong id="importTipoFileName">—</strong></div>
-            <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;padding:8px">
-              <button class="btn btn-g" style="min-width:250px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportTipo('fatura')">
-                <span style="font-size:2rem">💳</span>
-                <span style="font-weight:600">Fatura de cartão de crédito</span>
-                <span style="font-size:.75rem;color:var(--text-muted)">Todos os lançamentos viram despesa</span>
-              </button>
-              <button class="btn btn-g" style="min-width:250px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportTipo('extrato')">
-                <span style="font-size:2rem">🏦</span>
-                <span style="font-weight:600">Extrato bancário</span>
-                <span style="font-size:.75rem;color:var(--text-muted)">Apenas saídas / débitos são importados</span>
-              </button>
-            </div>
-            <div class="form-footer"><button class="btn btn-g btn-xs" onclick="cancelImportTipo()">Cancelar arquivo</button></div>
-          </div>
 
           <div id="importPreviewWrap" class="hidden mt16">
             <div class="import-preview">
