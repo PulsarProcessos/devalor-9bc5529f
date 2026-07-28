@@ -940,15 +940,16 @@ img,svg{display:block;max-width:100%}
     <div class="modal-ov" id="modalReplicar">
       <div class="modal-box" style="max-width:420px">
         <p class="modal-title">Replicar planejamento</p>
-        <p style="font-size:.84rem;color:var(--text-secondary);margin-bottom:12px">Escolha o mês de origem. Os valores serão copiados para o mês aberto.</p>
-        <div style="display:flex;gap:10px">
-          <select class="sel" id="repMesSel" style="flex:1"></select>
-          <select class="sel" id="repAnoSel" style="width:110px"></select>
+        <p style="font-size:.84rem;color:var(--text-secondary);margin-bottom:12px">Escolha um mês já planejado. Os valores serão copiados para o mês aberto.</p>
+        <div class="field"><label class="lbl">Mês de origem</label>
+          <select class="sel" id="repMesSel"></select>
         </div>
+        <div class="auth-err" id="repErr"></div>
         <div class="modal-footer">
           <button class="btn btn-g" onclick="closeModal('modalReplicar')">Cancelar</button>
-          <button class="btn btn-p" onclick="confirmReplicarMes()">Replicar</button>
+          <button class="btn btn-p" id="repBtn" onclick="confirmReplicarMes()">Replicar</button>
         </div>
+
       </div>
     </div>
 
