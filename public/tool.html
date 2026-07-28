@@ -2633,52 +2633,50 @@ async function submitImport(){
   try{
     const isCartao = _importSource==='cartao';
     const origem = isCartao ? 'import_cartao' : 'import';
-    const fp = isCartao ? 'Cartão de Crédito' : 'Extrato Bancário';
-    const cartao = isCartao ? (_importMeta?.cartao||null) : null;
-    const banco  = isCartao ? null : (_importMeta?.banco||null);
-    const mesPag = isCartao ? (_importMeta?.mesPag||null) : null;
+    const banco = _importBanco;
+    const fp = (isCartao ? 'Cartão de Crédito' : 'Débito/Dinheiro/Pix') + ' · ' + banco;
+    const cartao = isCartao ? banco : null;
 
-    // âncora p/ parcelas no cartão: usar o mês da fatura (mesPag) como mês da 1ª parcela
-    const mesPagIdx = isCartao && mesPag ? CFG.MESES.indexOf(mesPag) : -1;
-    const anoBaseCartao = isCartao ? parseInt(CFG.ANO||new Date().getFullYear(),10) : null;
-    const cartaoAnchorIso = (isCartao && mesPagIdx>=0)
-      ? `${anoBaseCartao}-${String(mesPagIdx+1).padStart(2,'0')}-01`
-      : null;
+    // Competência sempre o mês/ano vigente
+    const now=new Date();
+    const mesVig = _importMesVigente || CFG.MESES[now.getMonth()];
+    const anoVig = _importAnoVigente || String(now.getFullYear());
+    const idxVig = CFG.MESES.indexOf(mesVig);
+    const anchorIso = `${anoVig}-${String((idxVig>=0?idxVig:now.getMonth())+1).padStart(2,'0')}-01`;
 
     const recs=[];
     for(const r of selected){
-      const isoBase = normDate(r.data);
-      if(!isoBase)continue;
+      const isoBase = normDate(r.data) || anchorIso;
       const [grupo,categoria] = String(r.cat||'').split('·').map(s=>s.trim());
       if(r.parc && r.parcN>1){
         const grp = uuid();
         const total = r.parcN;
-        const per = +(r.valor/total).toFixed(2);
         for(let i=0;i<total;i++){
-          // Cartão: parcela i cai no mês da fatura + i. Extrato: segue data da compra.
-          const isoMes = (isCartao && cartaoAnchorIso) ? addMonthsISO(cartaoAnchorIso,i) : addMonthsISO(isoBase,i);
+          const isoMes = addMonthsISO(anchorIso,i);
           const mesParc = mesFromISO(isoMes);
-          const anoParc = String((isoMes.split('-')[0])||CFG.ANO);
+          const anoParc = String(isoMes.split('-')[0]);
           recs.push({
-            data:isoBase, descricao:`${r.desc} ${i+1}/${total}`, valor:per,
+            data:isoBase, descricao:`${r.desc} ${i+1}/${total}`,
+            valor:r.valor, // valor CHEIO replicado em cada mês
             categoria:categoria||r.cat||null, grupo:grupo||null,
             forma_pagamento:fp, banco, cartao, mes:mesParc,
             mes_pagamento: isCartao ? mesParc : null,
             ano: anoParc, origem,
-            parcela_n:i+1, parcela_total:total, parcela_grupo_id:grp, pago:false
+            parcela_n:i+1, parcela_total:total, parcela_grupo_id:grp
           });
         }
       } else {
         recs.push({
           data:isoBase, descricao:r.desc, valor:r.valor,
           categoria:categoria||r.cat||null, grupo:grupo||null,
-          forma_pagamento:fp, banco, cartao, mes: isCartao ? (mesPag||r.mes) : r.mes,
-          mes_pagamento: mesPag, ano:String(CFG.ANO), origem, pago:false
+          forma_pagamento:fp, banco, cartao, mes: mesVig,
+          mes_pagamento: isCartao ? mesVig : null,
+          ano: anoVig, origem
         });
       }
     }
 
-    if(!recs.length){toast('Não foi possível normalizar as datas dos lançamentos.','error');return;}
+    if(!recs.length){toast('Não foi possível normalizar os lançamentos.','error');return;}
     const resp = await gPost('addDespesas',{rows:recs,clienteId:cid()});
     const ins = resp.count||0;
     const ign = resp.ignored||0;
@@ -2690,6 +2688,7 @@ async function submitImport(){
   }catch(e){toast('Erro: '+e.message,'error');}
   finally{if(btn)btn.disabled=false;}
 }
+
 
 function clearImport(){
   _importRows=[];
