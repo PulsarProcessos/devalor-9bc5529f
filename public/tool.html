@@ -688,7 +688,7 @@ img,svg{display:block;max-width:100%}
         </div>
       </div>
       <div class="tbl-wrap mt16">
-        <table class="tbl" id="vencTable"><thead><tr><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Dia</th><th>Próx. venc.</th><th>Obs.</th><th></th></tr></thead><tbody id="vencTbody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:18px">Nenhuma conta cadastrada.</td></tr></tbody></table>
+        <table class="tbl" id="vencTable"><thead><tr><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Dia do vencimento</th><th>Status</th><th>Obs.</th><th></th></tr></thead><tbody id="vencTbody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:18px">Nenhuma conta cadastrada.</td></tr></tbody></table>
       </div>
     </div>
 
@@ -1811,7 +1811,7 @@ function renderVencimentos(){
       <td style="text-align:center"><span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:uppercase;background:${ativo?'var(--success-bg,#dcfce7)':'var(--bg-muted,#eef2f7)'};color:${ativo?'var(--success,#166534)':'var(--text-muted)'}">${ativo?'Ativo':'Interrompido'}</span></td>
       <td style="font-size:.82rem;color:var(--text-muted)">${esc(v.obs||'')}</td>
       <td style="white-space:nowrap;text-align:center">
-        <button class="btn btn-g btn-xs" onclick="editVencimento('${v.id}')">Editar</button>
+        <button class="btn btn-g btn-xs" onclick="editVencimento('${v.id}')">✎ Editar</button>
         <button class="btn btn-g btn-xs" onclick="toggleVencimento('${v.id}')">${ativo?'Interromper':'Retomar'}</button>
         <button class="btn btn-d btn-xs" onclick="removeVencimento('${v.id}')">✕</button>
       </td>
