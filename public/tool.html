@@ -454,6 +454,7 @@ img,svg{display:block;max-width:100%}
       <button class="btn btn-g" onclick="closeModal('modalCats')">Fechar</button>
       <button class="btn btn-p" onclick="saveCats()">✓ Salvar categorias</button>
     </div>
+  </div>
 </div>
 
 <!-- Modal: novo banco -->
@@ -470,7 +471,23 @@ img,svg{display:block;max-width:100%}
     </div>
   </div>
 </div>
+
+<!-- Modal: registrar pagamento de dívida -->
+<div class="modal-ov" id="modalPagDivida">
+  <div class="modal-box" style="max-width:440px">
+    <p class="modal-title">Registrar pagamento</p>
+    <div id="pagDivInfo" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"></div>
+    <div class="field"><label class="lbl">Valor pago (R$)</label>
+      <input class="inp inp-money" type="text" id="pagDivValor" placeholder="0,00" data-money
+        onkeydown="if(event.key==='Enter')confirmPagamentoDivida()"/></div>
+    <div class="auth-err" id="pagDivErr"></div>
+    <div class="modal-footer">
+      <button class="btn btn-g" onclick="closeModal('modalPagDivida')">Cancelar</button>
+      <button class="btn btn-p" id="pagDivBtn" onclick="confirmPagamentoDivida()">✓ Confirmar pagamento</button>
+    </div>
+  </div>
 </div>
+
 
 <!-- ══ TOPBAR ══════════════════════════════════════════════ -->
 <header class="topbar" id="topbar" style="display:none">
