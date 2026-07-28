@@ -910,6 +910,10 @@ img,svg{display:block;max-width:100%}
         <button class="btn btn-g btn-sm" onclick="replicarPlanejamentoAnterior()" title="Copia os valores do mês anterior para o mês atual">⎘ Replicar mês anterior</button>
         <span id="planStatus" style="margin-left:auto;font-size:.78rem;color:var(--text-muted)"></span>
       </div>
+      <div style="margin-bottom:18px">
+        <div class="preview-ttl" style="padding:0 0 8px">Contas a vencer neste mês</div>
+        <div class="tbl-wrap" id="planVencList"></div>
+      </div>
       <div id="planGroups" style="display:flex;flex-direction:column;gap:14px"></div>
       <div style="margin-top:18px;padding:14px;background:var(--bg-muted,#f5f7fa);border-radius:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
         <span style="font-size:.84rem;color:var(--text-secondary)">Total planejado para o mês</span>
