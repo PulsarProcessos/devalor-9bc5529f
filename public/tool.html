@@ -2085,11 +2085,13 @@ function switchDespTab(id,btn){
   document.querySelectorAll('.desp-panel').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');gel(`desp-${id}`)?.classList.add('active');
   if(id==='lancadas')loadDespesasLancadas();
+  if(id==='importar')fillImpBancoSelect();
 }
 
-/* Fonte da importação (cartão | extrato) e metadados */
+/* Importação: banco (passo 1) + tipo de arquivo (passo 3) */
 let _importSource = null;    // 'cartao' | 'extrato'
-let _importMeta = null;      // { cartao, mesPag } | { banco }
+let _importBanco = null;
+let _pendingFile = null;
 
 const CARTOES_KEY = ()=>`dv_cartoes_${cid()||'_'}`;
 function loadCartoes(){
@@ -2099,79 +2101,70 @@ function saveCartao(name){
   const n=String(name||'').trim();if(!n)return;
   const a=loadCartoes();if(!a.includes(n)){a.push(n);localStorage.setItem(CARTOES_KEY(),JSON.stringify(a));}
 }
-function fillCartaoSelect(){
-  const sel=gel('impCartaoSel');if(!sel)return;
-  const a=loadCartoes();
-  sel.innerHTML = a.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')
-    + `<option value="__new__">➕ Adicionar novo cartão…</option>`;
-  onImpCartaoChange();
-}
-function onImpCartaoChange(){
-  const sel=gel('impCartaoSel');const wrap=gel('impCartaoNewWrap');if(!sel||!wrap)return;
-  wrap.style.display = (sel.value==='__new__'||!sel.value)?'':'none';
-}
 
-function chooseImportSource(src){
-  _importSource = src;
-  gel('importSourcePicker').style.display='none';
-  gel('importMetaWrap').style.display='block';
-  const isCartao = src==='cartao';
-  gel('importMetaSrcLbl').textContent = isCartao?'💳 Fatura de cartão de crédito':'🏦 Extrato bancário';
-  gel('importMetaCartao').style.display = isCartao?'grid':'none';
-  gel('importMetaExtrato').style.display = isCartao?'none':'grid';
-  if(isCartao){
-    fillCartaoSelect();
-    const mesNow = CFG.MESES[new Date().getMonth()];
-    const ms=gel('impMesPag');if(ms)ms.value=mesNow;
-  }
-  // mantém drop-zone visível mas bloqueado
-  const dw=gel('importDropWrap'); if(dw) dw.classList.add('imp-locked');
+function fillImpBancoSelect(selected){
+  const sel=gel('impBanco');if(!sel)return;
+  const prev=selected||sel.value||'';
+  sel.innerHTML=loadBancos().map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');
+  if(prev && [...sel.options].some(o=>o.value===prev))sel.value=prev;
 }
-function confirmImportMeta(){
-  if(_importSource==='cartao'){
-    const sel=gel('impCartaoSel');
-    let cartao = sel?.value||'';
-    if(cartao==='__new__'){
-      cartao = (gel('impCartaoNew')?.value||'').trim();
-      if(!cartao){toast('Informe o nome do novo cartão.','error');return;}
-      saveCartao(cartao);
-    }
-    if(!cartao){toast('Selecione um cartão.','error');return;}
-    const mesPag = gel('impMesPag')?.value;
-    _importMeta = { cartao, mesPag };
-    gel('importMetaLbl').textContent = `💳 ${cartao} · pagto ${mesPag}`;
-  } else {
-    const banco = gel('impBanco')?.value;
-    _importMeta = { banco };
-    gel('importMetaLbl').textContent = `🏦 ${banco}`;
-  }
-  gel('importMetaWrap').style.display='none';
+function addBancoImportPrompt(){
+  const name=(prompt('Nome do novo banco:')||'').trim();
+  if(!name)return;
+  const list=loadBancos();
+  if(!list.some(b=>b.toLowerCase()===name.toLowerCase())){list.push(name);saveBancos(list);}
+  fillImpBancoSelect(name);fillBancoSelect(gel('despBanco')?.value);
+  toast('Banco adicionado.','success');
+}
+function confirmImportBanco(){
+  const banco=gel('impBanco')?.value;
+  if(!banco){toast('Selecione o banco.','error');return;}
+  _importBanco=banco;
+  gel('importBancoLbl').textContent=banco;
   const dw=gel('importDropWrap'); if(dw) dw.classList.remove('imp-locked');
-  gel('importSourceLbl').textContent = _importSource==='cartao'?'💳 Cartão de crédito':'🏦 Extrato bancário';
-  gel('importDropIcon').textContent = '📂';
-  gel('importDropTitle').textContent = 'Arraste ou clique para selecionar o arquivo';
-  gel('importDropSub').innerHTML = _importSource==='cartao'
-    ? 'Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong> — fatura do cartão'
-    : 'Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong> — apenas <strong>saídas/débitos</strong>';
+  gel('importDropIcon').textContent='📂';
+  gel('importDropTitle').textContent='Arraste ou clique para selecionar o arquivo';
+  gel('importDropSub').innerHTML='Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong>';
   const rb=gel('impResetBtn3'); if(rb) rb.style.display='';
 }
 function resetImportSource(){
-  _importSource = null; _importMeta = null;
+  _importSource=null;_importBanco=null;_pendingFile=null;
   clearImport();
   const dw=gel('importDropWrap'); if(dw) dw.classList.add('imp-locked');
-  gel('importMetaWrap').style.display='none';
-  gel('importSourcePicker').style.display='';
-  gel('importSourceLbl').textContent='—';
-  gel('importMetaLbl').textContent='aguardando confirmação';
+  const tw=gel('importTipoWrap'); if(tw) tw.style.display='none';
+  fillImpBancoSelect();
+  gel('importBancoLbl').textContent='—';
   gel('importDropIcon').textContent='🔒';
-  gel('importDropTitle').textContent='Confirme a fonte acima para liberar';
-  gel('importDropSub').textContent='Complete os passos 1 e 2 para habilitar o envio';
+  gel('importDropTitle').textContent='Selecione o banco acima para liberar';
+  gel('importDropSub').textContent='Complete o passo 1 para habilitar o envio';
   const rb=gel('impResetBtn3'); if(rb) rb.style.display='none';
 }
 function onImportDropClick(){
-  if(!_importMeta){ toast('Confirme a fonte (passos 1 e 2) antes de enviar o arquivo.','error'); return; }
+  if(!_importBanco){ toast('Selecione o banco (passo 1) antes de enviar o arquivo.','error'); return; }
   document.getElementById('fileInput').click();
 }
+/* Passo 3 — confirmar o tipo do arquivo antes de processar */
+function handleFileSelect(file){
+  if(!file)return;
+  if(!_importBanco){toast('Selecione o banco antes do arquivo.','error');return;}
+  _pendingFile=file;
+  gel('importPreviewWrap')?.classList.add('hidden');
+  const tw=gel('importTipoWrap'); if(tw) tw.style.display='';
+  const fn=gel('importTipoFileName'); if(fn) fn.textContent=file.name;
+  setTimeout(()=>tw?.scrollIntoView({behavior:'smooth',block:'center'}),50);
+}
+function chooseImportTipo(t){
+  if(!_pendingFile){toast('Selecione o arquivo novamente.','error');return;}
+  _importSource = t==='fatura' ? 'cartao' : 'extrato';
+  const tw=gel('importTipoWrap'); if(tw) tw.style.display='none';
+  parseImportFile(_pendingFile);
+}
+function cancelImportTipo(){
+  _pendingFile=null;_importSource=null;
+  const tw=gel('importTipoWrap'); if(tw) tw.style.display='none';
+  const fi=gel('fileInput'); if(fi) fi.value='';
+}
+
 
 /* Bancos persistidos por cliente */
 const BANCOS_KEY = ()=>`dv_bancos_${cid()||'_'}`;
