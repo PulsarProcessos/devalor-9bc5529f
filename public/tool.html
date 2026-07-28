@@ -2071,21 +2071,48 @@ async function loadQuitacao(){
   }
 }
 
-async function openPagamentoDivida(idx){
+let _pagDivIdx=null;
+function openPagamentoDivida(idx){
   const d=_dividasCache[idx]; if(!d) return;
+  _pagDivIdx=idx;
   const sugestao=Number(d.valor_parcela||0);
-  const def = sugestao>0 ? String(sugestao).replace('.',',') : '';
-  const v = prompt(`Registrar pagamento — ${d.credor||''}\n\nValor pago (R$):`, def);
-  if(v==null) return;
-  const valor = pMoney(v);
-  if(!(valor>0)){toast('Valor inválido.','error');return;}
+  const saldo=Number(d.saldo_devedor||0);
+  const pago=Number(d.total_pago||0);
+  const info=gel('pagDivInfo');
+  const cell=(t,v,color)=>`<div style="background:var(--bg-soft,#faf8f5);border:1px solid var(--border-subtle);border-radius:10px;padding:10px"><div style="font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)">${t}</div><div class="mono" style="font-size:.95rem;font-weight:700${color?';color:'+color:''}">${v}</div></div>`;
+  if(info){
+    info.innerHTML =
+      cell('Credor', esc(d.credor||'—')) +
+      cell('Tipo', esc(d.tipo||'—')) +
+      cell('Saldo devedor', fBRL(saldo), 'var(--danger,#dc2626)') +
+      cell('Total pago', fBRL(pago), '#16a34a');
+  }
+  const inp=gel('pagDivValor');
+  if(inp){ inp.value = sugestao>0 ? fBRL(sugestao).replace('R$','').trim() : ''; setTimeout(()=>{inp.focus();inp.select();},60); }
+  const err=gel('pagDivErr'); if(err){ err.textContent=''; err.classList.remove('show'); }
+  const btn=gel('pagDivBtn'); if(btn) btn.disabled=false;
+  openModal('modalPagDivida');
+}
+async function confirmPagamentoDivida(){
+  const d=_dividasCache[_pagDivIdx]; if(!d) return;
+  const err=gel('pagDivErr'), btn=gel('pagDivBtn');
+  const valor=pMoney(gel('pagDivValor')?.value||'');
+  if(!(valor>0)){ if(err){ err.textContent='Informe um valor válido maior que zero.'; err.classList.add('show'); } return; }
+  if(err){ err.textContent=''; err.classList.remove('show'); }
+  if(btn){ btn.disabled=true; btn.textContent='Salvando…'; }
   try{
     const r=await gPost('registerDividaPagamento',{id:d.id,valor});
-    if(r?.error){toast('Erro: '+r.error,'error');return;}
+    if(r?.error){ if(err){ err.textContent=r.error; err.classList.add('show'); } return; }
+    closeModal('modalPagDivida');
     toast(r?.status==='quitada'?'Dívida quitada! 🎉':'Pagamento registrado.','success');
     await loadQuitacao();
-  }catch(e){toast('Erro: '+e.message,'error');}
+  }catch(e){
+    if(err){ err.textContent=e.message; err.classList.add('show'); }
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='✓ Confirmar pagamento'; }
+  }
 }
+
 
 async function deleteDivida(id){
   if(!confirm('Excluir esta dívida?')) return;
