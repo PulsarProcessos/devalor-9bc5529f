@@ -779,7 +779,7 @@ img,svg{display:block;max-width:100%}
 
         <!-- Passo 2: Banco -->
         <div id="importBancoWrap" class="card-form mt16" style="display:none">
-          <div class="imp-step-hd"><span class="imp-step-badge">2</span><span>Selecione o banco</span></div>
+          <div class="imp-step-hd"><span class="imp-step-badge">2</span><span id="impStep2Ttl">Selecione o banco</span></div>
           <div class="grid3">
             <div class="field">
               <label class="lbl">Banco</label>
@@ -788,7 +788,12 @@ img,svg{display:block;max-width:100%}
                 <button type="button" class="btn btn-g btn-xs" onclick="addBancoImportPrompt()" title="Adicionar banco">＋</button>
               </div>
             </div>
+            <div class="field" id="impMesPagWrap" style="display:none">
+              <label class="lbl">Mês de pagamento da fatura</label>
+              <select class="sel" id="impMesPag" onchange="onImportMesPagChange()"></select>
+            </div>
           </div>
+
         </div>
 
         <!-- Passo 3: Arquivo -->
