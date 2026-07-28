@@ -754,72 +754,56 @@ img,svg{display:block;max-width:100%}
 
       <!-- Importar -->
       <div class="desp-panel" id="desp-importar">
-        <!-- Passo 1: Fonte -->
-        <div id="importSourcePicker">
-          <div class="imp-step-hd"><span class="imp-step-badge">1</span><span>Escolha a fonte do arquivo</span></div>
-          <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;padding:12px">
-            <button class="btn btn-g" style="min-width:240px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportSource('cartao')">
-              <span style="font-size:2rem">💳</span>
-              <span style="font-weight:600">Fatura de cartão de crédito</span>
-              <span style="font-size:.75rem;color:var(--text-muted)">Todos os lançamentos da fatura viram despesa</span>
-            </button>
-            <button class="btn btn-g" style="min-width:240px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportSource('extrato')">
-              <span style="font-size:2rem">🏦</span>
-              <span style="font-weight:600">Extrato bancário</span>
-              <span style="font-size:.75rem;color:var(--text-muted)">Apenas saídas / débitos são importados</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Passo 2: Metadados -->
-        <div id="importMetaWrap" style="display:none" class="card-form">
-          <div class="imp-step-hd"><span class="imp-step-badge">2</span><span>Confirme os dados da fonte</span></div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0;gap:8px;flex-wrap:wrap">
-            <div style="font-size:.9rem;color:var(--text-secondary)">Fonte: <strong id="importMetaSrcLbl">—</strong></div>
-            <button class="btn btn-g btn-xs" onclick="resetImportSource()">↺ Trocar fonte</button>
-          </div>
-          <div id="importMetaCartao" class="grid3" style="display:none">
-            <div class="field">
-              <label class="lbl">Cartão de crédito</label>
-              <select class="sel" id="impCartaoSel" onchange="onImpCartaoChange()"></select>
-            </div>
-            <div class="field" id="impCartaoNewWrap" style="display:none">
-              <label class="lbl">Nome do novo cartão</label>
-              <input class="inp" type="text" id="impCartaoNew" placeholder="Ex: Nubank Roxinho"/>
-            </div>
-            <div class="field">
-              <label class="lbl">Mês de pagamento da fatura</label>
-              <select class="sel" id="impMesPag">
-                <option value="JANEIRO">Janeiro</option><option value="FEVEREIRO">Fevereiro</option><option value="MARÇO">Março</option><option value="ABRIL">Abril</option><option value="MAIO">Maio</option><option value="JUNHO">Junho</option><option value="JULHO">Julho</option><option value="AGOSTO">Agosto</option><option value="SETEMBRO">Setembro</option><option value="OUTUBRO">Outubro</option><option value="NOVEMBRO">Novembro</option><option value="DEZEMBRO">Dezembro</option>
-              </select>
-            </div>
-          </div>
-          <div id="importMetaExtrato" class="grid3" style="display:none">
+        <!-- Passo 1: Banco -->
+        <div id="importBancoWrap" class="card-form">
+          <div class="imp-step-hd"><span class="imp-step-badge">1</span><span>Selecione o banco do arquivo</span></div>
+          <div class="grid3">
             <div class="field">
               <label class="lbl">Banco</label>
-              <select class="sel" id="impBanco">
-                <option>Bradesco</option><option>Nubank</option><option>Banco do Brasil</option><option>Caixa Econômica</option><option>Itaú</option><option>Santander</option><option>Inter</option><option>C6 Bank</option><option>Outro</option>
-              </select>
+              <div style="display:flex;gap:6px">
+                <select class="sel" id="impBanco" style="flex:1"></select>
+                <button type="button" class="btn btn-g btn-xs" onclick="addBancoImportPrompt()" title="Adicionar banco">＋</button>
+              </div>
             </div>
           </div>
           <div class="form-footer">
-            <button class="btn btn-p" onclick="confirmImportMeta()">Continuar →</button>
+            <button class="btn btn-p" onclick="confirmImportBanco()">Continuar →</button>
           </div>
         </div>
 
-        <!-- Passo 3: Drop-zone (sempre visível, bloqueado até confirmar) -->
+        <!-- Passo 2: Arquivo -->
         <div id="importDropWrap" class="imp-locked">
-          <div class="imp-step-hd"><span class="imp-step-badge">3</span><span>Envie o arquivo</span></div>
+          <div class="imp-step-hd"><span class="imp-step-badge">2</span><span>Envie o arquivo</span></div>
           <div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0;gap:8px;flex-wrap:wrap">
-            <div style="font-size:.9rem;color:var(--text-secondary)">Fonte: <strong id="importSourceLbl">—</strong> · <span id="importMetaLbl">aguardando confirmação</span></div>
-            <button class="btn btn-g btn-xs" onclick="resetImportSource()" id="impResetBtn3" style="display:none">↺ Trocar fonte</button>
+            <div style="font-size:.9rem;color:var(--text-secondary)">Banco: <strong id="importBancoLbl">—</strong></div>
+            <button class="btn btn-g btn-xs" onclick="resetImportSource()" id="impResetBtn3" style="display:none">↺ Trocar banco</button>
           </div>
           <div class="import-drop" id="importDrop" onclick="onImportDropClick()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onFileDrop(event)">
             <div class="import-drop__icon" id="importDropIcon">🔒</div>
-            <div class="import-drop__title" id="importDropTitle">Confirme a fonte acima para liberar</div>
-            <div class="import-drop__sub" id="importDropSub">Complete os passos 1 e 2 para habilitar o envio</div>
+            <div class="import-drop__title" id="importDropTitle">Selecione o banco acima para liberar</div>
+            <div class="import-drop__sub" id="importDropSub">Complete o passo 1 para habilitar o envio</div>
           </div>
           <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.pdf" style="display:none" onchange="handleFileSelect(this.files[0])"/>
+
+          <!-- Passo 3: Tipo do arquivo -->
+          <div id="importTipoWrap" class="card-form mt16" style="display:none">
+            <div class="imp-step-hd"><span class="imp-step-badge">3</span><span>Que tipo de arquivo é este?</span></div>
+            <div style="font-size:.85rem;color:var(--text-muted);margin:4px 0 10px">Arquivo: <strong id="importTipoFileName">—</strong></div>
+            <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;padding:8px">
+              <button class="btn btn-g" style="min-width:250px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportTipo('fatura')">
+                <span style="font-size:2rem">💳</span>
+                <span style="font-weight:600">Fatura de cartão de crédito</span>
+                <span style="font-size:.75rem;color:var(--text-muted)">Todos os lançamentos viram despesa</span>
+              </button>
+              <button class="btn btn-g" style="min-width:250px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportTipo('extrato')">
+                <span style="font-size:2rem">🏦</span>
+                <span style="font-weight:600">Extrato bancário</span>
+                <span style="font-size:.75rem;color:var(--text-muted)">Apenas saídas / débitos são importados</span>
+              </button>
+            </div>
+            <div class="form-footer"><button class="btn btn-g btn-xs" onclick="cancelImportTipo()">Cancelar arquivo</button></div>
+          </div>
+
           <div id="importPreviewWrap" class="hidden mt16">
             <div class="import-preview">
               <div class="import-preview-hd">
@@ -827,16 +811,21 @@ img,svg{display:block;max-width:100%}
                 <span style="font-size:.8rem;color:var(--text-muted)" id="importRowCount"></span>
               </div>
               <div style="padding:14px 16px">
-                <div class="info-box mb-12" style="margin-bottom:12px">Confira os lançamentos. Marque <strong>Parc.</strong> e informe o nº de parcelas para gerar a projeção. Lançamentos já importados anteriormente são <strong>ignorados automaticamente</strong>.</div>
+                <div class="info-box mb-12" style="margin-bottom:12px">
+                  <div id="importCompetLbl" style="font-weight:600;margin-bottom:4px"></div>
+                  Confira os lançamentos. Marque <strong>Parc.</strong> e informe o nº de parcelas para replicar o valor nos meses seguintes. Lançamentos já importados anteriormente são <strong>ignorados automaticamente</strong>.
+                </div>
                 <div class="tbl-wrap">
                   <table class="tbl" id="importTable" style="font-size:.95rem;color:var(--text-primary)">
-                    <thead><tr><th>Data</th><th>Descrição</th><th>Valor (R$)</th><th>Categoria</th><th>Mês Comp.</th><th title="Parcelado">Parc.</th><th title="Nº de parcelas">Nº</th><th>✓</th></tr></thead>
+                    <thead><tr><th>Data</th><th>Descrição</th><th>Valor (R$)</th><th>Categoria</th><th title="Parcelado">Parc.</th><th title="Nº de parcelas">Nº</th><th>✓</th></tr></thead>
                     <tbody id="importTbody"></tbody>
                   </table>
                 </div>
+                <div id="importPager" style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px;font-size:.85rem;color:var(--text-secondary)"></div>
                 <div class="form-footer mt16">
                   <button class="btn btn-g" onclick="clearImport()">Limpar</button>
                   <button class="btn btn-s" onclick="selectAllImport(true)">Selecionar todos</button>
+                  <button class="btn btn-s" onclick="selectAllImport(false)">Desmarcar todos</button>
                   <button class="btn btn-p" onclick="submitImport()">Enviar selecionados ↗</button>
                 </div>
               </div>
@@ -844,6 +833,7 @@ img,svg{display:block;max-width:100%}
           </div>
         </div>
       </div>
+
 
       <!-- Lançadas -->
       <div class="desp-panel" id="desp-lancadas">
@@ -882,8 +872,9 @@ img,svg{display:block;max-width:100%}
 
         <div class="tbl-wrap">
           <table class="tbl" id="lancTable" style="font-size:.92rem">
-            <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Forma Pag.</th><th>Banco/Cartão</th><th>Mês</th><th>Parc.</th><th>Pago</th><th>Origem</th><th></th></tr></thead>
-            <tbody id="lancTbody"><tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:20px">Carregando...</td></tr></tbody>
+            <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Forma Pag.</th><th>Banco/Cartão</th><th>Mês</th><th>Parc.</th><th>Origem</th><th></th></tr></thead>
+            <tbody id="lancTbody"><tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:20px">Carregando...</td></tr></tbody>
+
           </table>
         </div>
       </div>
@@ -1362,7 +1353,7 @@ function showCliente(user){
     [nEl,eEl].forEach(el=>{if(el){el.readOnly=true;el.style.opacity='.72';el.style.cursor='default';el.title='Preenchido automaticamente do seu cadastro';}});
   }
   resetCatsCache();
-  buildCatSelect();fillBancoSelect();fillFormaPagSelect();onDespFormaPagChange();
+  buildCatSelect();fillBancoSelect();fillImpBancoSelect();fillFormaPagSelect();onDespFormaPagChange();
   try{ buildVencCategoriaSelect(); }catch{}
   loadSonhosFromSheets();
   goPanel('perfil');
@@ -2094,11 +2085,13 @@ function switchDespTab(id,btn){
   document.querySelectorAll('.desp-panel').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');gel(`desp-${id}`)?.classList.add('active');
   if(id==='lancadas')loadDespesasLancadas();
+  if(id==='importar')fillImpBancoSelect();
 }
 
-/* Fonte da importação (cartão | extrato) e metadados */
+/* Importação: banco (passo 1) + tipo de arquivo (passo 3) */
 let _importSource = null;    // 'cartao' | 'extrato'
-let _importMeta = null;      // { cartao, mesPag } | { banco }
+let _importBanco = null;
+let _pendingFile = null;
 
 const CARTOES_KEY = ()=>`dv_cartoes_${cid()||'_'}`;
 function loadCartoes(){
@@ -2108,79 +2101,70 @@ function saveCartao(name){
   const n=String(name||'').trim();if(!n)return;
   const a=loadCartoes();if(!a.includes(n)){a.push(n);localStorage.setItem(CARTOES_KEY(),JSON.stringify(a));}
 }
-function fillCartaoSelect(){
-  const sel=gel('impCartaoSel');if(!sel)return;
-  const a=loadCartoes();
-  sel.innerHTML = a.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')
-    + `<option value="__new__">➕ Adicionar novo cartão…</option>`;
-  onImpCartaoChange();
-}
-function onImpCartaoChange(){
-  const sel=gel('impCartaoSel');const wrap=gel('impCartaoNewWrap');if(!sel||!wrap)return;
-  wrap.style.display = (sel.value==='__new__'||!sel.value)?'':'none';
-}
 
-function chooseImportSource(src){
-  _importSource = src;
-  gel('importSourcePicker').style.display='none';
-  gel('importMetaWrap').style.display='block';
-  const isCartao = src==='cartao';
-  gel('importMetaSrcLbl').textContent = isCartao?'💳 Fatura de cartão de crédito':'🏦 Extrato bancário';
-  gel('importMetaCartao').style.display = isCartao?'grid':'none';
-  gel('importMetaExtrato').style.display = isCartao?'none':'grid';
-  if(isCartao){
-    fillCartaoSelect();
-    const mesNow = CFG.MESES[new Date().getMonth()];
-    const ms=gel('impMesPag');if(ms)ms.value=mesNow;
-  }
-  // mantém drop-zone visível mas bloqueado
-  const dw=gel('importDropWrap'); if(dw) dw.classList.add('imp-locked');
+function fillImpBancoSelect(selected){
+  const sel=gel('impBanco');if(!sel)return;
+  const prev=selected||sel.value||'';
+  sel.innerHTML=loadBancos().map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');
+  if(prev && [...sel.options].some(o=>o.value===prev))sel.value=prev;
 }
-function confirmImportMeta(){
-  if(_importSource==='cartao'){
-    const sel=gel('impCartaoSel');
-    let cartao = sel?.value||'';
-    if(cartao==='__new__'){
-      cartao = (gel('impCartaoNew')?.value||'').trim();
-      if(!cartao){toast('Informe o nome do novo cartão.','error');return;}
-      saveCartao(cartao);
-    }
-    if(!cartao){toast('Selecione um cartão.','error');return;}
-    const mesPag = gel('impMesPag')?.value;
-    _importMeta = { cartao, mesPag };
-    gel('importMetaLbl').textContent = `💳 ${cartao} · pagto ${mesPag}`;
-  } else {
-    const banco = gel('impBanco')?.value;
-    _importMeta = { banco };
-    gel('importMetaLbl').textContent = `🏦 ${banco}`;
-  }
-  gel('importMetaWrap').style.display='none';
+function addBancoImportPrompt(){
+  const name=(prompt('Nome do novo banco:')||'').trim();
+  if(!name)return;
+  const list=loadBancos();
+  if(!list.some(b=>b.toLowerCase()===name.toLowerCase())){list.push(name);saveBancos(list);}
+  fillImpBancoSelect(name);fillBancoSelect(gel('despBanco')?.value);
+  toast('Banco adicionado.','success');
+}
+function confirmImportBanco(){
+  const banco=gel('impBanco')?.value;
+  if(!banco){toast('Selecione o banco.','error');return;}
+  _importBanco=banco;
+  gel('importBancoLbl').textContent=banco;
   const dw=gel('importDropWrap'); if(dw) dw.classList.remove('imp-locked');
-  gel('importSourceLbl').textContent = _importSource==='cartao'?'💳 Cartão de crédito':'🏦 Extrato bancário';
-  gel('importDropIcon').textContent = '📂';
-  gel('importDropTitle').textContent = 'Arraste ou clique para selecionar o arquivo';
-  gel('importDropSub').innerHTML = _importSource==='cartao'
-    ? 'Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong> — fatura do cartão'
-    : 'Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong> — apenas <strong>saídas/débitos</strong>';
+  gel('importDropIcon').textContent='📂';
+  gel('importDropTitle').textContent='Arraste ou clique para selecionar o arquivo';
+  gel('importDropSub').innerHTML='Suporta <strong>.CSV</strong>, <strong>.XLSX</strong>, <strong>.XLS</strong> e <strong>.PDF</strong>';
   const rb=gel('impResetBtn3'); if(rb) rb.style.display='';
 }
 function resetImportSource(){
-  _importSource = null; _importMeta = null;
+  _importSource=null;_importBanco=null;_pendingFile=null;
   clearImport();
   const dw=gel('importDropWrap'); if(dw) dw.classList.add('imp-locked');
-  gel('importMetaWrap').style.display='none';
-  gel('importSourcePicker').style.display='';
-  gel('importSourceLbl').textContent='—';
-  gel('importMetaLbl').textContent='aguardando confirmação';
+  const tw=gel('importTipoWrap'); if(tw) tw.style.display='none';
+  fillImpBancoSelect();
+  gel('importBancoLbl').textContent='—';
   gel('importDropIcon').textContent='🔒';
-  gel('importDropTitle').textContent='Confirme a fonte acima para liberar';
-  gel('importDropSub').textContent='Complete os passos 1 e 2 para habilitar o envio';
+  gel('importDropTitle').textContent='Selecione o banco acima para liberar';
+  gel('importDropSub').textContent='Complete o passo 1 para habilitar o envio';
   const rb=gel('impResetBtn3'); if(rb) rb.style.display='none';
 }
 function onImportDropClick(){
-  if(!_importMeta){ toast('Confirme a fonte (passos 1 e 2) antes de enviar o arquivo.','error'); return; }
+  if(!_importBanco){ toast('Selecione o banco (passo 1) antes de enviar o arquivo.','error'); return; }
   document.getElementById('fileInput').click();
 }
+/* Passo 3 — confirmar o tipo do arquivo antes de processar */
+function handleFileSelect(file){
+  if(!file)return;
+  if(!_importBanco){toast('Selecione o banco antes do arquivo.','error');return;}
+  _pendingFile=file;
+  gel('importPreviewWrap')?.classList.add('hidden');
+  const tw=gel('importTipoWrap'); if(tw) tw.style.display='';
+  const fn=gel('importTipoFileName'); if(fn) fn.textContent=file.name;
+  setTimeout(()=>tw?.scrollIntoView({behavior:'smooth',block:'center'}),50);
+}
+function chooseImportTipo(t){
+  if(!_pendingFile){toast('Selecione o arquivo novamente.','error');return;}
+  _importSource = t==='fatura' ? 'cartao' : 'extrato';
+  const tw=gel('importTipoWrap'); if(tw) tw.style.display='none';
+  parseImportFile(_pendingFile);
+}
+function cancelImportTipo(){
+  _pendingFile=null;_importSource=null;
+  const tw=gel('importTipoWrap'); if(tw) tw.style.display='none';
+  const fi=gel('fileInput'); if(fi) fi.value='';
+}
+
 
 /* Bancos persistidos por cliente */
 const BANCOS_KEY = ()=>`dv_bancos_${cid()||'_'}`;
@@ -2207,17 +2191,14 @@ function addBancoPrompt(){
 function fillFormaPagSelect(selected){
   const sel=gel('despFormaPag');if(!sel)return;
   const prev=selected||sel.value||'';
-  const cartoes=loadCartoes();
-  const opts=[`<option value="Débito/Dinheiro/Pix">Débito / Dinheiro / Pix</option>`];
-  if(cartoes.length){
-    cartoes.forEach(c=>opts.push(`<option value="CARTAO::${esc(c)}">💳 ${esc(c)}</option>`));
-  }else{
-    opts.push(`<option value="Cartão de Crédito">Cartão de Crédito</option>`);
-  }
-  sel.innerHTML=opts.join('');
+  sel.innerHTML=[
+    `<option value="Cartão de Crédito">Cartão de Crédito</option>`,
+    `<option value="Débito/Dinheiro/Pix">Débito / Dinheiro / Pix</option>`
+  ].join('');
   if(prev && [...sel.options].some(o=>o.value===prev))sel.value=prev;
 }
-function despCartaoFromFP(fp){return String(fp||'').startsWith('CARTAO::')?String(fp).slice(8):null;}
+/* Identidade composta: "<Forma de pagamento> · <Banco>" */
+function despTagFP(fp,bco){return bco?`${fp} · ${bco}`:fp;}
 function isAVista(){const v=gel('despFormaPag')?.value||'';return v==='Débito/Dinheiro/Pix';}
 function syncMesFromData(){
   const dt=gel('despData')?.value;if(!dt)return;
@@ -2239,8 +2220,10 @@ function onDespFormaPagChange(){
 
 function toggleParcelado(v){
   if(isAVista()){const c=gel('chkParcelado');if(c)c.checked=false;v=false;}
-  gel('parcelFields')?.classList.toggle('hidden',!v);if(!v)clearPrev();
+  gel('parcelFields')?.classList.toggle('hidden',!v);
+  if(!v){const n=gel('despNParcelas');if(n)n.value='';if(_previewTimer){clearTimeout(_previewTimer);_previewTimer=null;}clearPrev();}
 }
+
 function buildDespRows(){
   const fp=gel('despFormaPag')?.value,bco=gel('despBanco')?.value,dt=gel('despData')?.value;
   const desc=gel('despDesc')?.value.trim(),vp=pMoney(gel('despValorParc')?.value);
@@ -2261,8 +2244,7 @@ function renderPrev(rows){
   t.classList.remove('hidden');tbl.classList.remove('hidden');tb.innerHTML='';
   rows.forEach(r=>{
     const tr=document.createElement('tr');
-    const cn=despCartaoFromFP(r.fp); const fpLbl = cn?('Cartão: '+cn):r.fp;
-    tr.innerHTML=`<td>${esc(fpLbl)}</td><td>${r.bco}</td><td>${fDate(r.dt)}</td><td>${esc(r.desc)}</td><td class="mono" style="text-align:right">${fBRL(r.vp)}</td><td>${r.cat}</td><td class="mono">${r.mes}</td>`;
+    tr.innerHTML=`<td>${esc(despTagFP(r.fp,r.bco))}</td><td>${esc(r.bco||'')}</td><td>${fDate(r.dt)}</td><td>${esc(r.desc)}</td><td class="mono" style="text-align:right">${fBRL(r.vp)}</td><td>${r.cat}</td><td class="mono">${r.mes}</td>`;
     tb.appendChild(tr);
   });
 }
@@ -2284,20 +2266,18 @@ async function submitDespesas(){
     const grp = parcN>1 ? uuid() : null;
     const recs = rows.map((r,i)=>{
       const [grupo,categoria] = String(r.cat||'').split('·').map(s=>s.trim());
-      const cartaoNome = despCartaoFromFP(r.fp);
-      const isCartao = !!cartaoNome || r.fp==='Cartão de Crédito';
-      const fpLabel = isCartao ? 'Cartão de Crédito' : r.fp;
+      const isCartao = r.fp==='Cartão de Crédito';
       return {
         data: isoBase || r.dt || null,
         descricao: r.desc, valor: r.vp,
         categoria: categoria||r.cat||null, grupo: grupo||null,
-        forma_pagamento: fpLabel, banco: r.bco, cartao: cartaoNome,
+        forma_pagamento: despTagFP(r.fp,r.bco), banco: r.bco,
+        cartao: isCartao ? r.bco : null,
         mes: r.mes, mes_pagamento: isCartao ? r.mes : null,
         ano: String(r.ano||CFG.ANO), origem: 'manual',
         parcela_n: parcN>1 ? i+1 : null,
         parcela_total: parcN>1 ? parcN : null,
-        parcela_grupo_id: grp,
-        pago: false
+        parcela_grupo_id: grp
       };
     });
     await gPost('addDespesas',{rows:recs,clienteId:cid()});
@@ -2306,6 +2286,7 @@ async function submitDespesas(){
   }catch(e){toast('Erro: '+e.message,'error');}
   finally{if(btn)btn.disabled=false;}
 }
+
 function clearDespForm(){
   ['despDesc','despValorParc','despData','despNParcelas'].forEach(id=>{const el=gel(id);if(el)el.value='';});
   const c=gel('chkParcelado');if(c){c.checked=false;toggleParcelado(false);}
@@ -2321,9 +2302,10 @@ function onDragOver(e){e.preventDefault();gel('importDrop').classList.add('drag'
 function onDragLeave(){gel('importDrop').classList.remove('drag');}
 function onFileDrop(e){e.preventDefault();gel('importDrop').classList.remove('drag');const f=e.dataTransfer.files[0];if(f)handleFileSelect(f);}
 
-function handleFileSelect(file){
+function parseImportFile(file){
   if(!file)return;
-  if(!_importMeta){toast('Selecione a fonte e os dados antes do arquivo.','error');return;}
+  if(!_importBanco||!_importSource){toast('Selecione o banco e o tipo do arquivo antes.','error');return;}
+
   const ext=file.name.split('.').pop().toLowerCase();
   if(ext==='csv'){
     const reader=new FileReader();
@@ -2518,17 +2500,24 @@ function finishImportRows(rows,fname){
   gel('importPreviewWrap').classList.remove('hidden');
   const cats=getCats();
   const allCats=Object.entries(cats).flatMap(([grp,items])=>items.map(i=>`${grp} · ${i}`));
-  const isCartao = _importSource==='cartao';
-  const defMes = isCartao ? (_importMeta?.mesPag || CFG.MESES[new Date().getMonth()]) : null;
+  const now=new Date();
+  const mesVigente=CFG.MESES[now.getMonth()];
+  const anoVigente=String(now.getFullYear());
+  _importMesVigente=mesVigente;_importAnoVigente=anoVigente;
+  const cl=gel('importCompetLbl');
+  if(cl)cl.textContent=`Competência: ${mesVigente.charAt(0)+mesVigente.slice(1).toLowerCase()} / ${anoVigente} · ${_importSource==='cartao'?'💳 Fatura':'🏦 Extrato'} · ${_importBanco}`;
   _importRows=rows.map((r,i)=>({
     id:i,data:r.data,desc:r.desc,valor:r.valor,
     cat:allCats[0]||'',
-    mes: defMes || inferMes(r.data) || CFG.MESES[new Date().getMonth()],
+    mes: mesVigente,
     parc:false, parcN:1,
     selected:true
   }));
+  _importPage=1;
   renderImportTable();
+  setTimeout(()=>gel('importPreviewWrap')?.scrollIntoView({behavior:'smooth',block:'start'}),60);
 }
+
 
 function processImportData(data,fname){
   if(!data||!data.length){toast('Arquivo vazio.','error');return;}
@@ -2547,34 +2536,50 @@ function inferMes(dateStr){
   return CFG.MESES[new Date().getMonth()];
 }
 
+let _importPage=1, _importMesVigente=null, _importAnoVigente=null;
+const IMPORT_PAGE_SIZE=20;
+
 function renderImportTable(){
   const tb=gel('importTbody');if(!tb)return;
   const cats=getCats();
   const allCats=Object.entries(cats).flatMap(([grp,items])=>items.map(i=>`${grp} · ${i}`));
   const catOpts=allCats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
-  const mesOpts=CFG.MESES.map(m=>`<option value="${m}">${m.charAt(0)+m.slice(1).toLowerCase()}</option>`).join('');
 
-  tb.innerHTML=_importRows.map(r=>`
+  const totalPages=Math.max(1,Math.ceil(_importRows.length/IMPORT_PAGE_SIZE));
+  if(_importPage>totalPages)_importPage=totalPages;
+  const start=(_importPage-1)*IMPORT_PAGE_SIZE;
+  const pageRows=_importRows.slice(start,start+IMPORT_PAGE_SIZE);
+
+  tb.innerHTML=pageRows.map(r=>`
     <tr id="irow_${r.id}" style="${r.selected?'':'opacity:.45'}">
       <td>${esc(r.data)}</td>
       <td>${esc(r.desc)}</td>
       <td class="mono" style="text-align:right;font-weight:600">${fBRL(r.valor)}</td>
       <td><select class="sel sel-sm" style="min-width:180px" onchange="updateImportRow(${r.id},'cat',this.value)">${catOpts}</select></td>
-      <td><select class="sel sel-sm" onchange="updateImportRow(${r.id},'mes',this.value)">${mesOpts}</select></td>
       <td style="text-align:center"><input type="checkbox" ${r.parc?'checked':''} onchange="updateImportRow(${r.id},'parc',this.checked)" style="accent-color:var(--brand);width:15px;height:15px;cursor:pointer"/></td>
       <td><input type="number" min="2" max="120" value="${r.parcN||''}" ${r.parc?'':'disabled'} oninput="updateImportRow(${r.id},'parcN',parseInt(this.value)||1)" class="inp inp-sm" style="width:64px"/></td>
       <td style="text-align:center"><input type="checkbox" ${r.selected?'checked':''} style="accent-color:var(--brand);width:15px;height:15px;cursor:pointer" onchange="updateImportRow(${r.id},'selected',this.checked)"/></td>
     </tr>
   `).join('');
 
-  _importRows.forEach(r=>{
+  pageRows.forEach(r=>{
     const row=gel(`irow_${r.id}`);if(!row)return;
-    const catSel=row.querySelectorAll('select')[0];
-    const mesSel=row.querySelectorAll('select')[1];
+    const catSel=row.querySelector('select');
     if(catSel){[...catSel.options].forEach(o=>{if(o.value===r.cat)o.selected=true;});}
-    if(mesSel){[...mesSel.options].forEach(o=>{if(o.value===r.mes)o.selected=true;});}
   });
+
+  const pg=gel('importPager');
+  if(pg){
+    const selCount=_importRows.filter(r=>r.selected).length;
+    pg.innerHTML = totalPages<=1
+      ? `<span>${_importRows.length} lançamento(s) · ${selCount} selecionado(s)</span>`
+      : `<button class="btn btn-g btn-xs" ${_importPage<=1?'disabled':''} onclick="gotoImportPage(${_importPage-1})">←</button>
+         <span>Página ${_importPage} de ${totalPages} · ${_importRows.length} lançamento(s) · ${selCount} selecionado(s)</span>
+         <button class="btn btn-g btn-xs" ${_importPage>=totalPages?'disabled':''} onclick="gotoImportPage(${_importPage+1})">→</button>`;
+  }
 }
+function gotoImportPage(p){_importPage=p;renderImportTable();}
+
 
 function updateImportRow(id,field,val){
   const r=_importRows.find(r=>r.id===id);
@@ -2628,52 +2633,50 @@ async function submitImport(){
   try{
     const isCartao = _importSource==='cartao';
     const origem = isCartao ? 'import_cartao' : 'import';
-    const fp = isCartao ? 'Cartão de Crédito' : 'Extrato Bancário';
-    const cartao = isCartao ? (_importMeta?.cartao||null) : null;
-    const banco  = isCartao ? null : (_importMeta?.banco||null);
-    const mesPag = isCartao ? (_importMeta?.mesPag||null) : null;
+    const banco = _importBanco;
+    const fp = (isCartao ? 'Cartão de Crédito' : 'Débito/Dinheiro/Pix') + ' · ' + banco;
+    const cartao = isCartao ? banco : null;
 
-    // âncora p/ parcelas no cartão: usar o mês da fatura (mesPag) como mês da 1ª parcela
-    const mesPagIdx = isCartao && mesPag ? CFG.MESES.indexOf(mesPag) : -1;
-    const anoBaseCartao = isCartao ? parseInt(CFG.ANO||new Date().getFullYear(),10) : null;
-    const cartaoAnchorIso = (isCartao && mesPagIdx>=0)
-      ? `${anoBaseCartao}-${String(mesPagIdx+1).padStart(2,'0')}-01`
-      : null;
+    // Competência sempre o mês/ano vigente
+    const now=new Date();
+    const mesVig = _importMesVigente || CFG.MESES[now.getMonth()];
+    const anoVig = _importAnoVigente || String(now.getFullYear());
+    const idxVig = CFG.MESES.indexOf(mesVig);
+    const anchorIso = `${anoVig}-${String((idxVig>=0?idxVig:now.getMonth())+1).padStart(2,'0')}-01`;
 
     const recs=[];
     for(const r of selected){
-      const isoBase = normDate(r.data);
-      if(!isoBase)continue;
+      const isoBase = normDate(r.data) || anchorIso;
       const [grupo,categoria] = String(r.cat||'').split('·').map(s=>s.trim());
       if(r.parc && r.parcN>1){
         const grp = uuid();
         const total = r.parcN;
-        const per = +(r.valor/total).toFixed(2);
         for(let i=0;i<total;i++){
-          // Cartão: parcela i cai no mês da fatura + i. Extrato: segue data da compra.
-          const isoMes = (isCartao && cartaoAnchorIso) ? addMonthsISO(cartaoAnchorIso,i) : addMonthsISO(isoBase,i);
+          const isoMes = addMonthsISO(anchorIso,i);
           const mesParc = mesFromISO(isoMes);
-          const anoParc = String((isoMes.split('-')[0])||CFG.ANO);
+          const anoParc = String(isoMes.split('-')[0]);
           recs.push({
-            data:isoBase, descricao:`${r.desc} ${i+1}/${total}`, valor:per,
+            data:isoBase, descricao:`${r.desc} ${i+1}/${total}`,
+            valor:r.valor, // valor CHEIO replicado em cada mês
             categoria:categoria||r.cat||null, grupo:grupo||null,
             forma_pagamento:fp, banco, cartao, mes:mesParc,
             mes_pagamento: isCartao ? mesParc : null,
             ano: anoParc, origem,
-            parcela_n:i+1, parcela_total:total, parcela_grupo_id:grp, pago:false
+            parcela_n:i+1, parcela_total:total, parcela_grupo_id:grp
           });
         }
       } else {
         recs.push({
           data:isoBase, descricao:r.desc, valor:r.valor,
           categoria:categoria||r.cat||null, grupo:grupo||null,
-          forma_pagamento:fp, banco, cartao, mes: isCartao ? (mesPag||r.mes) : r.mes,
-          mes_pagamento: mesPag, ano:String(CFG.ANO), origem, pago:false
+          forma_pagamento:fp, banco, cartao, mes: mesVig,
+          mes_pagamento: isCartao ? mesVig : null,
+          ano: anoVig, origem
         });
       }
     }
 
-    if(!recs.length){toast('Não foi possível normalizar as datas dos lançamentos.','error');return;}
+    if(!recs.length){toast('Não foi possível normalizar os lançamentos.','error');return;}
     const resp = await gPost('addDespesas',{rows:recs,clienteId:cid()});
     const ins = resp.count||0;
     const ign = resp.ignored||0;
@@ -2686,12 +2689,16 @@ async function submitImport(){
   finally{if(btn)btn.disabled=false;}
 }
 
+
 function clearImport(){
-  _importRows=[];
+  _importRows=[];_importPage=1;_pendingFile=null;
   gel('importPreviewWrap')?.classList.add('hidden');
+  const tw=gel('importTipoWrap');if(tw)tw.style.display='none';
   const fi=gel('fileInput');if(fi)fi.value='';
   const tb=gel('importTbody');if(tb)tb.innerHTML='';
+  const pg=gel('importPager');if(pg)pg.innerHTML='';
 }
+
 
 
 /* ═══════════════════════════════════════════
@@ -2726,13 +2733,13 @@ async function loadDespesasLancadas(){
   const tb=gel('lancTbody');if(!tb)return;
   fillLancCategoriaSelect();
   fillLancBancoSelect();
-  tb.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:20px">Carregando...</td></tr>';
+  tb.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:20px">Carregando...</td></tr>';
   try{
     const r=await gGet('getDespesas',{clienteId:cid()});
     _lancRows = r.rows||[];
     renderDespesasLancadas();
   }catch(e){
-    tb.innerHTML=`<tr><td colspan="11" style="text-align:center;color:var(--danger);padding:20px">Erro: ${esc(e.message)}</td></tr>`;
+    tb.innerHTML=`<tr><td colspan="10" style="text-align:center;color:var(--danger);padding:20px">Erro: ${esc(e.message)}</td></tr>`;
   }
 }
 function origemLbl(o){
@@ -2756,18 +2763,18 @@ function renderDespesasLancadas(){
       if(catFull!==fCat)return false;
     }
     if(fBanco && !(r.banco===fBanco || r.cartao===fBanco))return false;
-    if(fFormaPag && String(r.forma_pagamento||'')!==fFormaPag)return false;
+    if(fFormaPag && !String(r.forma_pagamento||'').startsWith(fFormaPag))return false;
     if(hideProj){
       const mi=CFG.MESES.indexOf(String(r.mes||'').toUpperCase());
       const ay=parseInt(r.ano||curAno0,10);
-      const isFut = !(r.pago===true) && mi>=0 && (ay>curAno0 || (ay===curAno0 && mi>curMesIdx0));
+      const isFut = mi>=0 && (ay>curAno0 || (ay===curAno0 && mi>curMesIdx0));
       if(isFut)return false;
     }
     return true;
   });
 
   if(!filtered.length){
-    tb.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:20px">Nenhuma despesa encontrada.</td></tr>';
+    tb.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:20px">Nenhuma despesa encontrada.</td></tr>';
     gel('lancTotal').textContent='Total: '+fBRL(0);
     return;
   }
@@ -2778,12 +2785,11 @@ function renderDespesasLancadas(){
     const cat=r.grupo?`${r.grupo} · ${r.categoria||''}`:(r.categoria||'—');
     const bcoCar = r.cartao ? `💳 ${esc(r.cartao)}` : esc(r.banco||'—');
     const parc = (r.parcela_n && r.parcela_total) ? `${r.parcela_n}/${r.parcela_total}` : '—';
-    const pago = r.pago===true;
     const mesIdx = CFG.MESES.indexOf(String(r.mes||'').toUpperCase());
     const anoR = parseInt(r.ano||curAno,10);
-    const isFuture = !pago && mesIdx>=0 && (anoR>curAno || (anoR===curAno && mesIdx>curMesIdx));
-    const rowStyle = pago ? 'opacity:.65' : (isFuture ? 'background:rgba(99,102,241,.06)' : '');
-    const projBadge = isFuture ? ` <span title="Parcela futura — ainda não paga" style="font-size:.65rem;padding:1px 6px;border-radius:6px;background:rgba(99,102,241,.15);color:#4f46e5;font-weight:600;margin-left:4px">PROJETADO</span>` : '';
+    const isFuture = mesIdx>=0 && (anoR>curAno || (anoR===curAno && mesIdx>curMesIdx));
+    const rowStyle = isFuture ? 'background:rgba(99,102,241,.06)' : '';
+    const projBadge = isFuture ? ` <span title="Parcela futura" style="font-size:.65rem;padding:1px 6px;border-radius:6px;background:rgba(99,102,241,.15);color:#4f46e5;font-weight:600;margin-left:4px">PROJETADO</span>` : '';
     return `<tr style="${rowStyle}">
       <td>${fDate(r.data)}</td>
       <td>${esc(r.descricao||'')}${projBadge}</td>
@@ -2793,13 +2799,13 @@ function renderDespesasLancadas(){
       <td>${bcoCar}</td>
       <td>${esc(r.mes||'—')}</td>
       <td class="mono" style="text-align:center">${parc}</td>
-      <td style="text-align:center"><input type="checkbox" ${pago?'checked':''} onchange="toggleLancPago('${r.id}',this.checked)" style="accent-color:var(--brand);width:15px;height:15px;cursor:pointer"/></td>
       <td>${origemLbl(r.origem)}</td>
       <td><button class="btn btn-d btn-xs" onclick="deleteDespesaLanc('${r.id}')">✕</button></td>
     </tr>`;
   }).join('');
   gel('lancTotal').textContent='Total: '+fBRL(total);
 }
+
 
 async function toggleLancPago(id,pago){
   try{
