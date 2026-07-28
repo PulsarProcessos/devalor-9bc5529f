@@ -2299,7 +2299,7 @@ function handleFileSelect(file){
 
 /* Bancos persistidos por cliente */
 const BANCOS_KEY = ()=>`dv_bancos_${cid()||'_'}`;
-const BANCOS_DEFAULT = ['Bradesco','Nubank','Banco do Brasil','Caixa Econômica','Itaú','Santander','Inter','C6 Bank','Outro'];
+const BANCOS_DEFAULT = ['Bradesco','Nubank','Banco do Brasil','Caixa Econômica','Itaú','Santander','Inter','C6 Bank'];
 function loadBancos(){
   try{const a=JSON.parse(localStorage.getItem(BANCOS_KEY())||'null');if(Array.isArray(a)&&a.length)return a;}catch{}
   return BANCOS_DEFAULT.slice();
