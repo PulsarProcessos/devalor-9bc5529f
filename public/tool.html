@@ -2103,7 +2103,9 @@ function saveCartao(name){
 function fillImpBancoSelect(selected){
   const sel=gel('impBanco');if(!sel)return;
   const prev=selected||sel.value||'';
-  sel.innerHTML=loadBancos().map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');
+  let list=loadBancos();
+  if(!Array.isArray(list)||!list.length)list=BANCOS_DEFAULT.slice();
+  sel.innerHTML=list.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');
   if(prev && [...sel.options].some(o=>o.value===prev))sel.value=prev;
 }
 function addBancoImportPrompt(){
