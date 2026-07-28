@@ -2691,11 +2691,14 @@ async function submitImport(){
 
 
 function clearImport(){
-  _importRows=[];
+  _importRows=[];_importPage=1;_pendingFile=null;
   gel('importPreviewWrap')?.classList.add('hidden');
+  const tw=gel('importTipoWrap');if(tw)tw.style.display='none';
   const fi=gel('fileInput');if(fi)fi.value='';
   const tb=gel('importTbody');if(tb)tb.innerHTML='';
+  const pg=gel('importPager');if(pg)pg.innerHTML='';
 }
+
 
 
 /* ═══════════════════════════════════════════
