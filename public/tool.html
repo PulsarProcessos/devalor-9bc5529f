@@ -2217,11 +2217,10 @@ function loadBancos(){
 function saveBancos(arr){localStorage.setItem(BANCOS_KEY(),JSON.stringify(arr));}
 function fillBancoSelect(selected){
   const sel=gel('despBanco');if(!sel)return;
-  const list=loadBancos();
-  sel.innerHTML=list.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('')
-    +`<option value="__novo__">+ Novo banco…</option>`;
+  let list=loadBancos();
+  if(!Array.isArray(list)||!list.length)list=BANCOS_DEFAULT.slice();
+  sel.innerHTML=list.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');
   if(selected && [...sel.options].some(o=>o.value===selected))sel.value=selected;
-  if(sel.value==='__novo__')sel.selectedIndex=0;
 }
 function addBancoPrompt(){ openNovoBancoModal('despBanco'); }
 
