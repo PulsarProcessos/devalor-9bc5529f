@@ -2285,6 +2285,7 @@ function resetImportSource(){
 function onImportDropClick(){
   if(!_importTipo){ toast('Escolha a fonte do arquivo (passo 1).','error'); return; }
   if(!_importBanco){ toast('Selecione o banco (passo 2) antes de enviar o arquivo.','error'); return; }
+  if(_importTipo==='fatura' && !_importMesPag){ toast('Selecione o mês de pagamento da fatura (passo 2).','error'); return; }
   document.getElementById('fileInput').click();
 }
 function handleFileSelect(file){
