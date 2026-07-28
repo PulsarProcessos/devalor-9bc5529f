@@ -448,7 +448,22 @@ img,svg{display:block;max-width:100%}
       <button class="btn btn-g" onclick="closeModal('modalCats')">Fechar</button>
       <button class="btn btn-p" onclick="saveCats()">✓ Salvar categorias</button>
     </div>
+</div>
+
+<!-- Modal: novo banco -->
+<div class="modal-ov" id="modalNovoBanco">
+  <div class="modal-box" style="max-width:420px">
+    <p class="modal-title">Adicionar banco</p>
+    <div class="field"><label class="lbl">Nome do banco</label>
+      <input class="inp" type="text" id="nbInput" placeholder="Ex: Sicoob"
+        onkeydown="if(event.key==='Enter')confirmNovoBanco()"/></div>
+    <div class="auth-err" id="nbErr"></div>
+    <div class="modal-footer">
+      <button class="btn btn-g" onclick="cancelNovoBanco()">Cancelar</button>
+      <button class="btn btn-p" onclick="confirmNovoBanco()">Adicionar</button>
+    </div>
   </div>
+</div>
 </div>
 
 <!-- ══ TOPBAR ══════════════════════════════════════════════ -->
