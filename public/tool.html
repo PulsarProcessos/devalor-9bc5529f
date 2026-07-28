@@ -1841,6 +1841,7 @@ function nextVencDate(dia){
   const dt=new Date(y,m,Math.min(d,28));
   return dt.toLocaleDateString('pt-BR');
 }
+let _vencEditId = null;
 function addVencimento(){
   const desc=gel('vencDesc')?.value.trim();
   const valor=pMoney(gel('vencValor')?.value);
@@ -1848,33 +1849,81 @@ function addVencimento(){
   const cat=gel('vencCategoria')?.value||'';
   const obs=gel('vencObs')?.value.trim()||'';
   if(!desc||!dia){ toast('Informe descrição e dia.','error'); return; }
+  if(dia<1||dia>31){ toast('Informe um dia entre 1 e 31.','error'); return; }
   const list=getVencimentos();
-  list.push({id:Date.now(), desc, valor, dia, cat, obs});
+  if(_vencEditId){
+    const item=list.find(v=>String(v.id)===String(_vencEditId));
+    if(item){ item.desc=desc; item.valor=valor; item.dia=dia; item.cat=cat; item.obs=obs; }
+    _vencEditId=null;
+    const b=gel('vencAddBtn'); if(b) b.textContent='+ Adicionar conta';
+  }else{
+    list.push({id:Date.now(), desc, valor, dia, cat, obs, ativo:true});
+  }
   saveVencimentos(list);
   ['vencDesc','vencValor','vencDia','vencObs'].forEach(id=>{const e=gel(id);if(e)e.value='';});
-  renderVencimentos();
-  toast('Conta adicionada.','success');
+  renderVencimentos(); renderVencimentosPlano();
+  toast('Conta salva!','success');
+}
+function editVencimento(id){
+  const v=getVencimentos().find(x=>String(x.id)===String(id)); if(!v) return;
+  _vencEditId=v.id;
+  if(gel('vencDesc'))  gel('vencDesc').value=v.desc||'';
+  if(gel('vencValor')) gel('vencValor').value=(v.valor||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+  if(gel('vencDia'))   gel('vencDia').value=v.dia||'';
+  if(gel('vencCategoria')) gel('vencCategoria').value=v.cat||'';
+  if(gel('vencObs'))   gel('vencObs').value=v.obs||'';
+  const b=gel('vencAddBtn'); if(b) b.textContent='✓ Salvar edição';
+  gel('vencDesc')?.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function toggleVencimento(id){
+  const list=getVencimentos();
+  const v=list.find(x=>String(x.id)===String(id)); if(!v) return;
+  v.ativo = v.ativo===false ? true : false;
+  saveVencimentos(list);
+  renderVencimentos(); renderVencimentosPlano();
+  toast(v.ativo?'Planejamento retomado.':'Planejamento interrompido.','info');
 }
 function removeVencimento(id){
-  saveVencimentos(getVencimentos().filter(v=>v.id!==id));
-  renderVencimentos();
+  saveVencimentos(getVencimentos().filter(v=>String(v.id)!==String(id)));
+  renderVencimentos(); renderVencimentosPlano();
 }
 function renderVencimentos(){
   const tb=gel('vencTbody'); if(!tb) return;
   const list=getVencimentos();
   if(!list.length){ tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:18px">Nenhuma conta cadastrada.</td></tr>'; return; }
-  tb.innerHTML=list.sort((a,b)=>a.dia-b.dia).map(v=>`
-    <tr>
+  tb.innerHTML=list.slice().sort((a,b)=>a.dia-b.dia).map(v=>{
+    const ativo = v.ativo!==false;
+    return `
+    <tr style="${ativo?'':'opacity:.5'}">
       <td>${esc(v.desc)}</td>
       <td style="font-size:.82rem;color:var(--text-muted)">${esc(v.cat||'—')}</td>
       <td class="mono">${fBRL(v.valor||0)}</td>
-      <td style="text-align:center">${v.dia}</td>
-      <td style="font-size:.82rem">${nextVencDate(v.dia)}</td>
+      <td style="text-align:center">Dia ${v.dia}</td>
+      <td style="text-align:center"><span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:uppercase;background:${ativo?'var(--success-bg,#dcfce7)':'var(--bg-muted,#eef2f7)'};color:${ativo?'var(--success,#166534)':'var(--text-muted)'}">${ativo?'Ativo':'Interrompido'}</span></td>
       <td style="font-size:.82rem;color:var(--text-muted)">${esc(v.obs||'')}</td>
-      <td><button class="btn btn-d btn-xs" onclick="removeVencimento(${v.id})">✕</button></td>
-    </tr>
-  `).join('');
+      <td style="white-space:nowrap;text-align:center">
+        <button class="btn btn-g btn-xs" onclick="editVencimento('${v.id}')">Editar</button>
+        <button class="btn btn-g btn-xs" onclick="toggleVencimento('${v.id}')">${ativo?'Interromper':'Retomar'}</button>
+        <button class="btn btn-d btn-xs" onclick="removeVencimento('${v.id}')">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
 }
+/* Lista compacta exibida DENTRO do Planejamento */
+function renderVencimentosPlano(){
+  const c=gel('planVencList'); if(!c) return;
+  const arr=getVencimentos().filter(v=>v.ativo!==false).sort((a,b)=>a.dia-b.dia);
+  if(!arr.length){ c.innerHTML=`<div style="padding:14px;color:var(--text-muted);font-size:.82rem">Nenhuma conta ativa.</div>`; return; }
+  const total=arr.reduce((s,v)=>s+(v.valor||0),0);
+  c.innerHTML = arr.map(v=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border-subtle)">
+      <span class="mono" style="font-size:.72rem;font-weight:700;color:var(--brand);min-width:52px">Dia ${v.dia}</span>
+      <span style="flex:1;font-size:.82rem">${esc(v.desc)}</span>
+      <span class="mono" style="font-size:.82rem;font-weight:600">${fBRL(v.valor||0)}</span>
+    </div>`).join('')
+    + `<div style="display:flex;justify-content:space-between;padding:10px 12px;font-weight:700;background:var(--gold-pale,#faf5e9)"><span style="font-size:.78rem">Total mensal</span><span class="mono">${fBRL(total)}</span></div>`;
+}
+
 
 
 /* ═══════════════════════════════════════════
