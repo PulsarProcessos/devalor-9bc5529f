@@ -2639,7 +2639,7 @@ async function submitImport(){
     const isCartao = _importSource==='cartao';
     const origem = isCartao ? 'import_cartao' : 'import';
     const banco = _importBanco;
-    const fp = (isCartao ? 'Cartão de Crédito' : 'Débito/Dinheiro/Pix') + ' · ' + banco;
+    const fp = isCartao ? ('Cartão de Crédito · ' + banco) : banco;
     const cartao = isCartao ? banco : null;
 
     // Competência sempre o mês/ano vigente
