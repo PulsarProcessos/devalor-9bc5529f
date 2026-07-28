@@ -2082,7 +2082,7 @@ function switchDespTab(id,btn){
   document.querySelectorAll('.desp-panel').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');gel(`desp-${id}`)?.classList.add('active');
   if(id==='lancadas')loadDespesasLancadas();
-  if(id==='importar')fillImpBancoSelect();
+  if(id==='importar'){fillImpBancoSelect();resetImportSource();}
 }
 
 /* Importação: fonte (passo 1) + banco (passo 2) + arquivo (passo 3) */
@@ -2103,7 +2103,9 @@ function saveCartao(name){
 function fillImpBancoSelect(selected){
   const sel=gel('impBanco');if(!sel)return;
   const prev=selected||sel.value||'';
-  sel.innerHTML=loadBancos().map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');
+  let list=loadBancos();
+  if(!Array.isArray(list)||!list.length)list=BANCOS_DEFAULT.slice();
+  sel.innerHTML=list.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');
   if(prev && [...sel.options].some(o=>o.value===prev))sel.value=prev;
 }
 function addBancoImportPrompt(){
@@ -2309,24 +2311,34 @@ function onFileDrop(e){e.preventDefault();gel('importDrop').classList.remove('dr
 
 function parseImportFile(file){
   if(!file)return;
-  if(!_importBanco||!_importSource){toast('Selecione o banco e o tipo do arquivo antes.','error');return;}
+  if(!_importTipo){toast('Escolha a fonte do arquivo (passo 1).','error');return;}
+  if(!_importBanco){toast('Selecione o banco (passo 2).','error');return;}
 
-  const ext=file.name.split('.').pop().toLowerCase();
+  const ext=String(file.name||'').split('.').pop().toLowerCase();
   if(ext==='csv'){
+    if(!window['Papa']){toast('Leitor de CSV indisponível. Recarregue a página.','error');return;}
     const reader=new FileReader();
+    reader.onerror=()=>toast('Não foi possível ler o arquivo.','error');
     reader.onload=e=>{
-      const txt=e.target.result;
-      const ar=Papa.parse(txt,{header:false,skipEmptyLines:true});
-      processImportSheet(ar.data||[],file.name);
+      try{
+        const txt=e.target.result;
+        const ar=Papa.parse(txt,{header:false,skipEmptyLines:true});
+        processImportSheet(ar.data||[],file.name);
+      }catch(err){toast('Erro ao ler CSV: '+(err&&err.message||err),'error');}
     };
     reader.readAsText(file,'UTF-8');
   } else if(ext==='xlsx'||ext==='xls'){
+    if(!window['XLSX']){toast('Leitor de planilhas indisponível. Recarregue a página.','error');return;}
     const reader=new FileReader();
+    reader.onerror=()=>toast('Não foi possível ler o arquivo.','error');
     reader.onload=e=>{
-      const wb=XLSX.read(e.target.result,{type:'array'});
-      const ws=wb.Sheets[wb.SheetNames[0]];
-      const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      processImportSheet(aoa,file.name);
+      try{
+        const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        if(!ws){toast('A planilha está vazia.','error');return;}
+        const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+        processImportSheet(aoa,file.name);
+      }catch(err){toast('Erro ao ler planilha: '+(err&&err.message||err),'error');}
     };
     reader.readAsArrayBuffer(file);
   } else if(ext==='pdf'){

@@ -13,7 +13,8 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   useEffect(() => {
-    window.location.replace("/tool.html");
+    // cache-buster: garante que o navegador sempre receba a versão mais recente
+    window.location.replace(`/tool.html?v=${Date.now()}`);
   }, []);
   return (
     <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "system-ui", color: "#745341" }}>
