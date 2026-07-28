@@ -3042,22 +3042,39 @@ async function savePlanejamentoMes(){
 function buildExtraGrid(){ /* substituído por openPlanejamentoPanel */ }
 function saveExtraordinario(){ return savePlanejamentoMes(); }
 
-function openReplicarModal(){
+async function openReplicarModal(){
   const ms=gel('planMesSel'), as=gel('planAnoSel');
-  const rm=gel('repMesSel'), ra=gel('repAnoSel');
-  if(!rm||!ra||!ms||!as) return;
-  rm.innerHTML=MES_NOMES.map(m=>`<option value="${m}">${m[0]+m.slice(1).toLowerCase()}</option>`).join('');
-  ra.innerHTML=[...as.options].map(o=>`<option value="${o.value}">${o.textContent}</option>`).join('');
-  let i=MES_NOMES.indexOf(ms.value); let a=parseInt(as.value)||CFG.ANO;
-  i-=1; if(i<0){i=11;a-=1;}
-  rm.value=MES_NOMES[i];
-  if([...ra.options].some(o=>o.value===String(a))) ra.value=String(a); else ra.value=as.value;
+  const rm=gel('repMesSel'), err=gel('repErr'), btn=gel('repBtn');
+  if(!rm||!ms||!as) return;
+  if(err){ err.textContent=''; err.classList.remove('show'); }
+  if(!_planAllRows.length) await loadAllPlanejamento();
+  const seen=new Map();
+  _planAllRows.forEach(r=>{
+    const m=String(r.mes||'').toUpperCase(), a=String(r.ano||'');
+    if(!m||!a) return;
+    if(Number(r.valor_planejado||0)<=0) return;
+    if(m===String(ms.value).toUpperCase() && a===String(as.value)) return; // exclui o mês aberto
+    seen.set(`${m}|${a}`,{m,a});
+  });
+  const opts=[...seen.values()].sort((x,y)=>(Number(y.a)-Number(x.a))||(MES_NOMES.indexOf(y.m)-MES_NOMES.indexOf(x.m)));
+  if(!opts.length){
+    rm.innerHTML=`<option value="">— nenhum mês planejado —</option>`;
+    rm.disabled=true; if(btn) btn.disabled=true;
+    if(err){ err.textContent='Nenhum outro mês possui planejamento salvo para replicar.'; err.classList.add('show'); }
+  }else{
+    rm.disabled=false; if(btn) btn.disabled=false;
+    rm.innerHTML=opts.map(o=>`<option value="${o.m}|${o.a}">${o.m[0]+o.m.slice(1).toLowerCase()}/${o.a}</option>`).join('');
+  }
   openModal('modalReplicar');
 }
 async function confirmReplicarMes(){
+  const v=String(gel('repMesSel')?.value||'');
+  if(!v.includes('|')) return;
+  const [mes,ano]=v.split('|');
   closeModal('modalReplicar');
-  await replicarPlanejamentoAnterior(gel('repMesSel')?.value, gel('repAnoSel')?.value);
+  await replicarPlanejamentoAnterior(mes,ano);
 }
+
 async function replicarPlanejamentoAnterior(mesOrigem,anoOrigem){
   const ms=gel('planMesSel'), as=gel('planAnoSel'); if(!ms||!as) return;
   let mesAnt, anoAnt;
