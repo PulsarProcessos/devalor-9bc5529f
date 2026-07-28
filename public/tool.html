@@ -2733,13 +2733,13 @@ async function loadDespesasLancadas(){
   const tb=gel('lancTbody');if(!tb)return;
   fillLancCategoriaSelect();
   fillLancBancoSelect();
-  tb.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:20px">Carregando...</td></tr>';
+  tb.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:20px">Carregando...</td></tr>';
   try{
     const r=await gGet('getDespesas',{clienteId:cid()});
     _lancRows = r.rows||[];
     renderDespesasLancadas();
   }catch(e){
-    tb.innerHTML=`<tr><td colspan="11" style="text-align:center;color:var(--danger);padding:20px">Erro: ${esc(e.message)}</td></tr>`;
+    tb.innerHTML=`<tr><td colspan="10" style="text-align:center;color:var(--danger);padding:20px">Erro: ${esc(e.message)}</td></tr>`;
   }
 }
 function origemLbl(o){
@@ -2763,18 +2763,18 @@ function renderDespesasLancadas(){
       if(catFull!==fCat)return false;
     }
     if(fBanco && !(r.banco===fBanco || r.cartao===fBanco))return false;
-    if(fFormaPag && String(r.forma_pagamento||'')!==fFormaPag)return false;
+    if(fFormaPag && !String(r.forma_pagamento||'').startsWith(fFormaPag))return false;
     if(hideProj){
       const mi=CFG.MESES.indexOf(String(r.mes||'').toUpperCase());
       const ay=parseInt(r.ano||curAno0,10);
-      const isFut = !(r.pago===true) && mi>=0 && (ay>curAno0 || (ay===curAno0 && mi>curMesIdx0));
+      const isFut = mi>=0 && (ay>curAno0 || (ay===curAno0 && mi>curMesIdx0));
       if(isFut)return false;
     }
     return true;
   });
 
   if(!filtered.length){
-    tb.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:20px">Nenhuma despesa encontrada.</td></tr>';
+    tb.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:20px">Nenhuma despesa encontrada.</td></tr>';
     gel('lancTotal').textContent='Total: '+fBRL(0);
     return;
   }
@@ -2785,12 +2785,11 @@ function renderDespesasLancadas(){
     const cat=r.grupo?`${r.grupo} · ${r.categoria||''}`:(r.categoria||'—');
     const bcoCar = r.cartao ? `💳 ${esc(r.cartao)}` : esc(r.banco||'—');
     const parc = (r.parcela_n && r.parcela_total) ? `${r.parcela_n}/${r.parcela_total}` : '—';
-    const pago = r.pago===true;
     const mesIdx = CFG.MESES.indexOf(String(r.mes||'').toUpperCase());
     const anoR = parseInt(r.ano||curAno,10);
-    const isFuture = !pago && mesIdx>=0 && (anoR>curAno || (anoR===curAno && mesIdx>curMesIdx));
-    const rowStyle = pago ? 'opacity:.65' : (isFuture ? 'background:rgba(99,102,241,.06)' : '');
-    const projBadge = isFuture ? ` <span title="Parcela futura — ainda não paga" style="font-size:.65rem;padding:1px 6px;border-radius:6px;background:rgba(99,102,241,.15);color:#4f46e5;font-weight:600;margin-left:4px">PROJETADO</span>` : '';
+    const isFuture = mesIdx>=0 && (anoR>curAno || (anoR===curAno && mesIdx>curMesIdx));
+    const rowStyle = isFuture ? 'background:rgba(99,102,241,.06)' : '';
+    const projBadge = isFuture ? ` <span title="Parcela futura" style="font-size:.65rem;padding:1px 6px;border-radius:6px;background:rgba(99,102,241,.15);color:#4f46e5;font-weight:600;margin-left:4px">PROJETADO</span>` : '';
     return `<tr style="${rowStyle}">
       <td>${fDate(r.data)}</td>
       <td>${esc(r.descricao||'')}${projBadge}</td>
@@ -2800,13 +2799,13 @@ function renderDespesasLancadas(){
       <td>${bcoCar}</td>
       <td>${esc(r.mes||'—')}</td>
       <td class="mono" style="text-align:center">${parc}</td>
-      <td style="text-align:center"><input type="checkbox" ${pago?'checked':''} onchange="toggleLancPago('${r.id}',this.checked)" style="accent-color:var(--brand);width:15px;height:15px;cursor:pointer"/></td>
       <td>${origemLbl(r.origem)}</td>
       <td><button class="btn btn-d btn-xs" onclick="deleteDespesaLanc('${r.id}')">✕</button></td>
     </tr>`;
   }).join('');
   gel('lancTotal').textContent='Total: '+fBRL(total);
 }
+
 
 async function toggleLancPago(id,pago){
   try{
