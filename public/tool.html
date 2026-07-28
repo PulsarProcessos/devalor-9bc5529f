@@ -3283,6 +3283,52 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 
 });
+
+/* ═══════════════════════════════════════════════════════════
+   FIX BANCO — auto-instalável, à prova de falhas
+   Cole este bloco no FINAL do <script>, logo antes de </script>.
+   Não depende de mais nada além das funções que já existem.
+═══════════════════════════════════════════════════════════ */
+(function fixBanco(){
+  function popularSelects(){
+    try{ if(typeof fillBancoSelect==='function') fillBancoSelect(gel('despBanco')?.value||undefined); }catch(e){}
+    try{ if(typeof fillImpBancoSelect==='function') fillImpBancoSelect(gel('impBanco')?.value||undefined); }catch(e){}
+  }
+
+  // 1) Intercepta goPanel: sempre que abrir despesas/importar, repopula os selects.
+  if(typeof window.goPanel==='function' && !window.__goPanelWrapped){
+    const _orig = window.goPanel;
+    window.goPanel = function(id, btn){
+      const r = _orig.apply(this, arguments);
+      if(id==='despesas' || id==='importar'){ setTimeout(popularSelects, 0); }
+      return r;
+    };
+    window.__goPanelWrapped = true;
+  }
+
+  // 2) Blindagem de onBancoSelectChange: se o select estiver vazio/errado, repopula
+  //    e só então decide. Garante que "__novo__" sempre abra o modal.
+  if(typeof window.onBancoSelectChange==='function' && !window.__bancoChangeWrapped){
+    const _origChange = window.onBancoSelectChange;
+    window.onBancoSelectChange = function(sel){
+      // se o select só tem a opção "__novo__" ou está vazio, repopula antes
+      const vals = sel ? [...sel.options].map(o=>o.value) : [];
+      const soNovo = vals.length===0 || (vals.length===1 && vals[0]==='__novo__');
+      if(soNovo){
+        if(sel && sel.id==='impBanco'){ try{fillImpBancoSelect();}catch(e){} }
+        else { try{fillBancoSelect();}catch(e){} }
+      }
+      return _origChange.apply(this, arguments);
+    };
+    window.__bancoChangeWrapped = true;
+  }
+
+  // 3) Popula assim que o DOM estiver pronto e também um pouco depois (cobre
+  //    o caso de o painel ser montado após o load inicial).
+  function boot(){ popularSelects(); setTimeout(popularSelects, 400); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
 </script>
 </body>
 </html>
