@@ -2536,34 +2536,50 @@ function inferMes(dateStr){
   return CFG.MESES[new Date().getMonth()];
 }
 
+let _importPage=1, _importMesVigente=null, _importAnoVigente=null;
+const IMPORT_PAGE_SIZE=20;
+
 function renderImportTable(){
   const tb=gel('importTbody');if(!tb)return;
   const cats=getCats();
   const allCats=Object.entries(cats).flatMap(([grp,items])=>items.map(i=>`${grp} · ${i}`));
   const catOpts=allCats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
-  const mesOpts=CFG.MESES.map(m=>`<option value="${m}">${m.charAt(0)+m.slice(1).toLowerCase()}</option>`).join('');
 
-  tb.innerHTML=_importRows.map(r=>`
+  const totalPages=Math.max(1,Math.ceil(_importRows.length/IMPORT_PAGE_SIZE));
+  if(_importPage>totalPages)_importPage=totalPages;
+  const start=(_importPage-1)*IMPORT_PAGE_SIZE;
+  const pageRows=_importRows.slice(start,start+IMPORT_PAGE_SIZE);
+
+  tb.innerHTML=pageRows.map(r=>`
     <tr id="irow_${r.id}" style="${r.selected?'':'opacity:.45'}">
       <td>${esc(r.data)}</td>
       <td>${esc(r.desc)}</td>
       <td class="mono" style="text-align:right;font-weight:600">${fBRL(r.valor)}</td>
       <td><select class="sel sel-sm" style="min-width:180px" onchange="updateImportRow(${r.id},'cat',this.value)">${catOpts}</select></td>
-      <td><select class="sel sel-sm" onchange="updateImportRow(${r.id},'mes',this.value)">${mesOpts}</select></td>
       <td style="text-align:center"><input type="checkbox" ${r.parc?'checked':''} onchange="updateImportRow(${r.id},'parc',this.checked)" style="accent-color:var(--brand);width:15px;height:15px;cursor:pointer"/></td>
       <td><input type="number" min="2" max="120" value="${r.parcN||''}" ${r.parc?'':'disabled'} oninput="updateImportRow(${r.id},'parcN',parseInt(this.value)||1)" class="inp inp-sm" style="width:64px"/></td>
       <td style="text-align:center"><input type="checkbox" ${r.selected?'checked':''} style="accent-color:var(--brand);width:15px;height:15px;cursor:pointer" onchange="updateImportRow(${r.id},'selected',this.checked)"/></td>
     </tr>
   `).join('');
 
-  _importRows.forEach(r=>{
+  pageRows.forEach(r=>{
     const row=gel(`irow_${r.id}`);if(!row)return;
-    const catSel=row.querySelectorAll('select')[0];
-    const mesSel=row.querySelectorAll('select')[1];
+    const catSel=row.querySelector('select');
     if(catSel){[...catSel.options].forEach(o=>{if(o.value===r.cat)o.selected=true;});}
-    if(mesSel){[...mesSel.options].forEach(o=>{if(o.value===r.mes)o.selected=true;});}
   });
+
+  const pg=gel('importPager');
+  if(pg){
+    const selCount=_importRows.filter(r=>r.selected).length;
+    pg.innerHTML = totalPages<=1
+      ? `<span>${_importRows.length} lançamento(s) · ${selCount} selecionado(s)</span>`
+      : `<button class="btn btn-g btn-xs" ${_importPage<=1?'disabled':''} onclick="gotoImportPage(${_importPage-1})">←</button>
+         <span>Página ${_importPage} de ${totalPages} · ${_importRows.length} lançamento(s) · ${selCount} selecionado(s)</span>
+         <button class="btn btn-g btn-xs" ${_importPage>=totalPages?'disabled':''} onclick="gotoImportPage(${_importPage+1})">→</button>`;
+  }
 }
+function gotoImportPage(p){_importPage=p;renderImportTable();}
+
 
 function updateImportRow(id,field,val){
   const r=_importRows.find(r=>r.id===id);
