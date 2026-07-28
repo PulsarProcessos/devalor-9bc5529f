@@ -2342,7 +2342,6 @@ function parseImportFile(file){
     };
     reader.readAsArrayBuffer(file);
   } else if(ext==='pdf'){
-  } else if(ext==='pdf'){
     if(!window['pdfjsLib']){toast('Leitor de PDF indisponível. Recarregue a página.','error');return;}
     const reader=new FileReader();
     reader.onload=async e=>{
