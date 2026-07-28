@@ -2191,17 +2191,14 @@ function addBancoPrompt(){
 function fillFormaPagSelect(selected){
   const sel=gel('despFormaPag');if(!sel)return;
   const prev=selected||sel.value||'';
-  const cartoes=loadCartoes();
-  const opts=[`<option value="Débito/Dinheiro/Pix">Débito / Dinheiro / Pix</option>`];
-  if(cartoes.length){
-    cartoes.forEach(c=>opts.push(`<option value="CARTAO::${esc(c)}">💳 ${esc(c)}</option>`));
-  }else{
-    opts.push(`<option value="Cartão de Crédito">Cartão de Crédito</option>`);
-  }
-  sel.innerHTML=opts.join('');
+  sel.innerHTML=[
+    `<option value="Cartão de Crédito">Cartão de Crédito</option>`,
+    `<option value="Débito/Dinheiro/Pix">Débito / Dinheiro / Pix</option>`
+  ].join('');
   if(prev && [...sel.options].some(o=>o.value===prev))sel.value=prev;
 }
-function despCartaoFromFP(fp){return String(fp||'').startsWith('CARTAO::')?String(fp).slice(8):null;}
+/* Identidade composta: "<Forma de pagamento> · <Banco>" */
+function despTagFP(fp,bco){return bco?`${fp} · ${bco}`:fp;}
 function isAVista(){const v=gel('despFormaPag')?.value||'';return v==='Débito/Dinheiro/Pix';}
 function syncMesFromData(){
   const dt=gel('despData')?.value;if(!dt)return;
@@ -2223,8 +2220,10 @@ function onDespFormaPagChange(){
 
 function toggleParcelado(v){
   if(isAVista()){const c=gel('chkParcelado');if(c)c.checked=false;v=false;}
-  gel('parcelFields')?.classList.toggle('hidden',!v);if(!v)clearPrev();
+  gel('parcelFields')?.classList.toggle('hidden',!v);
+  if(!v){const n=gel('despNParcelas');if(n)n.value='';if(_previewTimer){clearTimeout(_previewTimer);_previewTimer=null;}clearPrev();}
 }
+
 function buildDespRows(){
   const fp=gel('despFormaPag')?.value,bco=gel('despBanco')?.value,dt=gel('despData')?.value;
   const desc=gel('despDesc')?.value.trim(),vp=pMoney(gel('despValorParc')?.value);
