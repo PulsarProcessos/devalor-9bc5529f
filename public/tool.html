@@ -2082,7 +2082,7 @@ function switchDespTab(id,btn){
   document.querySelectorAll('.desp-panel').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');gel(`desp-${id}`)?.classList.add('active');
   if(id==='lancadas')loadDespesasLancadas();
-  if(id==='importar')fillImpBancoSelect();
+  if(id==='importar'){fillImpBancoSelect();resetImportSource();}
 }
 
 /* Importação: fonte (passo 1) + banco (passo 2) + arquivo (passo 3) */
