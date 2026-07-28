@@ -261,6 +261,12 @@ img,svg{display:block;max-width:100%}
 .pc-row strong{display:block;font-family:'DM Mono',monospace;font-size:.97rem;font-weight:600;color:var(--text-primary);margin-top:2px}
 .pc-diff{font-family:'DM Mono',monospace;font-size:.8rem;font-weight:700;padding:2px 8px;border-radius:5px;align-self:flex-start}
 .pc-diff.pos{background:var(--success-bg);color:var(--success)}.pc-diff.neg{background:var(--danger-bg);color:var(--danger)}
+.consol-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:18px;background:linear-gradient(100deg,var(--brand,#7a5c3e),#2b2f3a);border-radius:16px;padding:18px 24px;margin-bottom:18px}
+.consol-cell{display:flex;flex-direction:column;gap:6px;min-width:0}
+.consol-lbl{font-size:.66rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.62)}
+.consol-mes{font-family:'Playfair Display',serif;font-size:1.35rem;color:#fff;font-weight:500}
+.consol-val{font-size:1.25rem;font-weight:700;color:#fff}
+@media(max-width:900px){.consol-bar{grid-template-columns:repeat(2,1fr);gap:14px}}
 .saldo-bar{display:flex;gap:20px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--rl);padding:20px 26px;flex-wrap:wrap}
 .saldo-item{flex:1;min-width:120px;display:flex;flex-direction:column;gap:3px}
 .saldo-lbl{font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)}
@@ -493,9 +499,7 @@ img,svg{display:block;max-width:100%}
           <button class="nav-item active" data-panel="perfil" onclick="goPanel('perfil',this)"><span class="nav-dot"></span><span class="nav-icon">👤</span>Perfil & Reserva</button>
           <button class="nav-item" data-panel="sonhos" onclick="goPanel('sonhos',this)"><span class="nav-dot"></span><span class="nav-icon">✨</span>Sonhos & Objetivos</button>
           <button class="nav-item" data-panel="dividas" onclick="goPanel('dividas',this)"><span class="nav-dot"></span><span class="nav-icon">📋</span>Inventário de Dívidas</button>
-          <button class="nav-item" data-panel="renda" onclick="goPanel('renda',this)"><span class="nav-dot"></span><span class="nav-icon">💰</span>Renda</button>
           <button class="nav-item" data-panel="vencimentos" onclick="goPanel('vencimentos',this)"><span class="nav-dot"></span><span class="nav-icon">📆</span>Vencimentos de Contas</button>
-          <button class="nav-item" data-panel="cartoes" onclick="goPanel('cartoes',this)"><span class="nav-dot"></span><span class="nav-icon">💳</span>Cartões de Crédito</button>
           <button class="nav-item" data-panel="__catsCad" onclick="openModal('modalCats');buildCatEditor()"><span class="nav-dot"></span><span class="nav-icon">🏷️</span>Categorias</button>
         </div>
       </div>
@@ -608,41 +612,10 @@ img,svg{display:block;max-width:100%}
       <div class="tbl-wrap"><table class="tbl hidden" id="dividasTable"><thead><tr><th>Credor</th><th>Descrição</th><th>Saldo</th><th>Parcela</th><th>Juros %</th><th></th></tr></thead><tbody id="dividasTbody"></tbody></table></div>
     </div>
 
-    <!-- ══ RENDA ════════════════════════════════════ -->
-    <div class="panel" id="panel-renda">
-      <div class="panel-hd"><h1 class="panel-title">Renda</h1><p class="panel-sub">Cadastre todas as fontes de renda recebidas mensalmente</p></div>
-      <div class="card-form">
-        <fieldset class="fset"><legend>Fontes de renda mensal</legend>
-          <div id="rendaFontes" style="display:flex;flex-direction:column;gap:10px;margin-top:12px"></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap;gap:10px">
-            <button type="button" class="btn btn-g btn-sm" onclick="addRendaFonte()">+ Adicionar renda</button>
-            <div style="font-size:.95rem;color:var(--text-secondary)">Total mensal: <strong id="rendaTotalLbl" style="color:var(--brand);font-family:'DM Mono',monospace">R$ 0,00</strong></div>
-          </div>
-        </fieldset>
-        <!-- inputs ocultos preservando compat com submitRenda antigo -->
-        <input type="hidden" id="rendaSalario" value=""/>
-        <input type="hidden" id="rendaOutras" value=""/>
-        <input type="hidden" id="rendaMensal" value=""/>
-        <div class="form-footer">
-          <button class="btn btn-p" onclick="submitRenda()">Salvar renda ✓</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ CARTÕES DE CRÉDITO ══════════════════════ -->
-    <div class="panel" id="panel-cartoes">
-      <div class="panel-hd"><h1 class="panel-title">Cartões de Crédito</h1><p class="panel-sub">Cadastre os cartões usados na importação de fatura e no Painel Resumo</p></div>
-      <div class="card-form">
-        <div class="grid3">
-          <div class="field" style="grid-column:span 2"><label class="lbl">Nome do cartão</label><input class="inp" type="text" id="cartaoNome" placeholder="Ex: Cartão Nubank"/></div>
-          <div class="field"><label class="lbl">&nbsp;</label><button type="button" class="btn btn-p" onclick="addCartao()" style="width:100%">+ Adicionar cartão</button></div>
-        </div>
-      </div>
-      <div class="tbl-wrap mt16">
-        <table class="tbl"><thead><tr><th>Cartão</th><th style="width:120px;text-align:right">Ações</th></tr></thead>
-        <tbody id="cartoesTbody"><tr><td colspan="2" style="text-align:center;color:var(--text-muted);padding:18px">Nenhum cartão cadastrado.</td></tr></tbody></table>
-      </div>
-    </div>
+    <!-- Renda migrada para dentro do painel Planejamento -->
+    <input type="hidden" id="rendaSalario" value=""/>
+    <input type="hidden" id="rendaOutras" value=""/>
+    <input type="hidden" id="rendaMensal" value=""/>
 
     <!-- ══ VIDA RICA ═══════════════════════════════ -->
     <div class="panel" id="panel-vidarica">
@@ -704,7 +677,7 @@ img,svg{display:block;max-width:100%}
         </div>
       </div>
       <div class="tbl-wrap mt16">
-        <table class="tbl" id="vencTable"><thead><tr><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Dia</th><th>Próx. venc.</th><th>Obs.</th><th></th></tr></thead><tbody id="vencTbody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:18px">Nenhuma conta cadastrada.</td></tr></tbody></table>
+        <table class="tbl" id="vencTable"><thead><tr><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Dia do vencimento</th><th>Status</th><th>Obs.</th><th></th></tr></thead><tbody id="vencTbody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:18px">Nenhuma conta cadastrada.</td></tr></tbody></table>
       </div>
     </div>
 
@@ -907,9 +880,34 @@ img,svg{display:block;max-width:100%}
         <select class="sel sel-sm" id="planMesSel" onchange="loadPlanejamentoMes()" style="min-width:140px"></select>
         <select class="sel sel-sm" id="planAnoSel" onchange="loadPlanejamentoMes()" style="width:100px"></select>
         <button class="btn btn-s btn-sm" onclick="planNavMes(1)">→</button>
-        <button class="btn btn-g btn-sm" onclick="replicarPlanejamentoAnterior()" title="Copia os valores do mês anterior para o mês atual">⎘ Replicar mês anterior</button>
+        <button class="btn btn-g btn-sm" onclick="openReplicarModal()" title="Escolha o mês de origem para copiar os valores">⎘ Replicar mês…</button>
         <span id="planStatus" style="margin-left:auto;font-size:.78rem;color:var(--text-muted)"></span>
       </div>
+
+      <!-- Consolidado do mês -->
+      <div class="consol-bar" id="planConsol">
+        <div class="consol-cell"><span class="consol-lbl">Consolidado do mês</span><strong class="consol-mes" id="consolMes">—</strong></div>
+        <div class="consol-cell"><span class="consol-lbl">Receitas</span><strong class="consol-val mono" id="consolReceitas">R$ 0,00</strong></div>
+        <div class="consol-cell"><span class="consol-lbl">Despesas totais</span><strong class="consol-val mono" id="consolDespesas">R$ 0,00</strong></div>
+        <div class="consol-cell"><span class="consol-lbl">Investimentos</span><strong class="consol-val mono" id="consolInvest">R$ 0,00</strong></div>
+        <div class="consol-cell"><span class="consol-lbl">Saldo final</span><strong class="consol-val mono" id="consolSaldo">R$ 0,00</strong></div>
+      </div>
+
+      <!-- Renda do mês -->
+      <div style="margin-bottom:18px;background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:12px;overflow:hidden">
+        <div style="padding:10px 14px;background:var(--bg-muted,#f5f7fa);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary)">Renda do mês</div>
+        <div style="padding:12px 14px">
+          <div id="rendaFontes" style="display:flex;flex-direction:column;gap:10px"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap">
+            <div style="display:flex;gap:8px">
+              <button type="button" class="btn btn-g btn-sm" onclick="addRendaFonte()">+ Adicionar renda</button>
+              <button type="button" class="btn btn-p btn-sm" onclick="submitRenda()">Salvar renda ✓</button>
+            </div>
+            <div style="font-size:.95rem;color:var(--text-secondary)">Total mensal: <strong id="rendaTotalLbl" style="color:var(--brand);font-family:'DM Mono',monospace">R$ 0,00</strong></div>
+          </div>
+        </div>
+      </div>
+
       <div style="margin-bottom:18px">
         <div class="preview-ttl" style="padding:0 0 8px">Contas a vencer neste mês</div>
         <div class="tbl-wrap" id="planVencList"></div>
@@ -918,6 +916,22 @@ img,svg{display:block;max-width:100%}
       <div style="margin-top:18px;padding:14px;background:var(--bg-muted,#f5f7fa);border-radius:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
         <span style="font-size:.84rem;color:var(--text-secondary)">Total planejado para o mês</span>
         <span id="planTotal" class="mono" style="font-size:1.25rem;font-weight:700;color:var(--brand)">R$ 0,00</span>
+      </div>
+    </div>
+
+    <!-- Modal replicar mês -->
+    <div class="modal-ov" id="modalReplicar">
+      <div class="modal-box" style="max-width:420px">
+        <p class="modal-title">Replicar planejamento</p>
+        <p style="font-size:.84rem;color:var(--text-secondary);margin-bottom:12px">Escolha o mês de origem. Os valores serão copiados para o mês aberto.</p>
+        <div style="display:flex;gap:10px">
+          <select class="sel" id="repMesSel" style="flex:1"></select>
+          <select class="sel" id="repAnoSel" style="width:110px"></select>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-g" onclick="closeModal('modalReplicar')">Cancelar</button>
+          <button class="btn btn-p" onclick="confirmReplicarMes()">Replicar</button>
+        </div>
       </div>
     </div>
 
@@ -1169,11 +1183,10 @@ function goPanel(id, btnEl){
   window.scrollTo({top:0,behavior:'smooth'});
   if(window.innerWidth<769) gel('appSidebar').classList.remove('open');
   if(id==='quitacao') loadQuitacao();
-  if(id==='extraordinario'){ openPlanejamentoPanel(); renderVencimentosPlano(); }
+  if(id==='extraordinario'){ openPlanejamentoPanel(); renderVencimentosPlano(); loadRendaPanel(); }
   if(id==='vencimentos'){ buildVencCategoriaSelect(); renderVencimentos(); }
-  if(id==='renda') loadRendaPanel();
+  if(id==='renda'){ goPanel('extraordinario'); return; }
   if(id==='painel'){ loadPainelAnual(); }
-  if(id==='cartoes') renderCartoes();
 }
 
 function toggleNavGroup(name){
@@ -1573,7 +1586,7 @@ function addDividaPreview(){
   toast(`"${desc}" adicionada.`,'info');
 }
 async function submitDividas(){
-  if(!_dividasQ.length){toast('Sem dívidas — avançando.','info');markNavDone('dividas');goPanel('renda');return;}
+  if(!_dividasQ.length){toast('Sem dívidas — avançando.','info');markNavDone('dividas');goPanel('extraordinario');return;}
   const rows=_dividasQ.map(d=>[d.banco,d.desc,d.vs,d.pt,d.vp,d.sd,d.j,d.up,d.tp,CFG.ANO]);
   const btn=document.querySelector('[onclick="submitDividas()"]');if(btn)btn.disabled=true;
   try{
@@ -1582,7 +1595,7 @@ async function submitDividas(){
     const tb=gel('dividasTbody'); if(tb) tb.innerHTML='';
     const tbl=gel('dividasTable'); if(tbl) tbl.classList.add('hidden');
     toast(`${rows.length} dívida(s) salvas!`,'success');
-    markNavDone('dividas');goPanel('renda');
+    markNavDone('dividas');goPanel('extraordinario');
   }catch(e){toast('Erro: '+e.message,'error');}
   finally{if(btn)btn.disabled=false;}
 }
@@ -1645,6 +1658,7 @@ function recalcRendaTotal(){
   const lbl = gel('rendaTotalLbl'); if(lbl) lbl.textContent = fBRL(total);
   const hid = gel('rendaMensal'); if(hid) hid.value = total>0?String(total):'';
   _rendaMensalCache = total;
+  try{ updatePlanConsolidado(); }catch(e){}
 }
 
 async function submitRenda(){
@@ -1828,7 +1842,7 @@ function renderVencimentos(){
       <td style="text-align:center"><span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:uppercase;background:${ativo?'var(--success-bg,#dcfce7)':'var(--bg-muted,#eef2f7)'};color:${ativo?'var(--success,#166534)':'var(--text-muted)'}">${ativo?'Ativo':'Interrompido'}</span></td>
       <td style="font-size:.82rem;color:var(--text-muted)">${esc(v.obs||'')}</td>
       <td style="white-space:nowrap;text-align:center">
-        <button class="btn btn-g btn-xs" onclick="editVencimento('${v.id}')">Editar</button>
+        <button class="btn btn-g btn-xs" onclick="editVencimento('${v.id}')">✎ Editar</button>
         <button class="btn btn-g btn-xs" onclick="toggleVencimento('${v.id}')">${ativo?'Interromper':'Retomar'}</button>
         <button class="btn btn-d btn-xs" onclick="removeVencimento('${v.id}')">✕</button>
       </td>
@@ -2095,27 +2109,21 @@ function fillImpBancoSelect(selected){
   const prev=selected||sel.value||'';
   let list=loadBancos();
   if(!Array.isArray(list)||!list.length)list=BANCOS_DEFAULT.slice();
-  sel.innerHTML=list.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('')
-    +`<option value="__novo__">+ Novo banco…</option>`;
+  sel.innerHTML=list.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');
   if(prev && [...sel.options].some(o=>o.value===prev))sel.value=prev;
-  if(sel.value==='__novo__')sel.selectedIndex=0;
   _bancoPrevValue=sel.value;
 }
 let _bancoTargetSelect=null, _bancoPrevValue=null;
 function openNovoBancoModal(targetSelId){
   _bancoTargetSelect = gel(targetSelId)||null;
-  if(_bancoTargetSelect && _bancoTargetSelect.value==='__novo__' && _bancoPrevValue==='__novo__') _bancoPrevValue=null;
   const inp=gel('nbInput'); if(inp){ inp.value=''; setTimeout(()=>inp.focus(),60); }
   const err=gel('nbErr'); if(err) err.classList.remove('show');
   openModal('modalNovoBanco');
 }
 function onBancoSelectChange(sel){
-  if(sel.value==='__novo__'){
-    openNovoBancoModal(sel.id);
-  }else{
-    _bancoPrevValue=sel.value;
-    if(sel.id==='impBanco') onImportBancoChange();
-  }
+  if(!sel) return;
+  _bancoPrevValue=sel.value;
+  if(sel.id==='impBanco') onImportBancoChange();
 }
 function confirmNovoBanco(){
   const inp=gel('nbInput'), err=gel('nbErr');
@@ -2217,11 +2225,10 @@ function loadBancos(){
 function saveBancos(arr){localStorage.setItem(BANCOS_KEY(),JSON.stringify(arr));}
 function fillBancoSelect(selected){
   const sel=gel('despBanco');if(!sel)return;
-  const list=loadBancos();
-  sel.innerHTML=list.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('')
-    +`<option value="__novo__">+ Novo banco…</option>`;
+  let list=loadBancos();
+  if(!Array.isArray(list)||!list.length)list=BANCOS_DEFAULT.slice();
+  sel.innerHTML=list.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');
   if(selected && [...sel.options].some(o=>o.value===selected))sel.value=selected;
-  if(sel.value==='__novo__')sel.selectedIndex=0;
 }
 function addBancoPrompt(){ openNovoBancoModal('despBanco'); }
 
@@ -2944,12 +2951,12 @@ function renderPlanejamentoMes(force){
     const items=cats[grupo]||[];
     return `<div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:12px;overflow:hidden">
       <div style="padding:10px 14px;background:var(--bg-muted,#f5f7fa);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary)">${esc(grupo)}</div>
-      <div style="padding:10px 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
+      <div style="display:flex;flex-direction:column">
         ${items.map(cat=>{
           const v=valOf(grupo,cat);
-          return `<div class="field" style="margin:0">
-            <label class="lbl" style="font-size:.74rem">${esc(cat)}</label>
-            <input class="inp inp-money inp-sm" type="text" data-money data-grupo="${esc(grupo)}" data-cat="${esc(cat)}" value="${v>0?fBRL(v).replace('R$','').trim():''}" placeholder="0,00" oninput="updatePlanTotal()"/>
+          return `<div style="display:flex;align-items:center;gap:12px;padding:8px 14px;border-top:1px solid var(--border-subtle)">
+            <label class="lbl" style="flex:1;margin:0;font-size:.82rem">${esc(cat)}</label>
+            <input class="inp inp-money inp-sm" style="width:150px;text-align:right" type="text" data-money data-grupo="${esc(grupo)}" data-cat="${esc(cat)}" value="${v>0?fBRL(v).replace('R$','').trim():''}" placeholder="0,00" oninput="updatePlanTotal()"/>
           </div>`;
         }).join('')}
       </div>
@@ -2962,9 +2969,29 @@ function renderPlanejamentoMes(force){
   if(st) st.textContent = hasData ? `Planejamento salvo (${existing.length} categoria(s))` : 'Sem planejamento para este mês';
 }
 function updatePlanTotal(){
-  let total=0;
-  document.querySelectorAll('#planGroups [data-grupo]').forEach(i=>{ total += pMoney(i.value)||0; });
+  let total=0, invest=0;
+  document.querySelectorAll('#planGroups [data-grupo]').forEach(i=>{
+    const v=pMoney(i.value)||0; total+=v;
+    if(/investimento/i.test(i.dataset.grupo||'')) invest+=v;
+  });
   const t=gel('planTotal'); if(t) t.textContent=fBRL(total);
+  updatePlanConsolidado(total,invest);
+}
+function updatePlanConsolidado(total,invest){
+  if(total===undefined){
+    total=0;invest=0;
+    document.querySelectorAll('#planGroups [data-grupo]').forEach(i=>{
+      const v=pMoney(i.value)||0; total+=v;
+      if(/investimento/i.test(i.dataset.grupo||'')) invest+=v;
+    });
+  }
+  const receitas=(_rendaFontes||[]).reduce((sm,f)=>sm+(Number(f.valor)||0),0);
+  const despesas=total-invest;
+  const mes=gel('planMesSel')?.value||'', ano=gel('planAnoSel')?.value||'';
+  const cm=gel('consolMes'); if(cm) cm.textContent = mes ? `${mes[0]+mes.slice(1).toLowerCase()}/${ano}` : '—';
+  const set=(id,v)=>{const e=gel(id); if(e) e.textContent=fBRL(v);};
+  set('consolReceitas',receitas); set('consolDespesas',despesas);
+  set('consolInvest',invest); set('consolSaldo',receitas-total);
 }
 async function loadPlanejamentoMes(){
   initPlanejamentoSelectors();
@@ -2997,12 +3024,32 @@ async function savePlanejamentoMes(){
 function buildExtraGrid(){ /* substituído por openPlanejamentoPanel */ }
 function saveExtraordinario(){ return savePlanejamentoMes(); }
 
-async function replicarPlanejamentoAnterior(){
-  const ms=gel('planMesSel'), as=gel('planAnoSel'); if(!ms||!as) return;
-  const mesAtual=ms.value, anoAtual=as.value;
-  let i=MES_NOMES.indexOf(mesAtual); let a=parseInt(anoAtual)||CFG.ANO;
+function openReplicarModal(){
+  const ms=gel('planMesSel'), as=gel('planAnoSel');
+  const rm=gel('repMesSel'), ra=gel('repAnoSel');
+  if(!rm||!ra||!ms||!as) return;
+  rm.innerHTML=MES_NOMES.map(m=>`<option value="${m}">${m[0]+m.slice(1).toLowerCase()}</option>`).join('');
+  ra.innerHTML=[...as.options].map(o=>`<option value="${o.value}">${o.textContent}</option>`).join('');
+  let i=MES_NOMES.indexOf(ms.value); let a=parseInt(as.value)||CFG.ANO;
   i-=1; if(i<0){i=11;a-=1;}
-  const mesAnt=MES_NOMES[i], anoAnt=String(a);
+  rm.value=MES_NOMES[i];
+  if([...ra.options].some(o=>o.value===String(a))) ra.value=String(a); else ra.value=as.value;
+  openModal('modalReplicar');
+}
+async function confirmReplicarMes(){
+  closeModal('modalReplicar');
+  await replicarPlanejamentoAnterior(gel('repMesSel')?.value, gel('repAnoSel')?.value);
+}
+async function replicarPlanejamentoAnterior(mesOrigem,anoOrigem){
+  const ms=gel('planMesSel'), as=gel('planAnoSel'); if(!ms||!as) return;
+  let mesAnt, anoAnt;
+  if(mesOrigem && anoOrigem){ mesAnt=String(mesOrigem).toUpperCase(); anoAnt=String(anoOrigem); }
+  else{
+    let i=MES_NOMES.indexOf(ms.value); let a=parseInt(as.value)||CFG.ANO;
+    i-=1; if(i<0){i=11;a-=1;}
+    mesAnt=MES_NOMES[i]; anoAnt=String(a);
+  }
+  if(mesAnt===ms.value && anoAnt===String(as.value)){ toast('Escolha um mês diferente do atual.','warning'); return; }
   if(!_planAllRows.length) await loadAllPlanejamento();
   const prev=_planAllRows.filter(r=>String(r.mes||'').toUpperCase()===mesAnt && String(r.ano||'')===anoAnt);
   if(!prev.length){ toast(`Não há planejamento em ${mesAnt[0]+mesAnt.slice(1).toLowerCase()}/${anoAnt} para replicar.`,'warning'); return; }
@@ -3316,49 +3363,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   else boot();
 })();
 
-</script>.
-   Não depende de mais nada além das funções que já existem.
-═══════════════════════════════════════════════════════════ */
-(function fixBanco(){
-  function popularSelects(){
-    try{ if(typeof fillBancoSelect==='function') fillBancoSelect(gel('despBanco')?.value||undefined); }catch(e){}
-    try{ if(typeof fillImpBancoSelect==='function') fillImpBancoSelect(gel('impBanco')?.value||undefined); }catch(e){}
-  }
-
-  // 1) Intercepta goPanel: sempre que abrir despesas/importar, repopula os selects.
-  if(typeof window.goPanel==='function' && !window.__goPanelWrapped){
-    const _orig = window.goPanel;
-    window.goPanel = function(id, btn){
-      const r = _orig.apply(this, arguments);
-      if(id==='despesas' || id==='importar'){ setTimeout(popularSelects, 0); }
-      return r;
-    };
-    window.__goPanelWrapped = true;
-  }
-
-  // 2) Blindagem de onBancoSelectChange: se o select estiver vazio/errado, repopula
-  //    e só então decide. Garante que "__novo__" sempre abra o modal.
-  if(typeof window.onBancoSelectChange==='function' && !window.__bancoChangeWrapped){
-    const _origChange = window.onBancoSelectChange;
-    window.onBancoSelectChange = function(sel){
-      // se o select só tem a opção "__novo__" ou está vazio, repopula antes
-      const vals = sel ? [...sel.options].map(o=>o.value) : [];
-      const soNovo = vals.length===0 || (vals.length===1 && vals[0]==='__novo__');
-      if(soNovo){
-        if(sel && sel.id==='impBanco'){ try{fillImpBancoSelect();}catch(e){} }
-        else { try{fillBancoSelect();}catch(e){} }
-      }
-      return _origChange.apply(this, arguments);
-    };
-    window.__bancoChangeWrapped = true;
-  }
-
-  // 3) Popula assim que o DOM estiver pronto e também um pouco depois (cobre
-  //    o caso de o painel ser montado após o load inicial).
-  function boot(){ popularSelects(); setTimeout(popularSelects, 400); }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot);
-  else boot();
-})();
 </script>
 </body>
 </html>
