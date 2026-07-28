@@ -2095,27 +2095,21 @@ function fillImpBancoSelect(selected){
   const prev=selected||sel.value||'';
   let list=loadBancos();
   if(!Array.isArray(list)||!list.length)list=BANCOS_DEFAULT.slice();
-  sel.innerHTML=list.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('')
-    +`<option value="__novo__">+ Novo banco…</option>`;
+  sel.innerHTML=list.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');
   if(prev && [...sel.options].some(o=>o.value===prev))sel.value=prev;
-  if(sel.value==='__novo__')sel.selectedIndex=0;
   _bancoPrevValue=sel.value;
 }
 let _bancoTargetSelect=null, _bancoPrevValue=null;
 function openNovoBancoModal(targetSelId){
   _bancoTargetSelect = gel(targetSelId)||null;
-  if(_bancoTargetSelect && _bancoTargetSelect.value==='__novo__' && _bancoPrevValue==='__novo__') _bancoPrevValue=null;
   const inp=gel('nbInput'); if(inp){ inp.value=''; setTimeout(()=>inp.focus(),60); }
   const err=gel('nbErr'); if(err) err.classList.remove('show');
   openModal('modalNovoBanco');
 }
 function onBancoSelectChange(sel){
-  if(sel.value==='__novo__'){
-    openNovoBancoModal(sel.id);
-  }else{
-    _bancoPrevValue=sel.value;
-    if(sel.id==='impBanco') onImportBancoChange();
-  }
+  if(!sel) return;
+  _bancoPrevValue=sel.value;
+  if(sel.id==='impBanco') onImportBancoChange();
 }
 function confirmNovoBanco(){
   const inp=gel('nbInput'), err=gel('nbErr');
