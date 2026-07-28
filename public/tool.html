@@ -2302,9 +2302,10 @@ function onDragOver(e){e.preventDefault();gel('importDrop').classList.add('drag'
 function onDragLeave(){gel('importDrop').classList.remove('drag');}
 function onFileDrop(e){e.preventDefault();gel('importDrop').classList.remove('drag');const f=e.dataTransfer.files[0];if(f)handleFileSelect(f);}
 
-function handleFileSelect(file){
+function parseImportFile(file){
   if(!file)return;
-  if(!_importMeta){toast('Selecione a fonte e os dados antes do arquivo.','error');return;}
+  if(!_importBanco||!_importSource){toast('Selecione o banco e o tipo do arquivo antes.','error');return;}
+
   const ext=file.name.split('.').pop().toLowerCase();
   if(ext==='csv'){
     const reader=new FileReader();
