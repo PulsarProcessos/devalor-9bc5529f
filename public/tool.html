@@ -261,6 +261,12 @@ img,svg{display:block;max-width:100%}
 .pc-row strong{display:block;font-family:'DM Mono',monospace;font-size:.97rem;font-weight:600;color:var(--text-primary);margin-top:2px}
 .pc-diff{font-family:'DM Mono',monospace;font-size:.8rem;font-weight:700;padding:2px 8px;border-radius:5px;align-self:flex-start}
 .pc-diff.pos{background:var(--success-bg);color:var(--success)}.pc-diff.neg{background:var(--danger-bg);color:var(--danger)}
+.consol-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:18px;background:linear-gradient(100deg,var(--brand,#7a5c3e),#2b2f3a);border-radius:16px;padding:18px 24px;margin-bottom:18px}
+.consol-cell{display:flex;flex-direction:column;gap:6px;min-width:0}
+.consol-lbl{font-size:.66rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.62)}
+.consol-mes{font-family:'Playfair Display',serif;font-size:1.35rem;color:#fff;font-weight:500}
+.consol-val{font-size:1.25rem;font-weight:700;color:#fff}
+@media(max-width:900px){.consol-bar{grid-template-columns:repeat(2,1fr);gap:14px}}
 .saldo-bar{display:flex;gap:20px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--rl);padding:20px 26px;flex-wrap:wrap}
 .saldo-item{flex:1;min-width:120px;display:flex;flex-direction:column;gap:3px}
 .saldo-lbl{font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)}
@@ -1652,6 +1658,7 @@ function recalcRendaTotal(){
   const lbl = gel('rendaTotalLbl'); if(lbl) lbl.textContent = fBRL(total);
   const hid = gel('rendaMensal'); if(hid) hid.value = total>0?String(total):'';
   _rendaMensalCache = total;
+  try{ updatePlanConsolidado(); }catch(e){}
 }
 
 async function submitRenda(){
@@ -2944,12 +2951,12 @@ function renderPlanejamentoMes(force){
     const items=cats[grupo]||[];
     return `<div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:12px;overflow:hidden">
       <div style="padding:10px 14px;background:var(--bg-muted,#f5f7fa);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary)">${esc(grupo)}</div>
-      <div style="padding:10px 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
+      <div style="display:flex;flex-direction:column">
         ${items.map(cat=>{
           const v=valOf(grupo,cat);
-          return `<div class="field" style="margin:0">
-            <label class="lbl" style="font-size:.74rem">${esc(cat)}</label>
-            <input class="inp inp-money inp-sm" type="text" data-money data-grupo="${esc(grupo)}" data-cat="${esc(cat)}" value="${v>0?fBRL(v).replace('R$','').trim():''}" placeholder="0,00" oninput="updatePlanTotal()"/>
+          return `<div style="display:flex;align-items:center;gap:12px;padding:8px 14px;border-top:1px solid var(--border-subtle)">
+            <label class="lbl" style="flex:1;margin:0;font-size:.82rem">${esc(cat)}</label>
+            <input class="inp inp-money inp-sm" style="width:150px;text-align:right" type="text" data-money data-grupo="${esc(grupo)}" data-cat="${esc(cat)}" value="${v>0?fBRL(v).replace('R$','').trim():''}" placeholder="0,00" oninput="updatePlanTotal()"/>
           </div>`;
         }).join('')}
       </div>
@@ -2962,9 +2969,29 @@ function renderPlanejamentoMes(force){
   if(st) st.textContent = hasData ? `Planejamento salvo (${existing.length} categoria(s))` : 'Sem planejamento para este mês';
 }
 function updatePlanTotal(){
-  let total=0;
-  document.querySelectorAll('#planGroups [data-grupo]').forEach(i=>{ total += pMoney(i.value)||0; });
+  let total=0, invest=0;
+  document.querySelectorAll('#planGroups [data-grupo]').forEach(i=>{
+    const v=pMoney(i.value)||0; total+=v;
+    if(/investimento/i.test(i.dataset.grupo||'')) invest+=v;
+  });
   const t=gel('planTotal'); if(t) t.textContent=fBRL(total);
+  updatePlanConsolidado(total,invest);
+}
+function updatePlanConsolidado(total,invest){
+  if(total===undefined){
+    total=0;invest=0;
+    document.querySelectorAll('#planGroups [data-grupo]').forEach(i=>{
+      const v=pMoney(i.value)||0; total+=v;
+      if(/investimento/i.test(i.dataset.grupo||'')) invest+=v;
+    });
+  }
+  const receitas=(_rendaFontes||[]).reduce((sm,f)=>sm+(Number(f.valor)||0),0);
+  const despesas=total-invest;
+  const mes=gel('planMesSel')?.value||'', ano=gel('planAnoSel')?.value||'';
+  const cm=gel('consolMes'); if(cm) cm.textContent = mes ? `${mes[0]+mes.slice(1).toLowerCase()}/${ano}` : '—';
+  const set=(id,v)=>{const e=gel(id); if(e) e.textContent=fBRL(v);};
+  set('consolReceitas',receitas); set('consolDespesas',despesas);
+  set('consolInvest',invest); set('consolSaldo',receitas-total);
 }
 async function loadPlanejamentoMes(){
   initPlanejamentoSelectors();
@@ -2997,12 +3024,32 @@ async function savePlanejamentoMes(){
 function buildExtraGrid(){ /* substituído por openPlanejamentoPanel */ }
 function saveExtraordinario(){ return savePlanejamentoMes(); }
 
-async function replicarPlanejamentoAnterior(){
-  const ms=gel('planMesSel'), as=gel('planAnoSel'); if(!ms||!as) return;
-  const mesAtual=ms.value, anoAtual=as.value;
-  let i=MES_NOMES.indexOf(mesAtual); let a=parseInt(anoAtual)||CFG.ANO;
+function openReplicarModal(){
+  const ms=gel('planMesSel'), as=gel('planAnoSel');
+  const rm=gel('repMesSel'), ra=gel('repAnoSel');
+  if(!rm||!ra||!ms||!as) return;
+  rm.innerHTML=MES_NOMES.map(m=>`<option value="${m}">${m[0]+m.slice(1).toLowerCase()}</option>`).join('');
+  ra.innerHTML=[...as.options].map(o=>`<option value="${o.value}">${o.textContent}</option>`).join('');
+  let i=MES_NOMES.indexOf(ms.value); let a=parseInt(as.value)||CFG.ANO;
   i-=1; if(i<0){i=11;a-=1;}
-  const mesAnt=MES_NOMES[i], anoAnt=String(a);
+  rm.value=MES_NOMES[i];
+  if([...ra.options].some(o=>o.value===String(a))) ra.value=String(a); else ra.value=as.value;
+  openModal('modalReplicar');
+}
+async function confirmReplicarMes(){
+  closeModal('modalReplicar');
+  await replicarPlanejamentoAnterior(gel('repMesSel')?.value, gel('repAnoSel')?.value);
+}
+async function replicarPlanejamentoAnterior(mesOrigem,anoOrigem){
+  const ms=gel('planMesSel'), as=gel('planAnoSel'); if(!ms||!as) return;
+  let mesAnt, anoAnt;
+  if(mesOrigem && anoOrigem){ mesAnt=String(mesOrigem).toUpperCase(); anoAnt=String(anoOrigem); }
+  else{
+    let i=MES_NOMES.indexOf(ms.value); let a=parseInt(as.value)||CFG.ANO;
+    i-=1; if(i<0){i=11;a-=1;}
+    mesAnt=MES_NOMES[i]; anoAnt=String(a);
+  }
+  if(mesAnt===ms.value && anoAnt===String(as.value)){ toast('Escolha um mês diferente do atual.','warning'); return; }
   if(!_planAllRows.length) await loadAllPlanejamento();
   const prev=_planAllRows.filter(r=>String(r.mes||'').toUpperCase()===mesAnt && String(r.ano||'')===anoAnt);
   if(!prev.length){ toast(`Não há planejamento em ${mesAnt[0]+mesAnt.slice(1).toLowerCase()}/${anoAnt} para replicar.`,'warning'); return; }
