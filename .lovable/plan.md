@@ -1,29 +1,34 @@
-## Diagnóstico
+## Contexto verificado
 
-A tela do print é a **versão antiga da página** ainda em cache no navegador:
+- O final de `public/tool.html` está corrompido: depois do `</script>` (linha 3317) existe texto solto e uma **segunda cópia** do bloco `fixBanco` como texto visível na página. Isso quebra o comportamento dos selects/botões de banco.
+- Os selects `despBanco` e `impBanco` são preenchidos com a opção `+ Novo banco…` (funções `fillBancoSelect` / `fillImpBancoSelect`), e o botão `＋` chama `addBancoPrompt()`.
+- A tabela de Vencimentos (linha 706) tem a coluna **"Próx. venc."** e já existe `editVencimento`, mas a coluna de ação hoje mostra status/Editar/Interromper.
+- O Planejamento (`panel-extraordinario`) tem grade horizontal de categorias, botão fixo "Replicar mês anterior" e não mostra resumo consolidado nem renda.
+- Renda é um painel separado (`panel-renda`) com `_rendaFontes`, `loadRendaPanel()` e `submitRenda()`.
+- Existe painel `Cartões de Crédito` no menu (linha 498) e painel `panel-cartoes`.
 
-- O passo "2 Selecione o banco" não aparece na sua tela, mas ele **já existe** no arquivo servido pelo servidor (verificado agora: `id="importBancoWrap"` com o rótulo "2 Selecione o banco" está lá).
-- A mensagem de erro "Selecione o arquivo novamente." **não existe mais** no código atual — ela era do fluxo antigo (em que a fonte só podia ser escolhida depois de enviar o arquivo). Ou seja, seu navegador está executando a versão anterior de `tool.html`.
+## O que será feito
 
-Resultado: ao clicar em "Fatura de cartão de crédito", o código antigo exige um arquivo já carregado, dispara o erro e nunca libera o envio.
+### 1. Limpeza do arquivo (causa raiz do botão de banco)
+- Remover todo o conteúdo duplicado/solto após o `</script>`, deixando o arquivo terminar corretamente com `</script></body></html>`.
 
-## O que fazer
+### 2. Banco (Despesas · manual e importação)
+- Remover a opção `+ Novo banco…` dos dois selects (`despBanco`, `impBanco`); a lista passa a conter apenas bancos reais.
+- Manter/garantir o botão `＋` ao lado de cada select (incluindo o da importação) abrindo o modal "Novo banco".
+- Simplificar `onBancoSelectChange` (sem tratamento de `__novo__`) e garantir repopulação ao abrir os painéis.
 
-### 1. Evitar que o navegador sirva versão velha (causa raiz)
-- Adicionar cabeçalhos anti-cache / parâmetro de versão ao carregar `/tool.html` (o redirecionamento em `src/routes/index.tsx` passa a incluir um marcador de versão), para que toda atualização chegue imediatamente ao usuário sem precisar de "hard refresh".
+### 3. Cadastros
+- Remover o item de menu "Cartões de Crédito" e o painel `panel-cartoes` (e a rota `goPanel('cartoes')`), mantendo as funções internas de banco intactas.
 
-### 2. Blindar o fluxo de importação contra estados inválidos
-- `chooseImportTipo` nunca depende de arquivo previamente selecionado: apenas marca a fonte, destaca o card e revela o passo 2.
-- Se a lista de bancos vier vazia, preencher com a lista padrão (Bradesco, Nubank, Banco do Brasil, Caixa Econômica, Itaú, Santander, Inter, C6 Bank, Outro) antes de mostrar o passo 2.
-- Ao abrir a aba "Importar arquivo", resetar o fluxo para o passo 1 limpo (sem fonte/banco/arquivo pendentes).
-- Envolver a leitura/parse do arquivo em `try/catch` e exibir a mensagem real do erro (ex.: "Não foi possível ler o PDF: ...") em vez de mensagens genéricas.
+### 4. Planejamento (layout vertical + renda + resumo)
+- Reorganizar a grade de categorias em **layout vertical** (uma linha por categoria: rótulo à esquerda, campo de valor à direita), agrupado por grupo.
+- Inserir no topo do Planejamento um bloco **Renda do mês**, com as mesmas fontes de renda do cadastro (adicionar/remover/valor), salvando pelo mesmo fluxo já existente.
+- Adicionar a **barra consolidada** no padrão da imagem: `CONSOLIDADO DO MÊS | Mês/Ano · Receitas · Despesas Totais · Investimentos · Saldo Final`, calculada com os dados do mês selecionado.
+- Trocar "Replicar mês anterior" por **"Replicar mês…"**: abre um seletor de mês/ano de origem e copia os valores desse mês para o mês atual.
 
-### 3. Validar
-- Recarregar a página e testar: escolher fonte → aparecer passo 2 → escolher banco → área de envio liberada → importar um CSV/XLSX e conferir a prévia.
+### 5. Vencimento de contas
+- Remover a coluna **"Próx. venc."**; manter a coluna **Dia do vencimento**.
+- Deixar o botão **Editar** explícito em cada linha (com rolagem até o formulário e botão "Salvar alterações" ao editar).
 
-## Observação
-Se depois desses ajustes ainda aparecer erro, preciso do texto exato da nova mensagem (ou do print pós-atualização) para tratar o caso específico do arquivo.
-
-## Arquivos alterados
-- `public/tool.html` (fluxo de importação)
-- `src/routes/index.tsx` (versionamento/anti-cache do redirecionamento)
+## Detalhes técnicos
+Todas as mudanças ficam em `public/tool.html` (HTML dos painéis + funções `fillBancoSelect`, `fillImpBancoSelect`, `onBancoSelectChange`, `openPlanejamentoPanel`, `savePlanejamentoMes`, `replicarPlanejamentoAnterior`, `renderVencimentos`, `editVencimento`). Sem alterações de banco de dados; a renda continua salva via `apiSaveRenda`.
