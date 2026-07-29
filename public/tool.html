@@ -266,7 +266,37 @@ img,svg{display:block;max-width:100%}
 .consol-lbl{font-size:.66rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.62)}
 .consol-mes{font-family:'Playfair Display',serif;font-size:1.35rem;color:#fff;font-weight:500}
 .consol-val{font-size:1.25rem;font-weight:700;color:#fff}
+.consol-sub{font-size:.72rem;color:rgba(255,255,255,.72)}
 @media(max-width:900px){.consol-bar{grid-template-columns:repeat(2,1fr);gap:14px}}
+/* Planejamento mensal — linhas planejado × realizado */
+.plan-head,.plan-row{display:grid;grid-template-columns:1fr 150px 150px 74px;gap:12px;align-items:center;padding:7px 14px}
+.plan-head{background:var(--bg-muted,#f5f7fa);border-top:1px solid var(--border-subtle);font-size:.66rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted)}
+.plan-head span:not(:first-child),.plan-row .plan-val,.plan-row .plan-pct{text-align:right}
+.plan-row{border-top:1px solid var(--border-subtle)}
+.plan-cat{font-size:.82rem;color:var(--text-secondary);min-width:0;overflow:hidden;text-overflow:ellipsis}
+.plan-val{font-family:'DM Mono',monospace;font-size:.82rem;color:var(--text-primary)}
+.plan-val.muted{color:var(--text-muted)}
+.plan-pct{font-family:'DM Mono',monospace;font-size:.75rem;font-weight:700;color:var(--text-muted)}
+.plan-pct.ok{color:var(--success)}.plan-pct.warn{color:#b45309}.plan-pct.over{color:var(--danger)}
+.plan-row--total{background:var(--gold-pale,#f7f2e8);font-weight:700;border-radius:8px}
+.plan-row--total .plan-cat{color:var(--text-primary);font-weight:700;font-size:.8rem;letter-spacing:.04em}
+@media(max-width:760px){.plan-head,.plan-row{grid-template-columns:1fr 110px 100px 54px;gap:8px;padding:7px 10px}}
+/* Resumo */
+.resumo-wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-top:20px}
+.resumo-box{border:1px solid var(--border-subtle);border-radius:12px;overflow:hidden;background:var(--bg-elev,#fff)}
+.resumo-tbl{width:100%;border-collapse:collapse;font-size:.82rem}
+.resumo-tbl th{padding:9px 12px;background:var(--bg-muted,#f5f7fa);font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);text-align:right;border-bottom:1px solid var(--border-subtle)}
+.resumo-tbl th:first-child{text-align:left}
+.resumo-tbl td{padding:8px 12px;border-bottom:1px solid var(--border-subtle);text-align:right;font-family:'DM Mono',monospace}
+.resumo-tbl td:first-child{text-align:left;font-family:inherit;color:var(--text-secondary)}
+.resumo-tbl tr.rz-total td{font-weight:700;background:var(--gold-pale,#f7f2e8);color:var(--text-primary)}
+.resumo-tbl tr.rz-rep td{font-style:italic;color:var(--text-muted);border-bottom:none}
+/* Gráfico anual */
+.chart-card{border:1px solid var(--border-subtle);border-radius:14px;background:var(--bg-elev,#fff);padding:16px 18px;margin-bottom:20px}
+.chart-legend{display:flex;gap:16px;align-items:center;font-size:.75rem;color:var(--text-secondary);margin-bottom:10px;flex-wrap:wrap}
+.chart-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.chart-scroll{overflow-x:auto}
+
 .saldo-bar{display:flex;gap:20px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--rl);padding:20px 26px;flex-wrap:wrap}
 .saldo-item{flex:1;min-width:120px;display:flex;flex-direction:column;gap:3px}
 .saldo-lbl{font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)}
