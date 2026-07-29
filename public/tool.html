@@ -3035,6 +3035,7 @@ async function loadDespesasLancadas(){
   try{
     const r=await gGet('getDespesas',{clienteId:cid()});
     _lancRows = r.rows||[];
+    _lancPage = 1;
     renderDespesasLancadas();
   }catch(e){
     tb.innerHTML=`<tr><td colspan="10" style="text-align:center;color:var(--danger);padding:20px">Erro: ${esc(e.message)}</td></tr>`;
