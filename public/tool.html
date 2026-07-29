@@ -266,7 +266,37 @@ img,svg{display:block;max-width:100%}
 .consol-lbl{font-size:.66rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.62)}
 .consol-mes{font-family:'Playfair Display',serif;font-size:1.35rem;color:#fff;font-weight:500}
 .consol-val{font-size:1.25rem;font-weight:700;color:#fff}
+.consol-sub{font-size:.72rem;color:rgba(255,255,255,.72)}
 @media(max-width:900px){.consol-bar{grid-template-columns:repeat(2,1fr);gap:14px}}
+/* Planejamento mensal — linhas planejado × realizado */
+.plan-head,.plan-row{display:grid;grid-template-columns:1fr 150px 150px 74px;gap:12px;align-items:center;padding:7px 14px}
+.plan-head{background:var(--bg-muted,#f5f7fa);border-top:1px solid var(--border-subtle);font-size:.66rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted)}
+.plan-head span:not(:first-child),.plan-row .plan-val,.plan-row .plan-pct{text-align:right}
+.plan-row{border-top:1px solid var(--border-subtle)}
+.plan-cat{font-size:.82rem;color:var(--text-secondary);min-width:0;overflow:hidden;text-overflow:ellipsis}
+.plan-val{font-family:'DM Mono',monospace;font-size:.82rem;color:var(--text-primary)}
+.plan-val.muted{color:var(--text-muted)}
+.plan-pct{font-family:'DM Mono',monospace;font-size:.75rem;font-weight:700;color:var(--text-muted)}
+.plan-pct.ok{color:var(--success)}.plan-pct.warn{color:#b45309}.plan-pct.over{color:var(--danger)}
+.plan-row--total{background:var(--gold-pale,#f7f2e8);font-weight:700;border-radius:8px}
+.plan-row--total .plan-cat{color:var(--text-primary);font-weight:700;font-size:.8rem;letter-spacing:.04em}
+@media(max-width:760px){.plan-head,.plan-row{grid-template-columns:1fr 110px 100px 54px;gap:8px;padding:7px 10px}}
+/* Resumo */
+.resumo-wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-top:20px}
+.resumo-box{border:1px solid var(--border-subtle);border-radius:12px;overflow:hidden;background:var(--bg-elev,#fff)}
+.resumo-tbl{width:100%;border-collapse:collapse;font-size:.82rem}
+.resumo-tbl th{padding:9px 12px;background:var(--bg-muted,#f5f7fa);font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);text-align:right;border-bottom:1px solid var(--border-subtle)}
+.resumo-tbl th:first-child{text-align:left}
+.resumo-tbl td{padding:8px 12px;border-bottom:1px solid var(--border-subtle);text-align:right;font-family:'DM Mono',monospace}
+.resumo-tbl td:first-child{text-align:left;font-family:inherit;color:var(--text-secondary)}
+.resumo-tbl tr.rz-total td{font-weight:700;background:var(--gold-pale,#f7f2e8);color:var(--text-primary)}
+.resumo-tbl tr.rz-rep td{font-style:italic;color:var(--text-muted);border-bottom:none}
+/* Gráfico anual */
+.chart-card{border:1px solid var(--border-subtle);border-radius:14px;background:var(--bg-elev,#fff);padding:16px 18px;margin-bottom:20px}
+.chart-legend{display:flex;gap:16px;align-items:center;font-size:.75rem;color:var(--text-secondary);margin-bottom:10px;flex-wrap:wrap}
+.chart-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.chart-scroll{overflow-x:auto}
+
 .saldo-bar{display:flex;gap:20px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--rl);padding:20px 26px;flex-wrap:wrap}
 .saldo-item{flex:1;min-width:120px;display:flex;flex-direction:column;gap:3px}
 .saldo-lbl{font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)}
@@ -531,8 +561,9 @@ img,svg{display:block;max-width:100%}
           <button class="nav-item" data-panel="planoacao" onclick="goPanel('planoacao',this)"><span class="nav-dot"></span><span class="nav-icon">✅</span>Plano de Ação</button>
           <button class="nav-item" data-panel="quitacao" onclick="goPanel('quitacao',this)"><span class="nav-dot"></span><span class="nav-icon">🏦</span>Quitação de Dívidas</button>
           <button class="nav-item" data-panel="despesas" onclick="goPanel('despesas',this)"><span class="nav-dot"></span><span class="nav-icon">💳</span>Despesas</button>
-          <button class="nav-item" data-panel="extraordinario" onclick="goPanel('extraordinario',this)"><span class="nav-dot"></span><span class="nav-icon">📅</span>Planejamento</button>
-          <button class="nav-item" data-panel="painel" onclick="goPanel('painel',this)"><span class="nav-dot"></span><span class="nav-icon">📊</span>Painel Resumo</button>
+          <button class="nav-item" data-panel="extraordinario" onclick="goPanel('extraordinario',this)"><span class="nav-dot"></span><span class="nav-icon">📅</span>Planejamento Mensal</button>
+          <button class="nav-item" data-panel="painel" onclick="goPanel('painel',this)"><span class="nav-dot"></span><span class="nav-icon">📊</span>Painel</button>
+
         </div>
       </div>
     </div>
@@ -890,7 +921,7 @@ img,svg{display:block;max-width:100%}
     <!-- ══ PLANEJAMENTO (mês a mês) ════════════════ -->
     <div class="panel" id="panel-extraordinario">
       <div class="sec-hd">
-        <div><h2 class="sec-title">Planejamento</h2><p class="sec-sub">Quanto você planeja gastar em cada categoria neste mês</p></div>
+        <div><h2 class="sec-title">Planejamento Mensal</h2><p class="sec-sub">Preencha o valor por categoria na coluna Planejado — o Realizado vem dos lançamentos do mês</p></div>
         <button class="btn btn-p btn-sm" onclick="savePlanejamentoMes()">✓ Salvar mês</button>
       </div>
       <div id="planAlert" style="display:none;background:var(--warning-bg,#fef3c7);color:var(--warning,#92400e);border:1px solid rgba(234,179,8,.35);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:none;align-items:center;gap:10px;justify-content:space-between">
@@ -909,23 +940,29 @@ img,svg{display:block;max-width:100%}
       <!-- Consolidado do mês -->
       <div class="consol-bar" id="planConsol">
         <div class="consol-cell"><span class="consol-lbl">Consolidado do mês</span><strong class="consol-mes" id="consolMes">—</strong></div>
-        <div class="consol-cell"><span class="consol-lbl">Receitas</span><strong class="consol-val mono" id="consolReceitas">R$ 0,00</strong></div>
-        <div class="consol-cell"><span class="consol-lbl">Despesas totais</span><strong class="consol-val mono" id="consolDespesas">R$ 0,00</strong></div>
-        <div class="consol-cell"><span class="consol-lbl">Investimentos</span><strong class="consol-val mono" id="consolInvest">R$ 0,00</strong></div>
-        <div class="consol-cell"><span class="consol-lbl">Saldo final</span><strong class="consol-val mono" id="consolSaldo">R$ 0,00</strong></div>
+        <div class="consol-cell"><span class="consol-lbl">Receitas</span><strong class="consol-val mono" id="consolReceitas">R$ 0,00</strong><span class="consol-sub mono" id="consolReceitasReal">real. R$ 0,00</span></div>
+        <div class="consol-cell"><span class="consol-lbl">Despesas totais</span><strong class="consol-val mono" id="consolDespesas">R$ 0,00</strong><span class="consol-sub mono" id="consolDespesasReal">real. R$ 0,00</span></div>
+        <div class="consol-cell"><span class="consol-lbl">Investimentos</span><strong class="consol-val mono" id="consolInvest">R$ 0,00</strong><span class="consol-sub mono" id="consolInvestReal">real. R$ 0,00</span></div>
+        <div class="consol-cell"><span class="consol-lbl">Saldo final</span><strong class="consol-val mono" id="consolSaldo">R$ 0,00</strong><span class="consol-sub mono" id="consolSaldoReal">real. R$ 0,00</span></div>
       </div>
 
-      <!-- Renda do mês -->
+
+      <!-- Receita do mês -->
       <div style="margin-bottom:18px;background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:12px;overflow:hidden">
-        <div style="padding:10px 14px;background:var(--bg-muted,#f5f7fa);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary)">Renda do mês</div>
+        <div style="padding:10px 14px;background:var(--bg-muted,#f5f7fa);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary);display:flex;justify-content:space-between;gap:10px">
+          <span>Receita</span><span style="font-weight:600;letter-spacing:.02em;text-transform:none">Planejado × Realizado</span>
+        </div>
         <div style="padding:12px 14px">
           <div id="rendaFontes" style="display:flex;flex-direction:column;gap:10px"></div>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap">
-            <div style="display:flex;gap:8px">
-              <button type="button" class="btn btn-g btn-sm" onclick="addRendaFonte()">+ Adicionar renda</button>
-              <button type="button" class="btn btn-p btn-sm" onclick="submitRenda()">Salvar renda ✓</button>
-            </div>
-            <div style="font-size:.95rem;color:var(--text-secondary)">Total mensal: <strong id="rendaTotalLbl" style="color:var(--brand);font-family:'DM Mono',monospace">R$ 0,00</strong></div>
+          <div class="plan-row plan-row--total" style="margin-top:10px">
+            <span class="plan-cat">RECEITA TOTAL</span>
+            <span class="plan-val mono" id="rendaTotalLbl">R$ 0,00</span>
+            <span class="plan-val mono" id="rendaTotalRealLbl">R$ 0,00</span>
+            <span class="plan-pct"></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap">
+            <button type="button" class="btn btn-g btn-sm" onclick="addRendaFonte()">+ Adicionar renda</button>
+            <button type="button" class="btn btn-p btn-sm" onclick="submitRenda()">Salvar renda ✓</button>
           </div>
         </div>
       </div>
@@ -936,10 +973,30 @@ img,svg{display:block;max-width:100%}
       </div>
       <div id="planGroups" style="display:flex;flex-direction:column;gap:14px"></div>
       <div style="margin-top:18px;padding:14px;background:var(--bg-muted,#f5f7fa);border-radius:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-        <span style="font-size:.84rem;color:var(--text-secondary)">Total planejado para o mês</span>
-        <span id="planTotal" class="mono" style="font-size:1.25rem;font-weight:700;color:var(--brand)">R$ 0,00</span>
+        <span style="font-size:.84rem;color:var(--text-secondary)">Total do mês</span>
+        <span style="display:flex;gap:24px;align-items:baseline">
+          <span style="font-size:.78rem;color:var(--text-muted)">Planejado <strong id="planTotal" class="mono" style="font-size:1.15rem;color:var(--brand)">R$ 0,00</strong></span>
+          <span style="font-size:.78rem;color:var(--text-muted)">Realizado <strong id="planTotalReal" class="mono" style="font-size:1.15rem;color:var(--text-primary,inherit)">R$ 0,00</strong></span>
+        </span>
+      </div>
+
+      <!-- RESUMO -->
+      <div class="resumo-wrap">
+        <div class="resumo-box">
+          <table class="resumo-tbl" id="resumoTbl">
+            <thead><tr><th>Resumo</th><th>Planejado</th><th>Realizado</th></tr></thead>
+            <tbody id="resumoTbody"></tbody>
+          </table>
+        </div>
+        <div class="resumo-box">
+          <table class="resumo-tbl" id="resumoCartoesTbl">
+            <thead><tr><th>Cartão de Crédito</th><th>Crédito à vista</th><th>Parcelado</th></tr></thead>
+            <tbody id="resumoCartoesTbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
+
 
     <!-- Modal replicar mês -->
     <div class="modal-ov" id="modalReplicar">
@@ -961,12 +1018,25 @@ img,svg{display:block;max-width:100%}
     <!-- ══ PAINEL ══════════════════════════════════ -->
     <div class="panel" id="panel-painel">
       <div class="sec-hd">
-        <div><h2 class="sec-title">Painel Anual</h2>
-          <p class="sec-sub">Visão consolidada do ano — planejado × realizado por mês</p></div>
+        <div><h2 class="sec-title">Painel</h2>
+          <p class="sec-sub">Visão consolidada do ano — realizado × projetado por mês</p></div>
         <button class="btn btn-g btn-sm" onclick="loadPainelAnual()">↻ Atualizar</button>
       </div>
 
       <div class="painel-grid" id="painelDestaques" style="margin-bottom:20px"></div>
+
+      <div class="chart-card">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+          <strong style="font-size:.95rem">Evolução do ano</strong>
+          <span style="font-size:.75rem;color:var(--text-muted)" id="chartAnoLbl"></span>
+        </div>
+        <div class="chart-legend">
+          <span><i style="background:#94a3b8"></i>Projetado</span>
+          <span><i style="background:var(--brand,#7a5c3e)"></i>Realizado</span>
+        </div>
+        <div class="chart-scroll"><div id="painelChart"></div></div>
+      </div>
+
 
       <div class="annual-tbl-wrap">
         <table class="annual-tbl" id="annualTbl">
@@ -1645,15 +1715,20 @@ let _rendaFontes = [];
 function renderRendaFontes(){
   const c = gel('rendaFontes'); if(!c) return;
   if(!_rendaFontes.length) _rendaFontes = [{nome:'Salário / Pró-labore', valor:0, fixed:true}];
+  const money = v => (Number(v)>0?Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'');
   c.innerHTML = _rendaFontes.map((f,i)=>`
-    <div style="display:grid;grid-template-columns:1.6fr 1fr auto;gap:8px;align-items:end">
+    <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr auto;gap:8px;align-items:end">
       <div class="field" style="margin:0">
         <label class="lbl" style="font-size:.7rem">Fonte ${i===0?'(principal)':''}</label>
         <input class="inp" type="text" value="${esc(f.nome||'')}" ${f.fixed?'readonly style="opacity:.8;cursor:default"':''} oninput="updateRendaFonte(${i},'nome',this.value)" placeholder="Ex: Aluguel, Dividendos"/>
       </div>
       <div class="field" style="margin:0">
-        <label class="lbl" style="font-size:.7rem">Valor mensal (R$)</label>
-        <input class="inp inp-money" type="text" data-money value="${f.valor>0?Number(f.valor).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):''}" oninput="updateRendaFonte(${i},'valor',this.value)" placeholder="0,00"/>
+        <label class="lbl" style="font-size:.7rem">Planejado (R$)</label>
+        <input class="inp inp-money" type="text" data-money data-renda="plan" value="${money(f.valor)}" oninput="updateRendaFonte(${i},'valor',this.value)" placeholder="0,00"/>
+      </div>
+      <div class="field" style="margin:0">
+        <label class="lbl" style="font-size:.7rem">Realizado (R$)</label>
+        <input class="inp inp-money" type="text" data-money data-renda="real" value="${money(f.recebido)}" oninput="updateRendaFonte(${i},'recebido',this.value)" placeholder="0,00"/>
       </div>
       <button type="button" class="btn btn-d btn-xs" ${f.fixed?'disabled style="opacity:.3;cursor:not-allowed"':''} onclick="removeRendaFonte(${i})" title="Remover">✕</button>
     </div>
@@ -1663,12 +1738,13 @@ function renderRendaFontes(){
 }
 function updateRendaFonte(i,field,val){
   if(!_rendaFontes[i]) return;
-  if(field==='valor') _rendaFontes[i].valor = pMoney(val)||0;
+  if(field==='valor'||field==='recebido') _rendaFontes[i][field] = pMoney(val)||0;
   else _rendaFontes[i][field] = val;
-  if(field==='valor') recalcRendaTotal();
+  if(field==='valor'||field==='recebido') recalcRendaTotal();
 }
+
 function addRendaFonte(){
-  _rendaFontes.push({nome:'', valor:0});
+  _rendaFontes.push({nome:'', valor:0, recebido:0});
   renderRendaFontes();
 }
 function removeRendaFonte(i){
@@ -1676,18 +1752,30 @@ function removeRendaFonte(i){
   _rendaFontes.splice(i,1);
   renderRendaFontes();
 }
+function rendaTotais(){
+  const plan = _rendaFontes.reduce((s,f)=>s+(Number(f.valor)||0),0);
+  const real = _rendaFontes.reduce((s,f)=>s+(Number(f.recebido)||0),0);
+  return {plan, real};
+}
 function recalcRendaTotal(){
-  const total = _rendaFontes.reduce((s,f)=>s+(Number(f.valor)||0),0);
-  const lbl = gel('rendaTotalLbl'); if(lbl) lbl.textContent = fBRL(total);
-  const hid = gel('rendaMensal'); if(hid) hid.value = total>0?String(total):'';
-  _rendaMensalCache = total;
+  const {plan,real} = rendaTotais();
+  const lbl = gel('rendaTotalLbl'); if(lbl) lbl.textContent = fBRL(plan);
+  const lblR = gel('rendaTotalRealLbl'); if(lblR) lblR.textContent = fBRL(real);
+  const hid = gel('rendaMensal'); if(hid) hid.value = plan>0?String(plan):'';
+  _rendaMensalCache = plan;
   try{ updatePlanConsolidado(); }catch(e){}
+}
+
+function syncRendaInputs(){
+  document.querySelectorAll('#rendaFontes [data-renda="plan"]').forEach((el,i)=>{ if(_rendaFontes[i]) _rendaFontes[i].valor = pMoney(el.value)||0; });
+  document.querySelectorAll('#rendaFontes [data-renda="real"]').forEach((el,i)=>{ if(_rendaFontes[i]) _rendaFontes[i].recebido = pMoney(el.value)||0; });
+  document.querySelectorAll('#rendaFontes input[type="text"]:not([data-money])').forEach((el,i)=>{ if(_rendaFontes[i] && !_rendaFontes[i].fixed) _rendaFontes[i].nome = el.value.trim()||_rendaFontes[i].nome; });
 }
 
 async function submitRenda(){
   // sincroniza valores atuais dos inputs antes de salvar
-  document.querySelectorAll('#rendaFontes [data-money]').forEach((el,i)=>{ if(_rendaFontes[i]) _rendaFontes[i].valor = pMoney(el.value)||0; });
-  document.querySelectorAll('#rendaFontes input[type="text"]:not([data-money])').forEach((el,i)=>{ if(_rendaFontes[i] && !_rendaFontes[i].fixed) _rendaFontes[i].nome = el.value.trim()||_rendaFontes[i].nome; });
+  syncRendaInputs();
+
   recalcRendaTotal();
   const rendaMensal = _rendaFontes.reduce((s,f)=>s+(Number(f.valor)||0),0);
   const salario = Number(_rendaFontes[0]?.valor||0);
@@ -1715,7 +1803,7 @@ async function loadRendaPanel(force){
     const dt = renda?.data || {};
     // Preferência: data.fontes; fallback: salario+outras+rendaMensal
     if(Array.isArray(dt.fontes) && dt.fontes.length){
-      _rendaFontes = dt.fontes.map((f,idx)=>({nome:f.nome||(idx===0?'Salário / Pró-labore':''), valor:Number(f.valor)||0, fixed: idx===0}));
+      _rendaFontes = dt.fontes.map((f,idx)=>({nome:f.nome||(idx===0?'Salário / Pró-labore':''), valor:Number(f.valor)||0, recebido:Number(f.recebido)||0, fixed: idx===0}));
     } else if(renda){
       _rendaFontes = [{nome:'Salário / Pró-labore', valor:Number(renda.salario||0), fixed:true}];
       const outras = Number(renda.outras||0);
@@ -3023,6 +3111,27 @@ async function loadAllPlanejamento(){
     _planAllRows = r?.rows || [];
   }catch{ _planAllRows=[]; }
 }
+/* Realizado do mês — vem dos lançamentos de despesas */
+let _planDespRows = [];
+async function loadPlanDespesas(force){
+  if(_planDespRows.length && !force) return;
+  try{
+    const r = await gGet('getDespesas',{clienteId:cid()});
+    _planDespRows = r?.rows || [];
+  }catch{ _planDespRows = []; }
+}
+function planRealizadoMap(mes,ano){
+  const map = {};
+  (_planDespRows||[]).forEach(r=>{
+    if(String(r.mes||'').toUpperCase()!==String(mes||'').toUpperCase()) return;
+    if(String(r.ano||'')!==String(ano||'')) return;
+    const k = `${r.grupo||''}||${r.categoria||''}`;
+    map[k] = (map[k]||0) + (Number(r.valor)||0);
+  });
+  return map;
+}
+function pctClass(p){ return p<=90?'ok':(p<=100?'warn':'over'); }
+
 let _planRenderedKey = null;
 function renderPlanejamentoMes(force){
   const ms=gel('planMesSel'), as=gel('planAnoSel'), c=gel('planGroups'); if(!c||!ms||!as) return;
@@ -3032,22 +3141,38 @@ function renderPlanejamentoMes(force){
   _planRenderedKey = key;
   const cats=getCats(); // {grupo: [cat,...]}
   const existing = _planAllRows.filter(r=>String(r.mes||'').toUpperCase()===mes && String(r.ano||'')===ano);
+  const real = planRealizadoMap(mes,ano);
   const valOf = (grupo,cat)=>{
     const m=existing.find(r=>(r.grupo||'')===grupo && (r.categoria||'')===cat);
     return m ? Number(m.valor_planejado||0) : 0;
   };
   c.innerHTML=Object.keys(cats).map(grupo=>{
     const items=cats[grupo]||[];
+    let subPlan=0, subReal=0;
+    const rows = items.map(cat=>{
+      const v=valOf(grupo,cat);
+      const rv=Number(real[`${grupo}||${cat}`]||0);
+      subPlan+=v; subReal+=rv;
+      const pct = v>0 ? Math.round((rv/v)*100) : (rv>0?null:0);
+      const pctTxt = v>0 ? `${pct}%` : (rv>0?'—':'0%');
+      const pctCls = v>0 ? pctClass(pct) : '';
+      return `<div class="plan-row">
+        <span class="plan-cat">${esc(cat)}</span>
+        <input class="inp inp-money inp-sm" style="text-align:right" type="text" data-money data-grupo="${esc(grupo)}" data-cat="${esc(cat)}" value="${v>0?fBRL(v).replace('R$','').trim():''}" placeholder="0,00" oninput="updatePlanTotal()"/>
+        <span class="plan-val ${rv>0?'':'muted'}" data-real-grupo="${esc(grupo)}">${rv>0?fBRL(rv):'–'}</span>
+        <span class="plan-pct ${pctCls}">${pctTxt}</span>
+      </div>`;
+    }).join('');
+    const subPct = subPlan>0 ? Math.round((subReal/subPlan)*100) : 0;
     return `<div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:12px;overflow:hidden">
       <div style="padding:10px 14px;background:var(--bg-muted,#f5f7fa);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary)">${esc(grupo)}</div>
-      <div style="display:flex;flex-direction:column">
-        ${items.map(cat=>{
-          const v=valOf(grupo,cat);
-          return `<div style="display:flex;align-items:center;gap:12px;padding:8px 14px;border-top:1px solid var(--border-subtle)">
-            <label class="lbl" style="flex:1;margin:0;font-size:.82rem">${esc(cat)}</label>
-            <input class="inp inp-money inp-sm" style="width:150px;text-align:right" type="text" data-money data-grupo="${esc(grupo)}" data-cat="${esc(cat)}" value="${v>0?fBRL(v).replace('R$','').trim():''}" placeholder="0,00" oninput="updatePlanTotal()"/>
-          </div>`;
-        }).join('')}
+      <div class="plan-head"><span>Categorias</span><span>Planejado</span><span>Realizado</span><span>% Real</span></div>
+      <div style="display:flex;flex-direction:column">${rows}</div>
+      <div class="plan-row plan-row--total" data-subtotal="${esc(grupo)}">
+        <span class="plan-cat">Subtotal ${esc(grupo)}</span>
+        <span class="plan-val" data-sub="plan">${fBRL(subPlan)}</span>
+        <span class="plan-val" data-sub="real">${fBRL(subReal)}</span>
+        <span class="plan-pct ${subPlan>0?pctClass(subPct):''}">${subPlan>0?subPct+'%':'—'}</span>
       </div>
     </div>`;
   }).join('');
@@ -3057,42 +3182,122 @@ function renderPlanejamentoMes(force){
   const st=gel('planStatus');
   if(st) st.textContent = hasData ? `Planejamento salvo (${existing.length} categoria(s))` : 'Sem planejamento para este mês';
 }
-function updatePlanTotal(){
-  let total=0, invest=0;
+function planTotais(){
+  const mes=gel('planMesSel')?.value||'', ano=gel('planAnoSel')?.value||'';
+  const real = planRealizadoMap(mes,ano);
+  const t = {plan:0, real:0, investPlan:0, investReal:0, grupos:{}};
   document.querySelectorAll('#planGroups [data-grupo]').forEach(i=>{
-    const v=pMoney(i.value)||0; total+=v;
-    if(/investimento/i.test(i.dataset.grupo||'')) invest+=v;
+    const grupo=i.dataset.grupo||'', cat=i.dataset.cat||'';
+    const v=pMoney(i.value)||0;
+    const rv=Number(real[`${grupo}||${cat}`]||0);
+    t.plan+=v; t.real+=rv;
+    if(/investimento/i.test(grupo)){ t.investPlan+=v; t.investReal+=rv; }
+    const g = t.grupos[grupo] || (t.grupos[grupo]={plan:0,real:0});
+    g.plan+=v; g.real+=rv;
   });
-  const t=gel('planTotal'); if(t) t.textContent=fBRL(total);
-  updatePlanConsolidado(total,invest);
+  return t;
 }
-function updatePlanConsolidado(total,invest){
-  if(total===undefined){
-    total=0;invest=0;
-    document.querySelectorAll('#planGroups [data-grupo]').forEach(i=>{
-      const v=pMoney(i.value)||0; total+=v;
-      if(/investimento/i.test(i.dataset.grupo||'')) invest+=v;
-    });
-  }
-  const receitas=(_rendaFontes||[]).reduce((sm,f)=>sm+(Number(f.valor)||0),0);
-  const despesas=total-invest;
+function updatePlanTotal(){
+  const t = planTotais();
+  const el=gel('planTotal'); if(el) el.textContent=fBRL(t.plan);
+  const er=gel('planTotalReal'); if(er) er.textContent=fBRL(t.real);
+  // subtotais por grupo
+  document.querySelectorAll('#planGroups [data-subtotal]').forEach(box=>{
+    const g = t.grupos[box.dataset.subtotal] || {plan:0,real:0};
+    const p = box.querySelector('[data-sub="plan"]'), r = box.querySelector('[data-sub="real"]');
+    if(p) p.textContent = fBRL(g.plan);
+    if(r) r.textContent = fBRL(g.real);
+    const pc = box.querySelector('.plan-pct');
+    if(pc){
+      const v = g.plan>0?Math.round((g.real/g.plan)*100):0;
+      pc.textContent = g.plan>0?v+'%':'—';
+      pc.className = 'plan-pct '+(g.plan>0?pctClass(v):'');
+    }
+  });
+  updatePlanConsolidado(t);
+  renderPlanResumo(t);
+}
+function updatePlanConsolidado(t){
+  if(!t || typeof t.plan!=='number') t = planTotais();
+  const rt = rendaTotais();
+  const despPlan = t.plan - t.investPlan, despReal = t.real - t.investReal;
   const mes=gel('planMesSel')?.value||'', ano=gel('planAnoSel')?.value||'';
   const cm=gel('consolMes'); if(cm) cm.textContent = mes ? `${mes[0]+mes.slice(1).toLowerCase()}/${ano}` : '—';
   const set=(id,v)=>{const e=gel(id); if(e) e.textContent=fBRL(v);};
-  set('consolReceitas',receitas); set('consolDespesas',despesas);
-  set('consolInvest',invest); set('consolSaldo',receitas-total);
+  const setR=(id,v)=>{const e=gel(id); if(e) e.textContent='real. '+fBRL(v);};
+  set('consolReceitas',rt.plan);  setR('consolReceitasReal',rt.real);
+  set('consolDespesas',despPlan); setR('consolDespesasReal',despReal);
+  set('consolInvest',t.investPlan); setR('consolInvestReal',t.investReal);
+  set('consolSaldo',rt.plan-t.plan); setR('consolSaldoReal',rt.real-t.real);
 }
+
+/* ── Resumo (planejado × realizado) + cartões ── */
+function renderPlanResumo(t){
+  if(!t || typeof t.plan!=='number') t = planTotais();
+  const tb = gel('resumoTbody');
+  if(tb){
+    const rt = rendaTotais();
+    let oblP=0,oblR=0,nooP=0,nooR=0;
+    Object.entries(t.grupos||{}).forEach(([g,v])=>{
+      if(/investimento/i.test(g)) return;
+      if(/obrigat/i.test(g) && !/n[ãa]o/i.test(g)){ oblP+=v.plan; oblR+=v.real; }
+      else { nooP+=v.plan; nooR+=v.real; }
+    });
+    const line=(lbl,p,r,cls='')=>`<tr class="${cls}"><td>${lbl}</td><td>${fBRL(p)}</td><td>${fBRL(r)}</td></tr>`;
+    tb.innerHTML =
+      line('Receita',rt.plan,rt.real) +
+      line('Obrigatórias',oblP,oblR) +
+      line('Não Obrigatórias',nooP,nooR) +
+      line('Investimentos',t.investPlan,t.investReal) +
+      line('SALDO',rt.plan-t.plan,rt.real-t.real,'rz-total');
+  }
+  renderResumoCartoes();
+}
+function renderResumoCartoes(){
+  const tb = gel('resumoCartoesTbody'); if(!tb) return;
+  const mes=gel('planMesSel')?.value||'', ano=gel('planAnoSel')?.value||'';
+  const map = {};
+  (_planDespRows||[]).forEach(r=>{
+    if(String(r.mes||'').toUpperCase()!==String(mes).toUpperCase()) return;
+    if(String(r.ano||'')!==String(ano)) return;
+    const forma = String(r.forma_pagamento||'');
+    if(!/cr[ée]dito|cart/i.test(forma) && !r.cartao) return;
+    const nome = r.cartao || r.banco || 'Cartão';
+    const parcelado = Number(r.parcela_total||0) > 1;
+    const m = map[nome] || (map[nome]={vista:0,parc:0});
+    if(parcelado) m.parc += Number(r.valor)||0; else m.vista += Number(r.valor)||0;
+  });
+  const nomes = Object.keys(map).sort();
+  if(!nomes.length){
+    tb.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:16px">Nenhuma despesa de cartão neste mês.</td></tr>`;
+    return;
+  }
+  let tv=0, tp=0;
+  const rows = nomes.map(n=>{
+    tv+=map[n].vista; tp+=map[n].parc;
+    return `<tr><td>${esc(n)}</td><td>${map[n].vista>0?fBRL(map[n].vista):'–'}</td><td>${map[n].parc>0?fBRL(map[n].parc):'–'}</td></tr>`;
+  }).join('');
+  const tot = tv+tp;
+  const pc = v => tot>0 ? (v/tot*100).toFixed(2).replace('.',',')+'%' : '0,00%';
+  tb.innerHTML = rows +
+    `<tr class="rz-total"><td>TOTAL</td><td>${fBRL(tv)}</td><td>${fBRL(tp)}</td></tr>` +
+    `<tr class="rz-rep"><td>Representatividade</td><td>${pc(tv)}</td><td>${pc(tp)}</td></tr>`;
+}
+
 async function loadPlanejamentoMes(){
   initPlanejamentoSelectors();
   if(!_planAllRows.length) await loadAllPlanejamento();
+  await loadPlanDespesas();
   renderPlanejamentoMes(true); // troca de mês → força rebuild
 }
 async function openPlanejamentoPanel(){
   initPlanejamentoSelectors();
   if(!_planAllRows.length) await loadAllPlanejamento();
-  renderPlanejamentoMes(false); // mesmo mês? preserva o que o usuário digitou
+  await loadPlanDespesas(true);
+  renderPlanejamentoMes(true);
   checkPlanMonthAlert();
 }
+
 async function savePlanejamentoMes(){
   const mes=gel('planMesSel')?.value, ano=gel('planAnoSel')?.value;
   if(!mes||!ano){toast('Selecione mês e ano.','error');return;}
@@ -3220,30 +3425,75 @@ async function loadPainelAnual(){
 
   tb.innerHTML=rows.join('');
   renderPainelDestaques(results,somaPlanReal,tRenda,tPlan,tReal);
+  renderPainelChart(results,somaPlanReal);
 }
 
 function renderPainelDestaques(results,somaFn,tRenda,tPlan,tReal){
   const box=gel('painelDestaques');if(!box)return;
-  let melhor=null,pior=null;
+  let melhor=null,pior=null,mesesComDados=0;
   results.forEach(({mes,data})=>{
     const {renda,despReal}=somaFn(data);
     if(renda===0&&despReal===0)return;
+    mesesComDados++;
     const saldo=renda-despReal;
     if(!melhor||saldo>melhor.saldo)melhor={mes,saldo};
     if(!pior||saldo<pior.saldo)pior={mes,saldo};
   });
   const aderencia=tPlan>0?Math.round((tReal/tPlan)*100):0;
   const nm=m=>m?m.charAt(0)+m.slice(1).toLowerCase():'—';
+  const mediaMes = mesesComDados>0 ? tReal/mesesComDados : 0;
+  const saldoAno = tRenda-tReal;
   box.innerHTML=`
-    <div class="painel-card pc-rec"><div class="pc-lbl">Melhor saldo</div>
+    <div class="painel-card pc-rec"><div class="pc-lbl">Receita do ano</div>
+      <div class="pc-row">Total<strong>${fBRL(tRenda)}</strong></div></div>
+    <div class="painel-card pc-noo"><div class="pc-lbl">Despesa do ano</div>
+      <div class="pc-row">Projetado ${fBRL(tPlan)}<strong>Realizado ${fBRL(tReal)}</strong></div></div>
+    <div class="painel-card pc-inv"><div class="pc-lbl">Saldo do ano</div>
+      <div class="pc-row">Receita − realizado<strong style="color:${saldoAno>=0?'var(--success)':'var(--danger)'}">${fBRL(saldoAno)}</strong></div></div>
+    <div class="painel-card pc-obl"><div class="pc-lbl">Aderência ao planejado</div>
+      <div class="pc-row">Realizado / Projetado<strong>${aderencia}%</strong></div></div>
+    <div class="painel-card pc-rec"><div class="pc-lbl">Média mensal gasta</div>
+      <div class="pc-row">${mesesComDados} mês(es) com dados<strong>${fBRL(mediaMes)}</strong></div></div>
+    <div class="painel-card pc-inv"><div class="pc-lbl">Melhor saldo</div>
       <div class="pc-row">${nm(melhor?.mes)}<strong>${melhor?fBRL(melhor.saldo):'R$ —'}</strong></div></div>
     <div class="painel-card pc-obl"><div class="pc-lbl">Pior saldo</div>
-      <div class="pc-row">${nm(pior?.mes)}<strong>${pior?fBRL(pior.saldo):'R$ —'}</strong></div></div>
-    <div class="painel-card pc-inv"><div class="pc-lbl">Aderência ao planejado</div>
-      <div class="pc-row">Realizado / Planejado<strong>${aderencia}%</strong></div></div>
-    <div class="painel-card pc-noo"><div class="pc-lbl">Total gasto no ano</div>
-      <div class="pc-row">Realizado<strong>${fBRL(tReal)}</strong></div></div>`;
+      <div class="pc-row">${nm(pior?.mes)}<strong>${pior?fBRL(pior.saldo):'R$ —'}</strong></div></div>`;
 }
+
+/* Gráfico de evolução (SVG puro) — realizado × projetado */
+function renderPainelChart(results,somaFn){
+  const host=gel('painelChart'); if(!host) return;
+  const lbl=gel('chartAnoLbl'); if(lbl) lbl.textContent = String(CFG.ANO||new Date().getFullYear());
+  const data = results.map(({mes,data})=>{
+    const {despPlan,despReal}=somaFn(data);
+    return {mes:mes.slice(0,3), plan:despPlan, real:despReal};
+  });
+  const max = Math.max(1, ...data.map(d=>Math.max(d.plan,d.real)));
+  const W=880, H=280, padL=64, padB=34, padT=12, padR=10;
+  const iw = W-padL-padR, ih = H-padT-padB;
+  const slot = iw/data.length, bw = Math.min(18, slot/3);
+  const y = v => padT+ih-(v/max)*ih;
+  const grid = [0,.25,.5,.75,1].map(f=>{
+    const gy=padT+ih-f*ih, val=max*f;
+    return `<line x1="${padL}" y1="${gy}" x2="${W-padR}" y2="${gy}" stroke="rgba(0,0,0,.08)"/>
+      <text x="${padL-8}" y="${gy+4}" text-anchor="end" font-size="10" fill="#94a3b8">${val>=1000?Math.round(val/1000)+'k':Math.round(val)}</text>`;
+  }).join('');
+  const bars = data.map((d,i)=>{
+    const cx = padL + slot*i + slot/2;
+    const xp = cx - bw - 2, xr = cx + 2;
+    return `<g>
+      <title>${d.mes} · Projetado ${fBRL(d.plan)} · Realizado ${fBRL(d.real)}</title>
+      <rect x="${xp}" y="${y(d.plan)}" width="${bw}" height="${Math.max(0,padT+ih-y(d.plan))}" rx="3" fill="#94a3b8"/>
+      <rect x="${xr}" y="${y(d.real)}" width="${bw}" height="${Math.max(0,padT+ih-y(d.real))}" rx="3" fill="var(--brand,#7a5c3e)"/>
+      <text x="${cx}" y="${H-padB+18}" text-anchor="middle" font-size="10" fill="#64748b">${d.mes}</text>
+    </g>`;
+  }).join('');
+  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" style="min-width:640px" role="img" aria-label="Evolução mensal projetado e realizado">
+    ${grid}${bars}
+    <line x1="${padL}" y1="${padT+ih}" x2="${W-padR}" y2="${padT+ih}" stroke="rgba(0,0,0,.18)"/>
+  </svg>`;
+}
+
 
 /* ═══════════════════════════════════════════
    SIMULADOR — APOSENTADORIA
