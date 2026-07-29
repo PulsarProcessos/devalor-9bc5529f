@@ -1011,6 +1011,19 @@ img,svg{display:block;max-width:100%}
         <button class="btn btn-p" onclick="askSavePlanejamentoMes()">✓ Salvar mês</button>
       </div>
     </div>
+    <!-- Modal confirmar tipo de importação -->
+    <div class="modal-ov" id="modalConfirmImportTipo">
+      <div class="modal-box" style="max-width:430px">
+        <p class="modal-title" id="confImpTtl">Confirmar tipo de arquivo</p>
+        <p style="font-size:.95rem;color:var(--text-primary);margin-bottom:6px" id="confImpMsg"></p>
+        <p style="font-size:.82rem;color:var(--text-secondary)" id="confImpSub"></p>
+        <div class="modal-footer">
+          <button class="btn btn-g" onclick="closeModal('modalConfirmImportTipo')">Cancelar</button>
+          <button class="btn btn-p" onclick="confirmImportTipo()">Sim, confirmar</button>
+        </div>
+      </div>
+    </div>
+
 
     <!-- Modal confirmar salvar planejamento -->
     <div class="modal-ov" id="modalSalvarPlan">
