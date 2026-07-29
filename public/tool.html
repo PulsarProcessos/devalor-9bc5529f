@@ -917,17 +917,22 @@ img,svg{display:block;max-width:100%}
       </div>
 
 
-      <!-- Renda do mês -->
+      <!-- Receita do mês -->
       <div style="margin-bottom:18px;background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:12px;overflow:hidden">
-        <div style="padding:10px 14px;background:var(--bg-muted,#f5f7fa);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary)">Renda do mês</div>
+        <div style="padding:10px 14px;background:var(--bg-muted,#f5f7fa);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary);display:flex;justify-content:space-between;gap:10px">
+          <span>Receita</span><span style="font-weight:600;letter-spacing:.02em;text-transform:none">Planejado × Realizado</span>
+        </div>
         <div style="padding:12px 14px">
           <div id="rendaFontes" style="display:flex;flex-direction:column;gap:10px"></div>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap">
-            <div style="display:flex;gap:8px">
-              <button type="button" class="btn btn-g btn-sm" onclick="addRendaFonte()">+ Adicionar renda</button>
-              <button type="button" class="btn btn-p btn-sm" onclick="submitRenda()">Salvar renda ✓</button>
-            </div>
-            <div style="font-size:.95rem;color:var(--text-secondary)">Total mensal: <strong id="rendaTotalLbl" style="color:var(--brand);font-family:'DM Mono',monospace">R$ 0,00</strong></div>
+          <div class="plan-row plan-row--total" style="margin-top:10px">
+            <span class="plan-cat">RECEITA TOTAL</span>
+            <span class="plan-val mono" id="rendaTotalLbl">R$ 0,00</span>
+            <span class="plan-val mono" id="rendaTotalRealLbl">R$ 0,00</span>
+            <span class="plan-pct"></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap">
+            <button type="button" class="btn btn-g btn-sm" onclick="addRendaFonte()">+ Adicionar renda</button>
+            <button type="button" class="btn btn-p btn-sm" onclick="submitRenda()">Salvar renda ✓</button>
           </div>
         </div>
       </div>
@@ -938,10 +943,30 @@ img,svg{display:block;max-width:100%}
       </div>
       <div id="planGroups" style="display:flex;flex-direction:column;gap:14px"></div>
       <div style="margin-top:18px;padding:14px;background:var(--bg-muted,#f5f7fa);border-radius:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-        <span style="font-size:.84rem;color:var(--text-secondary)">Total planejado para o mês</span>
-        <span id="planTotal" class="mono" style="font-size:1.25rem;font-weight:700;color:var(--brand)">R$ 0,00</span>
+        <span style="font-size:.84rem;color:var(--text-secondary)">Total do mês</span>
+        <span style="display:flex;gap:24px;align-items:baseline">
+          <span style="font-size:.78rem;color:var(--text-muted)">Planejado <strong id="planTotal" class="mono" style="font-size:1.15rem;color:var(--brand)">R$ 0,00</strong></span>
+          <span style="font-size:.78rem;color:var(--text-muted)">Realizado <strong id="planTotalReal" class="mono" style="font-size:1.15rem;color:var(--text-primary,inherit)">R$ 0,00</strong></span>
+        </span>
+      </div>
+
+      <!-- RESUMO -->
+      <div class="resumo-wrap">
+        <div class="resumo-box">
+          <table class="resumo-tbl" id="resumoTbl">
+            <thead><tr><th>Resumo</th><th>Planejado</th><th>Realizado</th></tr></thead>
+            <tbody id="resumoTbody"></tbody>
+          </table>
+        </div>
+        <div class="resumo-box">
+          <table class="resumo-tbl" id="resumoCartoesTbl">
+            <thead><tr><th>Cartão de Crédito</th><th>Crédito à vista</th><th>Parcelado</th></tr></thead>
+            <tbody id="resumoCartoesTbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
+
 
     <!-- Modal replicar mês -->
     <div class="modal-ov" id="modalReplicar">
