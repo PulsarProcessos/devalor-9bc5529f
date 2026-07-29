@@ -1,30 +1,45 @@
 ## Contexto verificado
 
-- **Causa do botão "＋ Adicionar banco" não abrir nada**: no HTML, o modal `modalCats` (linha ~449) não tem a tag de fechamento da camada `modal-ov`. Com isso o `#modalNovoBanco` ficou **aninhado dentro do modal de categorias**, que está oculto — o modal existe e a função `openNovoBancoModal()` roda, mas nada aparece na tela.
-- A lista padrão `BANCOS_DEFAULT` contém a entrada `'Outro'` (linha 2220), que aparece no dropdown.
-- `openPagamentoDivida()` (linha 2058) ainda usa o `prompt()` nativo do navegador.
-- `openReplicarModal()` monta os 12 meses × todos os anos, sem filtrar pelos meses que realmente têm planejamento salvo (`_planAllRows`).
-- Na importação, o passo 2 só tem o campo Banco; a competência é fixada em `finishImportRows()` como o mês/ano atual, sem o usuário poder escolher.
+- O painel de Planejamento (`panel-extraordinario`, título "Planejamento") hoje só tem **uma coluna de valor planejado** por categoria (`renderPlanejamentoMes`), agrupada por grupo de categorias, mais a barra "Consolidado do mês" e o bloco "Renda do mês".
+- As despesas lançadas (manuais + importadas) já ficam em `despesas` com `categoria`, `grupo`, `mes_pagamento` — é a base natural do **realizado** das despesas.
+- A renda (`_rendaFontes`) hoje guarda apenas um valor por fonte (planejado), sem campo de recebido.
+- O menu tem "Painel Resumo" (`panel-painel`), hoje só uma tabela anual + 4 cards. Não há nenhum gráfico no sistema.
 
 ## O que será feito
 
-### 1. Dívidas — modal "Registrar pagamento"
-- Novo modal no padrão do sistema (`modal-ov` / `modal-box`) mostrando credor, saldo devedor e valor da parcela sugerido, com campo de valor formatado em R$, mensagem de erro inline e botões Cancelar / Confirmar pagamento.
-- `openPagamentoDivida()` passa a abrir esse modal; a confirmação chama a mesma API `registerDividaPagamento` já existente.
+### 1. Aba "Planejamento Mensal" (módulo Acompanhamento)
+- Renomear no menu lateral e no título da seção: **Planejamento Mensal**.
+- Estrutura em duas colunas de valores, no formato da planilha:
 
-### 2. Banco (aba Despesas e Importação)
-- Corrigir o HTML do `modalCats` (fechar a camada corretamente) para que o `#modalNovoBanco` volte a ser um modal de primeiro nível — isso faz o botão **＋** funcionar nos dois lugares.
-- Melhorar o formulário do modal no padrão do sistema (título, campo, validação, rodapé).
-- Remover **"Outro"** de `BANCOS_DEFAULT` para não aparecer no dropdown.
+```text
+RECEITA
+Agrupamento | Categorias      | Planejado | Realizado
+RECEITA     | Salário         | 20.000,00 | 20.000,00
+            | RECEITA TOTAL   | 31.558,28 | 32.158,28
 
-### 3. Planejamento — Replicar mês
-- O seletor de origem passa a listar apenas os meses/anos que existem em `_planAllRows` (planejamentos já salvos), em um único select do tipo "Julho/2026", excluindo o mês atualmente aberto.
-- Se não houver nenhum mês salvo, o modal informa isso e o botão fica desabilitado.
+DESPESAS
+Agrupamento          | Categorias | Planejado | Realizado | % Real
+Obrigatórias Fixa    | Aluguel    |  2.550,84 |         – |   0%
+Não Obrig. Variáveis | Mercado    |  1.000,00 |    214,14 |  21%
+```
 
-### 4. Importação — Fatura de cartão
-- No passo 2, quando a fonte for **Fatura de cartão de crédito**, exibir, ao lado do Banco, o campo **"Mês de pagamento da fatura"** (conforme a imagem), com os meses a partir do mês atual, começando selecionado no mês atual.
-- Para **Extrato bancário** o campo fica oculto (segue o mês vigente).
-- O mês escolhido substitui a competência aplicada às linhas importadas e aparece no rótulo "Competência: …".
+- **Receitas**: cada fonte de renda passa a ter Planejado e Realizado (recebido), com linha de RECEITA TOTAL.
+- **Despesas**: para cada categoria, ao lado do campo Planejado (editável), uma coluna **Realizado** (somente leitura), calculada a partir das despesas lançadas no mês/ano selecionado, mais uma coluna **% Real** (realizado ÷ planejado) com cor: verde dentro do planejado, âmbar perto do limite, vermelho quando estoura.
+- Cada grupo mostra subtotal Planejado/Realizado; a barra Consolidado do mês passa a mostrar as duas colunas (Receitas, Despesas, Investimentos e Saldo — planejado e realizado).
+
+### 2. Resumo no padrão da segunda imagem
+Abaixo do planejamento, um bloco **Resumo** com:
+- Tabela Planejado × Realizado por linha: Receita, Obrigatórias, Não Obrigatórias, Investimentos e **SALDO** (destacado).
+- Tabela **Cartão de Crédito**: por cartão/banco, valores em "Crédito à vista" e "Parcelado", com linha TOTAL e a linha de **Representatividade** (% de cada coluna), usando a forma de pagamento e as parcelas já registradas nas despesas.
+
+### 3. Painel (ex-"Painel Resumo")
+- Renomear menu e título para **Painel**.
+- **Gráfico de evolução** dos 12 meses do ano, com barras lado a lado de **Realizado** e **Projetado (planejado)**, com legenda, tooltip por mês e responsivo. Desenhado em SVG puro (sem nova dependência), no padrão visual do sistema.
+- **Cards do ano** acima do gráfico: Receita do ano (plan. × real.), Despesa do ano (plan. × real.), Saldo do ano, Aderência ao planejado (%), Investimentos do ano e melhor/pior mês.
+- A tabela anual atual permanece abaixo do gráfico.
 
 ## Detalhes técnicos
-Todas as mudanças ficam em `public/tool.html`: correção da estrutura dos modais, novo `modalPagDivida`, ajustes em `openPagamentoDivida`, `BANCOS_DEFAULT`, `openReplicarModal`/`confirmReplicarMes`, `chooseImportTipo`, `onImportBancoChange`/`refreshImportDropState` e `finishImportRows`. Nenhuma alteração de banco de dados.
+Tudo em `public/tool.html`: novo layout/render em `renderPlanejamentoMes` (linhas com planejado + realizado), agregador de realizado a partir das despesas lançadas por mês, campo `recebido` por fonte de renda persistido junto de `apiSaveRenda`, novo bloco de resumo e resumo de cartões, renomeações no menu (`nav-item` extraordinario/painel), e um renderizador de gráfico SVG em `loadPainelAnual` + cards anuais. Sem alteração de banco de dados (o `recebido` é gravado no JSON de `fontes` já existente).
+
+## Ponto a confirmar
+O **Realizado das receitas** será digitado manualmente por fonte (o sistema não tem lançamentos de entrada — a importação de extrato ignora entradas por regra). Se preferir, posso depois habilitar a importação de entradas para preencher isso automaticamente.
