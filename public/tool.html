@@ -1715,15 +1715,20 @@ let _rendaFontes = [];
 function renderRendaFontes(){
   const c = gel('rendaFontes'); if(!c) return;
   if(!_rendaFontes.length) _rendaFontes = [{nome:'Salário / Pró-labore', valor:0, fixed:true}];
+  const money = v => (Number(v)>0?Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'');
   c.innerHTML = _rendaFontes.map((f,i)=>`
-    <div style="display:grid;grid-template-columns:1.6fr 1fr auto;gap:8px;align-items:end">
+    <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr auto;gap:8px;align-items:end">
       <div class="field" style="margin:0">
         <label class="lbl" style="font-size:.7rem">Fonte ${i===0?'(principal)':''}</label>
         <input class="inp" type="text" value="${esc(f.nome||'')}" ${f.fixed?'readonly style="opacity:.8;cursor:default"':''} oninput="updateRendaFonte(${i},'nome',this.value)" placeholder="Ex: Aluguel, Dividendos"/>
       </div>
       <div class="field" style="margin:0">
-        <label class="lbl" style="font-size:.7rem">Valor mensal (R$)</label>
-        <input class="inp inp-money" type="text" data-money value="${f.valor>0?Number(f.valor).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):''}" oninput="updateRendaFonte(${i},'valor',this.value)" placeholder="0,00"/>
+        <label class="lbl" style="font-size:.7rem">Planejado (R$)</label>
+        <input class="inp inp-money" type="text" data-money data-renda="plan" value="${money(f.valor)}" oninput="updateRendaFonte(${i},'valor',this.value)" placeholder="0,00"/>
+      </div>
+      <div class="field" style="margin:0">
+        <label class="lbl" style="font-size:.7rem">Realizado (R$)</label>
+        <input class="inp inp-money" type="text" data-money data-renda="real" value="${money(f.recebido)}" oninput="updateRendaFonte(${i},'recebido',this.value)" placeholder="0,00"/>
       </div>
       <button type="button" class="btn btn-d btn-xs" ${f.fixed?'disabled style="opacity:.3;cursor:not-allowed"':''} onclick="removeRendaFonte(${i})" title="Remover">✕</button>
     </div>
@@ -1733,10 +1738,11 @@ function renderRendaFontes(){
 }
 function updateRendaFonte(i,field,val){
   if(!_rendaFontes[i]) return;
-  if(field==='valor') _rendaFontes[i].valor = pMoney(val)||0;
+  if(field==='valor'||field==='recebido') _rendaFontes[i][field] = pMoney(val)||0;
   else _rendaFontes[i][field] = val;
-  if(field==='valor') recalcRendaTotal();
+  if(field==='valor'||field==='recebido') recalcRendaTotal();
 }
+
 function addRendaFonte(){
   _rendaFontes.push({nome:'', valor:0});
   renderRendaFontes();
