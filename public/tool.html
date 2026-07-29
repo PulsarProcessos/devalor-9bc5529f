@@ -795,12 +795,12 @@ img,svg{display:block;max-width:100%}
         <div id="importSourceWrap" class="card-form">
           <div class="imp-step-hd"><span class="imp-step-badge">1</span><span>Escolha a fonte do arquivo</span></div>
           <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;padding:8px">
-            <button class="btn btn-g imp-src-card" id="impSrcFatura" style="min-width:250px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportTipo('fatura')">
+            <button class="btn btn-g imp-src-card" id="impSrcFatura" style="min-width:250px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="askImportTipo('fatura')">
               <span style="font-size:2rem">💳</span>
               <span style="font-weight:600">Fatura de cartão de crédito</span>
               <span style="font-size:.75rem;color:var(--text-muted)">Todos os lançamentos da fatura viram despesa</span>
             </button>
-            <button class="btn btn-g imp-src-card" id="impSrcExtrato" style="min-width:250px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="chooseImportTipo('extrato')">
+            <button class="btn btn-g imp-src-card" id="impSrcExtrato" style="min-width:250px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px" onclick="askImportTipo('extrato')">
               <span style="font-size:2rem">🏦</span>
               <span style="font-weight:600">Extrato bancário</span>
               <span style="font-size:.75rem;color:var(--text-muted)">Apenas saídas / débitos são importados</span>
