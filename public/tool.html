@@ -1018,12 +1018,25 @@ img,svg{display:block;max-width:100%}
     <!-- ══ PAINEL ══════════════════════════════════ -->
     <div class="panel" id="panel-painel">
       <div class="sec-hd">
-        <div><h2 class="sec-title">Painel Anual</h2>
-          <p class="sec-sub">Visão consolidada do ano — planejado × realizado por mês</p></div>
+        <div><h2 class="sec-title">Painel</h2>
+          <p class="sec-sub">Visão consolidada do ano — realizado × projetado por mês</p></div>
         <button class="btn btn-g btn-sm" onclick="loadPainelAnual()">↻ Atualizar</button>
       </div>
 
       <div class="painel-grid" id="painelDestaques" style="margin-bottom:20px"></div>
+
+      <div class="chart-card">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+          <strong style="font-size:.95rem">Evolução do ano</strong>
+          <span style="font-size:.75rem;color:var(--text-muted)" id="chartAnoLbl"></span>
+        </div>
+        <div class="chart-legend">
+          <span><i style="background:#94a3b8"></i>Projetado</span>
+          <span><i style="background:var(--brand,#7a5c3e)"></i>Realizado</span>
+        </div>
+        <div class="chart-scroll"><div id="painelChart"></div></div>
+      </div>
+
 
       <div class="annual-tbl-wrap">
         <table class="annual-tbl" id="annualTbl">
