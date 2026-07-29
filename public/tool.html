@@ -3425,30 +3425,75 @@ async function loadPainelAnual(){
 
   tb.innerHTML=rows.join('');
   renderPainelDestaques(results,somaPlanReal,tRenda,tPlan,tReal);
+  renderPainelChart(results,somaPlanReal);
 }
 
 function renderPainelDestaques(results,somaFn,tRenda,tPlan,tReal){
   const box=gel('painelDestaques');if(!box)return;
-  let melhor=null,pior=null;
+  let melhor=null,pior=null,mesesComDados=0;
   results.forEach(({mes,data})=>{
     const {renda,despReal}=somaFn(data);
     if(renda===0&&despReal===0)return;
+    mesesComDados++;
     const saldo=renda-despReal;
     if(!melhor||saldo>melhor.saldo)melhor={mes,saldo};
     if(!pior||saldo<pior.saldo)pior={mes,saldo};
   });
   const aderencia=tPlan>0?Math.round((tReal/tPlan)*100):0;
   const nm=m=>m?m.charAt(0)+m.slice(1).toLowerCase():'—';
+  const mediaMes = mesesComDados>0 ? tReal/mesesComDados : 0;
+  const saldoAno = tRenda-tReal;
   box.innerHTML=`
-    <div class="painel-card pc-rec"><div class="pc-lbl">Melhor saldo</div>
+    <div class="painel-card pc-rec"><div class="pc-lbl">Receita do ano</div>
+      <div class="pc-row">Total<strong>${fBRL(tRenda)}</strong></div></div>
+    <div class="painel-card pc-noo"><div class="pc-lbl">Despesa do ano</div>
+      <div class="pc-row">Projetado ${fBRL(tPlan)}<strong>Realizado ${fBRL(tReal)}</strong></div></div>
+    <div class="painel-card pc-inv"><div class="pc-lbl">Saldo do ano</div>
+      <div class="pc-row">Receita − realizado<strong style="color:${saldoAno>=0?'var(--success)':'var(--danger)'}">${fBRL(saldoAno)}</strong></div></div>
+    <div class="painel-card pc-obl"><div class="pc-lbl">Aderência ao planejado</div>
+      <div class="pc-row">Realizado / Projetado<strong>${aderencia}%</strong></div></div>
+    <div class="painel-card pc-rec"><div class="pc-lbl">Média mensal gasta</div>
+      <div class="pc-row">${mesesComDados} mês(es) com dados<strong>${fBRL(mediaMes)}</strong></div></div>
+    <div class="painel-card pc-inv"><div class="pc-lbl">Melhor saldo</div>
       <div class="pc-row">${nm(melhor?.mes)}<strong>${melhor?fBRL(melhor.saldo):'R$ —'}</strong></div></div>
     <div class="painel-card pc-obl"><div class="pc-lbl">Pior saldo</div>
-      <div class="pc-row">${nm(pior?.mes)}<strong>${pior?fBRL(pior.saldo):'R$ —'}</strong></div></div>
-    <div class="painel-card pc-inv"><div class="pc-lbl">Aderência ao planejado</div>
-      <div class="pc-row">Realizado / Planejado<strong>${aderencia}%</strong></div></div>
-    <div class="painel-card pc-noo"><div class="pc-lbl">Total gasto no ano</div>
-      <div class="pc-row">Realizado<strong>${fBRL(tReal)}</strong></div></div>`;
+      <div class="pc-row">${nm(pior?.mes)}<strong>${pior?fBRL(pior.saldo):'R$ —'}</strong></div></div>`;
 }
+
+/* Gráfico de evolução (SVG puro) — realizado × projetado */
+function renderPainelChart(results,somaFn){
+  const host=gel('painelChart'); if(!host) return;
+  const lbl=gel('chartAnoLbl'); if(lbl) lbl.textContent = String(CFG.ANO||new Date().getFullYear());
+  const data = results.map(({mes,data})=>{
+    const {despPlan,despReal}=somaFn(data);
+    return {mes:mes.slice(0,3), plan:despPlan, real:despReal};
+  });
+  const max = Math.max(1, ...data.map(d=>Math.max(d.plan,d.real)));
+  const W=880, H=280, padL=64, padB=34, padT=12, padR=10;
+  const iw = W-padL-padR, ih = H-padT-padB;
+  const slot = iw/data.length, bw = Math.min(18, slot/3);
+  const y = v => padT+ih-(v/max)*ih;
+  const grid = [0,.25,.5,.75,1].map(f=>{
+    const gy=padT+ih-f*ih, val=max*f;
+    return `<line x1="${padL}" y1="${gy}" x2="${W-padR}" y2="${gy}" stroke="rgba(0,0,0,.08)"/>
+      <text x="${padL-8}" y="${gy+4}" text-anchor="end" font-size="10" fill="#94a3b8">${val>=1000?Math.round(val/1000)+'k':Math.round(val)}</text>`;
+  }).join('');
+  const bars = data.map((d,i)=>{
+    const cx = padL + slot*i + slot/2;
+    const xp = cx - bw - 2, xr = cx + 2;
+    return `<g>
+      <title>${d.mes} · Projetado ${fBRL(d.plan)} · Realizado ${fBRL(d.real)}</title>
+      <rect x="${xp}" y="${y(d.plan)}" width="${bw}" height="${Math.max(0,padT+ih-y(d.plan))}" rx="3" fill="#94a3b8"/>
+      <rect x="${xr}" y="${y(d.real)}" width="${bw}" height="${Math.max(0,padT+ih-y(d.real))}" rx="3" fill="var(--brand,#7a5c3e)"/>
+      <text x="${cx}" y="${H-padB+18}" text-anchor="middle" font-size="10" fill="#64748b">${d.mes}</text>
+    </g>`;
+  }).join('');
+  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" style="min-width:640px" role="img" aria-label="Evolução mensal projetado e realizado">
+    ${grid}${bars}
+    <line x1="${padL}" y1="${padT+ih}" x2="${W-padR}" y2="${padT+ih}" stroke="rgba(0,0,0,.18)"/>
+  </svg>`;
+}
+
 
 /* ═══════════════════════════════════════════
    SIMULADOR — APOSENTADORIA
