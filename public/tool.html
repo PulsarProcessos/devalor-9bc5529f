@@ -3111,6 +3111,27 @@ async function loadAllPlanejamento(){
     _planAllRows = r?.rows || [];
   }catch{ _planAllRows=[]; }
 }
+/* Realizado do mês — vem dos lançamentos de despesas */
+let _planDespRows = [];
+async function loadPlanDespesas(force){
+  if(_planDespRows.length && !force) return;
+  try{
+    const r = await gGet('getDespesas',{clienteId:cid()});
+    _planDespRows = r?.rows || [];
+  }catch{ _planDespRows = []; }
+}
+function planRealizadoMap(mes,ano){
+  const map = {};
+  (_planDespRows||[]).forEach(r=>{
+    if(String(r.mes||'').toUpperCase()!==String(mes||'').toUpperCase()) return;
+    if(String(r.ano||'')!==String(ano||'')) return;
+    const k = `${r.grupo||''}||${r.categoria||''}`;
+    map[k] = (map[k]||0) + (Number(r.valor)||0);
+  });
+  return map;
+}
+function pctClass(p){ return p<=90?'ok':(p<=100?'warn':'over'); }
+
 let _planRenderedKey = null;
 function renderPlanejamentoMes(force){
   const ms=gel('planMesSel'), as=gel('planAnoSel'), c=gel('planGroups'); if(!c||!ms||!as) return;
@@ -3120,22 +3141,38 @@ function renderPlanejamentoMes(force){
   _planRenderedKey = key;
   const cats=getCats(); // {grupo: [cat,...]}
   const existing = _planAllRows.filter(r=>String(r.mes||'').toUpperCase()===mes && String(r.ano||'')===ano);
+  const real = planRealizadoMap(mes,ano);
   const valOf = (grupo,cat)=>{
     const m=existing.find(r=>(r.grupo||'')===grupo && (r.categoria||'')===cat);
     return m ? Number(m.valor_planejado||0) : 0;
   };
   c.innerHTML=Object.keys(cats).map(grupo=>{
     const items=cats[grupo]||[];
+    let subPlan=0, subReal=0;
+    const rows = items.map(cat=>{
+      const v=valOf(grupo,cat);
+      const rv=Number(real[`${grupo}||${cat}`]||0);
+      subPlan+=v; subReal+=rv;
+      const pct = v>0 ? Math.round((rv/v)*100) : (rv>0?null:0);
+      const pctTxt = v>0 ? `${pct}%` : (rv>0?'—':'0%');
+      const pctCls = v>0 ? pctClass(pct) : '';
+      return `<div class="plan-row">
+        <span class="plan-cat">${esc(cat)}</span>
+        <input class="inp inp-money inp-sm" style="text-align:right" type="text" data-money data-grupo="${esc(grupo)}" data-cat="${esc(cat)}" value="${v>0?fBRL(v).replace('R$','').trim():''}" placeholder="0,00" oninput="updatePlanTotal()"/>
+        <span class="plan-val ${rv>0?'':'muted'}" data-real-grupo="${esc(grupo)}">${rv>0?fBRL(rv):'–'}</span>
+        <span class="plan-pct ${pctCls}">${pctTxt}</span>
+      </div>`;
+    }).join('');
+    const subPct = subPlan>0 ? Math.round((subReal/subPlan)*100) : 0;
     return `<div style="background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:12px;overflow:hidden">
       <div style="padding:10px 14px;background:var(--bg-muted,#f5f7fa);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary)">${esc(grupo)}</div>
-      <div style="display:flex;flex-direction:column">
-        ${items.map(cat=>{
-          const v=valOf(grupo,cat);
-          return `<div style="display:flex;align-items:center;gap:12px;padding:8px 14px;border-top:1px solid var(--border-subtle)">
-            <label class="lbl" style="flex:1;margin:0;font-size:.82rem">${esc(cat)}</label>
-            <input class="inp inp-money inp-sm" style="width:150px;text-align:right" type="text" data-money data-grupo="${esc(grupo)}" data-cat="${esc(cat)}" value="${v>0?fBRL(v).replace('R$','').trim():''}" placeholder="0,00" oninput="updatePlanTotal()"/>
-          </div>`;
-        }).join('')}
+      <div class="plan-head"><span>Categorias</span><span>Planejado</span><span>Realizado</span><span>% Real</span></div>
+      <div style="display:flex;flex-direction:column">${rows}</div>
+      <div class="plan-row plan-row--total" data-subtotal="${esc(grupo)}">
+        <span class="plan-cat">Subtotal ${esc(grupo)}</span>
+        <span class="plan-val" data-sub="plan">${fBRL(subPlan)}</span>
+        <span class="plan-val" data-sub="real">${fBRL(subReal)}</span>
+        <span class="plan-pct ${subPlan>0?pctClass(subPct):''}">${subPlan>0?subPct+'%':'—'}</span>
       </div>
     </div>`;
   }).join('');
@@ -3145,42 +3182,122 @@ function renderPlanejamentoMes(force){
   const st=gel('planStatus');
   if(st) st.textContent = hasData ? `Planejamento salvo (${existing.length} categoria(s))` : 'Sem planejamento para este mês';
 }
-function updatePlanTotal(){
-  let total=0, invest=0;
+function planTotais(){
+  const mes=gel('planMesSel')?.value||'', ano=gel('planAnoSel')?.value||'';
+  const real = planRealizadoMap(mes,ano);
+  const t = {plan:0, real:0, investPlan:0, investReal:0, grupos:{}};
   document.querySelectorAll('#planGroups [data-grupo]').forEach(i=>{
-    const v=pMoney(i.value)||0; total+=v;
-    if(/investimento/i.test(i.dataset.grupo||'')) invest+=v;
+    const grupo=i.dataset.grupo||'', cat=i.dataset.cat||'';
+    const v=pMoney(i.value)||0;
+    const rv=Number(real[`${grupo}||${cat}`]||0);
+    t.plan+=v; t.real+=rv;
+    if(/investimento/i.test(grupo)){ t.investPlan+=v; t.investReal+=rv; }
+    const g = t.grupos[grupo] || (t.grupos[grupo]={plan:0,real:0});
+    g.plan+=v; g.real+=rv;
   });
-  const t=gel('planTotal'); if(t) t.textContent=fBRL(total);
-  updatePlanConsolidado(total,invest);
+  return t;
 }
-function updatePlanConsolidado(total,invest){
-  if(total===undefined){
-    total=0;invest=0;
-    document.querySelectorAll('#planGroups [data-grupo]').forEach(i=>{
-      const v=pMoney(i.value)||0; total+=v;
-      if(/investimento/i.test(i.dataset.grupo||'')) invest+=v;
-    });
-  }
-  const receitas=(_rendaFontes||[]).reduce((sm,f)=>sm+(Number(f.valor)||0),0);
-  const despesas=total-invest;
+function updatePlanTotal(){
+  const t = planTotais();
+  const el=gel('planTotal'); if(el) el.textContent=fBRL(t.plan);
+  const er=gel('planTotalReal'); if(er) er.textContent=fBRL(t.real);
+  // subtotais por grupo
+  document.querySelectorAll('#planGroups [data-subtotal]').forEach(box=>{
+    const g = t.grupos[box.dataset.subtotal] || {plan:0,real:0};
+    const p = box.querySelector('[data-sub="plan"]'), r = box.querySelector('[data-sub="real"]');
+    if(p) p.textContent = fBRL(g.plan);
+    if(r) r.textContent = fBRL(g.real);
+    const pc = box.querySelector('.plan-pct');
+    if(pc){
+      const v = g.plan>0?Math.round((g.real/g.plan)*100):0;
+      pc.textContent = g.plan>0?v+'%':'—';
+      pc.className = 'plan-pct '+(g.plan>0?pctClass(v):'');
+    }
+  });
+  updatePlanConsolidado(t);
+  renderPlanResumo(t);
+}
+function updatePlanConsolidado(t){
+  if(!t || typeof t.plan!=='number') t = planTotais();
+  const rt = rendaTotais();
+  const despPlan = t.plan - t.investPlan, despReal = t.real - t.investReal;
   const mes=gel('planMesSel')?.value||'', ano=gel('planAnoSel')?.value||'';
   const cm=gel('consolMes'); if(cm) cm.textContent = mes ? `${mes[0]+mes.slice(1).toLowerCase()}/${ano}` : '—';
   const set=(id,v)=>{const e=gel(id); if(e) e.textContent=fBRL(v);};
-  set('consolReceitas',receitas); set('consolDespesas',despesas);
-  set('consolInvest',invest); set('consolSaldo',receitas-total);
+  const setR=(id,v)=>{const e=gel(id); if(e) e.textContent='real. '+fBRL(v);};
+  set('consolReceitas',rt.plan);  setR('consolReceitasReal',rt.real);
+  set('consolDespesas',despPlan); setR('consolDespesasReal',despReal);
+  set('consolInvest',t.investPlan); setR('consolInvestReal',t.investReal);
+  set('consolSaldo',rt.plan-t.plan); setR('consolSaldoReal',rt.real-t.real);
 }
+
+/* ── Resumo (planejado × realizado) + cartões ── */
+function renderPlanResumo(t){
+  if(!t || typeof t.plan!=='number') t = planTotais();
+  const tb = gel('resumoTbody');
+  if(tb){
+    const rt = rendaTotais();
+    let oblP=0,oblR=0,nooP=0,nooR=0;
+    Object.entries(t.grupos||{}).forEach(([g,v])=>{
+      if(/investimento/i.test(g)) return;
+      if(/obrigat/i.test(g) && !/n[ãa]o/i.test(g)){ oblP+=v.plan; oblR+=v.real; }
+      else { nooP+=v.plan; nooR+=v.real; }
+    });
+    const line=(lbl,p,r,cls='')=>`<tr class="${cls}"><td>${lbl}</td><td>${fBRL(p)}</td><td>${fBRL(r)}</td></tr>`;
+    tb.innerHTML =
+      line('Receita',rt.plan,rt.real) +
+      line('Obrigatórias',oblP,oblR) +
+      line('Não Obrigatórias',nooP,nooR) +
+      line('Investimentos',t.investPlan,t.investReal) +
+      line('SALDO',rt.plan-t.plan,rt.real-t.real,'rz-total');
+  }
+  renderResumoCartoes();
+}
+function renderResumoCartoes(){
+  const tb = gel('resumoCartoesTbody'); if(!tb) return;
+  const mes=gel('planMesSel')?.value||'', ano=gel('planAnoSel')?.value||'';
+  const map = {};
+  (_planDespRows||[]).forEach(r=>{
+    if(String(r.mes||'').toUpperCase()!==String(mes).toUpperCase()) return;
+    if(String(r.ano||'')!==String(ano)) return;
+    const forma = String(r.forma_pagamento||'');
+    if(!/cr[ée]dito|cart/i.test(forma) && !r.cartao) return;
+    const nome = r.cartao || r.banco || 'Cartão';
+    const parcelado = Number(r.parcela_total||0) > 1;
+    const m = map[nome] || (map[nome]={vista:0,parc:0});
+    if(parcelado) m.parc += Number(r.valor)||0; else m.vista += Number(r.valor)||0;
+  });
+  const nomes = Object.keys(map).sort();
+  if(!nomes.length){
+    tb.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:16px">Nenhuma despesa de cartão neste mês.</td></tr>`;
+    return;
+  }
+  let tv=0, tp=0;
+  const rows = nomes.map(n=>{
+    tv+=map[n].vista; tp+=map[n].parc;
+    return `<tr><td>${esc(n)}</td><td>${map[n].vista>0?fBRL(map[n].vista):'–'}</td><td>${map[n].parc>0?fBRL(map[n].parc):'–'}</td></tr>`;
+  }).join('');
+  const tot = tv+tp;
+  const pc = v => tot>0 ? (v/tot*100).toFixed(2).replace('.',',')+'%' : '0,00%';
+  tb.innerHTML = rows +
+    `<tr class="rz-total"><td>TOTAL</td><td>${fBRL(tv)}</td><td>${fBRL(tp)}</td></tr>` +
+    `<tr class="rz-rep"><td>Representatividade</td><td>${pc(tv)}</td><td>${pc(tp)}</td></tr>`;
+}
+
 async function loadPlanejamentoMes(){
   initPlanejamentoSelectors();
   if(!_planAllRows.length) await loadAllPlanejamento();
+  await loadPlanDespesas();
   renderPlanejamentoMes(true); // troca de mês → força rebuild
 }
 async function openPlanejamentoPanel(){
   initPlanejamentoSelectors();
   if(!_planAllRows.length) await loadAllPlanejamento();
-  renderPlanejamentoMes(false); // mesmo mês? preserva o que o usuário digitou
+  await loadPlanDespesas(true);
+  renderPlanejamentoMes(true);
   checkPlanMonthAlert();
 }
+
 async function savePlanejamentoMes(){
   const mes=gel('planMesSel')?.value, ano=gel('planAnoSel')?.value;
   if(!mes||!ano){toast('Selecione mês e ano.','error');return;}
