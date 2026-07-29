@@ -3097,14 +3097,10 @@ function renderDespesasLancadas(){
     const cat=r.grupo?`${r.grupo} · ${r.categoria||''}`:(r.categoria||'—');
     const bcoCar = r.cartao ? `💳 ${esc(r.cartao)}` : esc(r.banco||'—');
     const parc = (r.parcela_n && r.parcela_total) ? `${r.parcela_n}/${r.parcela_total}` : '—';
-    const mesIdx = CFG.MESES.indexOf(String(r.mes||'').toUpperCase());
-    const anoR = parseInt(r.ano||curAno,10);
-    const isFuture = mesIdx>=0 && (anoR>curAno || (anoR===curAno && mesIdx>curMesIdx));
-    const rowStyle = isFuture ? 'background:rgba(99,102,241,.06)' : '';
-    const projBadge = isFuture ? ` <span title="Parcela futura" style="font-size:.65rem;padding:1px 6px;border-radius:6px;background:rgba(99,102,241,.15);color:#4f46e5;font-weight:600;margin-left:4px">PROJETADO</span>` : '';
-    return `<tr style="${rowStyle}">
+    return `<tr>
       <td>${fDate(r.data)}</td>
-      <td>${esc(r.descricao||'')}${projBadge}</td>
+      <td>${esc(r.descricao||'')}</td>
+
       <td>${esc(cat)}</td>
       <td class="mono" style="text-align:right">${fBRL(v)}</td>
       <td>${esc(r.forma_pagamento||'—')}</td>
