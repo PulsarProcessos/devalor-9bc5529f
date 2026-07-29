@@ -2339,6 +2339,25 @@ function cancelNovoBanco(){
 function addBancoImportPrompt(){ openNovoBancoModal('impBanco'); }
 
 /* Passo 1 — fonte do arquivo */
+let _pendingImportTipo=null;
+function askImportTipo(t){
+  _pendingImportTipo = (t==='fatura') ? 'fatura' : 'extrato';
+  const isF = _pendingImportTipo==='fatura';
+  gel('confImpTtl').textContent = isF ? 'Fatura de cartão de crédito' : 'Extrato bancário';
+  gel('confImpMsg').innerHTML = isF
+    ? 'Você está importando uma <strong>fatura de cartão de crédito</strong>?'
+    : 'Você está importando um <strong>extrato bancário</strong>?';
+  gel('confImpSub').textContent = isF
+    ? 'Todos os lançamentos da fatura serão importados como despesa.'
+    : 'Apenas as saídas / débitos serão importados. Entradas são ignoradas.';
+  openModal('modalConfirmImportTipo');
+}
+function confirmImportTipo(){
+  closeModal('modalConfirmImportTipo');
+  if(_pendingImportTipo) chooseImportTipo(_pendingImportTipo);
+  _pendingImportTipo=null;
+}
+
 function chooseImportTipo(t){
   _importTipo = (t==='fatura') ? 'fatura' : 'extrato';
   _importSource = (t==='fatura') ? 'cartao' : 'extrato';
