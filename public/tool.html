@@ -1744,7 +1744,7 @@ function updateRendaFonte(i,field,val){
 }
 
 function addRendaFonte(){
-  _rendaFontes.push({nome:'', valor:0});
+  _rendaFontes.push({nome:'', valor:0, recebido:0});
   renderRendaFontes();
 }
 function removeRendaFonte(i){
@@ -1752,18 +1752,30 @@ function removeRendaFonte(i){
   _rendaFontes.splice(i,1);
   renderRendaFontes();
 }
+function rendaTotais(){
+  const plan = _rendaFontes.reduce((s,f)=>s+(Number(f.valor)||0),0);
+  const real = _rendaFontes.reduce((s,f)=>s+(Number(f.recebido)||0),0);
+  return {plan, real};
+}
 function recalcRendaTotal(){
-  const total = _rendaFontes.reduce((s,f)=>s+(Number(f.valor)||0),0);
-  const lbl = gel('rendaTotalLbl'); if(lbl) lbl.textContent = fBRL(total);
-  const hid = gel('rendaMensal'); if(hid) hid.value = total>0?String(total):'';
-  _rendaMensalCache = total;
+  const {plan,real} = rendaTotais();
+  const lbl = gel('rendaTotalLbl'); if(lbl) lbl.textContent = fBRL(plan);
+  const lblR = gel('rendaTotalRealLbl'); if(lblR) lblR.textContent = fBRL(real);
+  const hid = gel('rendaMensal'); if(hid) hid.value = plan>0?String(plan):'';
+  _rendaMensalCache = plan;
   try{ updatePlanConsolidado(); }catch(e){}
+}
+
+function syncRendaInputs(){
+  document.querySelectorAll('#rendaFontes [data-renda="plan"]').forEach((el,i)=>{ if(_rendaFontes[i]) _rendaFontes[i].valor = pMoney(el.value)||0; });
+  document.querySelectorAll('#rendaFontes [data-renda="real"]').forEach((el,i)=>{ if(_rendaFontes[i]) _rendaFontes[i].recebido = pMoney(el.value)||0; });
+  document.querySelectorAll('#rendaFontes input[type="text"]:not([data-money])').forEach((el,i)=>{ if(_rendaFontes[i] && !_rendaFontes[i].fixed) _rendaFontes[i].nome = el.value.trim()||_rendaFontes[i].nome; });
 }
 
 async function submitRenda(){
   // sincroniza valores atuais dos inputs antes de salvar
-  document.querySelectorAll('#rendaFontes [data-money]').forEach((el,i)=>{ if(_rendaFontes[i]) _rendaFontes[i].valor = pMoney(el.value)||0; });
-  document.querySelectorAll('#rendaFontes input[type="text"]:not([data-money])').forEach((el,i)=>{ if(_rendaFontes[i] && !_rendaFontes[i].fixed) _rendaFontes[i].nome = el.value.trim()||_rendaFontes[i].nome; });
+  syncRendaInputs();
+
   recalcRendaTotal();
   const rendaMensal = _rendaFontes.reduce((s,f)=>s+(Number(f.valor)||0),0);
   const salario = Number(_rendaFontes[0]?.valor||0);
