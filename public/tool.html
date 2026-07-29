@@ -853,6 +853,11 @@ img,svg{display:block;max-width:100%}
                   <div id="importCompetLbl" style="font-weight:600;margin-bottom:4px"></div>
                   Confira os lançamentos. Marque <strong>Parc.</strong> e informe o nº de parcelas para replicar o valor nos meses seguintes. Lançamentos já importados anteriormente são <strong>ignorados automaticamente</strong>.
                 </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+                  <button class="btn btn-g btn-sm" onclick="clearImport()">Limpar</button>
+                  <button class="btn btn-s btn-sm" onclick="selectAllImport(true)">Selecionar todos</button>
+                  <button class="btn btn-s btn-sm" onclick="selectAllImport(false)">Desmarcar todos</button>
+                </div>
                 <div class="tbl-wrap">
                   <table class="tbl" id="importTable" style="font-size:.95rem;color:var(--text-primary)">
                     <thead><tr><th>Data</th><th>Descrição</th><th>Valor (R$)</th><th>Categoria</th><th title="Parcelado">Parc.</th><th title="Nº de parcelas">Nº</th><th>✓</th></tr></thead>
@@ -861,11 +866,9 @@ img,svg{display:block;max-width:100%}
                 </div>
                 <div id="importPager" style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px;font-size:.85rem;color:var(--text-secondary)"></div>
                 <div class="form-footer mt16">
-                  <button class="btn btn-g" onclick="clearImport()">Limpar</button>
-                  <button class="btn btn-s" onclick="selectAllImport(true)">Selecionar todos</button>
-                  <button class="btn btn-s" onclick="selectAllImport(false)">Desmarcar todos</button>
                   <button class="btn btn-p" onclick="submitImport()">Enviar selecionados ↗</button>
                 </div>
+
               </div>
             </div>
           </div>
