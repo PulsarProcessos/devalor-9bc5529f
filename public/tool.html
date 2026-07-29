@@ -3046,6 +3046,10 @@ function origemLbl(o){
   if(o==='import'||o==='import_extrato')return '🏦 Extrato';
   return o||'—';
 }
+const LANC_PAGE_SIZE=25;
+let _lancPage=1;
+function lancFilterChanged(){ _lancPage=1; renderDespesasLancadas(); }
+function gotoLancPage(p){ _lancPage=p; renderDespesasLancadas(); const t=gel('lancTable'); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); }
 function renderDespesasLancadas(){
   const tb=gel('lancTbody');if(!tb)return;
   const fMes=gel('lancFiltroMes')?.value||'';
@@ -3071,15 +3075,23 @@ function renderDespesasLancadas(){
     return true;
   });
 
+  const pg=gel('lancPager');
   if(!filtered.length){
     tb.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:20px">Nenhuma despesa encontrada.</td></tr>';
     gel('lancTotal').textContent='Total: '+fBRL(0);
+    if(pg) pg.innerHTML='';
     return;
   }
-  let total=0;
+  const total=filtered.reduce((s,r)=>s+Number(r.valor||0),0);
+  const totalPages=Math.max(1,Math.ceil(filtered.length/LANC_PAGE_SIZE));
+  if(_lancPage>totalPages)_lancPage=totalPages;
+  if(_lancPage<1)_lancPage=1;
+  const start=(_lancPage-1)*LANC_PAGE_SIZE;
+  const pageRows=filtered.slice(start,start+LANC_PAGE_SIZE);
+
   const curMesIdx=curMesIdx0; const curAno=curAno0;
-  tb.innerHTML=filtered.map(r=>{
-    const v=Number(r.valor||0);total+=v;
+  tb.innerHTML=pageRows.map(r=>{
+    const v=Number(r.valor||0);
     const cat=r.grupo?`${r.grupo} · ${r.categoria||''}`:(r.categoria||'—');
     const bcoCar = r.cartao ? `💳 ${esc(r.cartao)}` : esc(r.banco||'—');
     const parc = (r.parcela_n && r.parcela_total) ? `${r.parcela_n}/${r.parcela_total}` : '—';
@@ -3102,7 +3114,15 @@ function renderDespesasLancadas(){
     </tr>`;
   }).join('');
   gel('lancTotal').textContent='Total: '+fBRL(total);
+  if(pg){
+    pg.innerHTML = totalPages<=1
+      ? `<span>${filtered.length} lançamento(s)</span>`
+      : `<button class="btn btn-g btn-xs" ${_lancPage<=1?'disabled':''} onclick="gotoLancPage(${_lancPage-1})">←</button>
+         <span>Página ${_lancPage} de ${totalPages} · ${filtered.length} lançamento(s)</span>
+         <button class="btn btn-g btn-xs" ${_lancPage>=totalPages?'disabled':''} onclick="gotoLancPage(${_lancPage+1})">→</button>`;
+  }
 }
+
 
 
 async function toggleLancPago(id,pago){
