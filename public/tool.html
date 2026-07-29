@@ -922,19 +922,28 @@ img,svg{display:block;max-width:100%}
     <div class="panel" id="panel-extraordinario">
       <div class="sec-hd">
         <div><h2 class="sec-title">Planejamento Mensal</h2><p class="sec-sub">Preencha o valor por categoria na coluna Planejado — o Realizado vem dos lançamentos do mês</p></div>
-        <button class="btn btn-p btn-sm" onclick="savePlanejamentoMes()">✓ Salvar mês</button>
       </div>
       <div id="planAlert" style="display:none;background:var(--warning-bg,#fef3c7);color:var(--warning,#92400e);border:1px solid rgba(234,179,8,.35);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:none;align-items:center;gap:10px;justify-content:space-between">
         <span id="planAlertMsg">Novo mês começou! Faça o planejamento das categorias.</span>
         <button class="btn btn-s btn-xs" onclick="dismissPlanAlert()">Ok</button>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-        <button class="btn btn-s btn-sm" onclick="planNavMes(-1)">←</button>
-        <select class="sel sel-sm" id="planMesSel" onchange="loadPlanejamentoMes()" style="min-width:140px"></select>
-        <select class="sel sel-sm" id="planAnoSel" onchange="loadPlanejamentoMes()" style="width:100px"></select>
-        <button class="btn btn-s btn-sm" onclick="planNavMes(1)">→</button>
+
+      <!-- Navegação de mês -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:center;gap:18px">
+          <button class="btn btn-s btn-sm" onclick="planNavMes(-1)" title="Mês anterior">←</button>
+          <button type="button" id="planPeriodoBtn" onclick="togglePlanPeriodoPicker()" title="Escolher mês e ano"
+            style="background:none;border:none;cursor:pointer;font-size:1.15rem;font-weight:700;color:var(--text-primary);letter-spacing:.01em;padding:4px 10px;border-radius:8px">
+            <span id="planPeriodoLbl">—</span>
+          </button>
+          <button class="btn btn-s btn-sm" onclick="planNavMes(1)" title="Próximo mês">→</button>
+        </div>
+        <div id="planPeriodoPicker" style="display:none;gap:8px;align-items:center;justify-content:center">
+          <select class="sel sel-sm" id="planMesSel" onchange="loadPlanejamentoMes()" style="min-width:140px"></select>
+          <select class="sel sel-sm" id="planAnoSel" onchange="loadPlanejamentoMes()" style="width:100px"></select>
+        </div>
+        <span id="planStatus" style="font-size:.78rem;color:var(--text-muted)"></span>
         <button class="btn btn-g btn-sm" onclick="openReplicarModal()" title="Escolha o mês de origem para copiar os valores">⎘ Replicar mês…</button>
-        <span id="planStatus" style="margin-left:auto;font-size:.78rem;color:var(--text-muted)"></span>
       </div>
 
       <!-- Consolidado do mês -->
@@ -946,6 +955,21 @@ img,svg{display:block;max-width:100%}
         <div class="consol-cell"><span class="consol-lbl">Saldo final</span><strong class="consol-val mono" id="consolSaldo">R$ 0,00</strong><span class="consol-sub mono" id="consolSaldoReal">real. R$ 0,00</span></div>
       </div>
 
+      <!-- RESUMO -->
+      <div class="resumo-wrap">
+        <div class="resumo-box">
+          <table class="resumo-tbl" id="resumoTbl">
+            <thead><tr><th>Resumo</th><th>Planejado</th><th>Realizado</th></tr></thead>
+            <tbody id="resumoTbody"></tbody>
+          </table>
+        </div>
+        <div class="resumo-box">
+          <table class="resumo-tbl" id="resumoCartoesTbl">
+            <thead><tr><th>Cartão de Crédito</th><th>Crédito à vista</th><th>Parcelado</th></tr></thead>
+            <tbody id="resumoCartoesTbody"></tbody>
+          </table>
+        </div>
+      </div>
 
       <!-- Receita do mês -->
       <div style="margin-bottom:18px;background:var(--bg-elev,#fff);border:1px solid var(--border-subtle);border-radius:12px;overflow:hidden">
@@ -980,22 +1004,23 @@ img,svg{display:block;max-width:100%}
         </span>
       </div>
 
-      <!-- RESUMO -->
-      <div class="resumo-wrap">
-        <div class="resumo-box">
-          <table class="resumo-tbl" id="resumoTbl">
-            <thead><tr><th>Resumo</th><th>Planejado</th><th>Realizado</th></tr></thead>
-            <tbody id="resumoTbody"></tbody>
-          </table>
-        </div>
-        <div class="resumo-box">
-          <table class="resumo-tbl" id="resumoCartoesTbl">
-            <thead><tr><th>Cartão de Crédito</th><th>Crédito à vista</th><th>Parcelado</th></tr></thead>
-            <tbody id="resumoCartoesTbody"></tbody>
-          </table>
+      <div style="margin-top:18px;display:flex;justify-content:flex-end">
+        <button class="btn btn-p" onclick="askSavePlanejamentoMes()">✓ Salvar mês</button>
+      </div>
+    </div>
+
+    <!-- Modal confirmar salvar planejamento -->
+    <div class="modal-ov" id="modalSalvarPlan">
+      <div class="modal-box" style="max-width:400px">
+        <p class="modal-title">Salvar planejamento</p>
+        <p style="font-size:.88rem;color:var(--text-secondary);margin-bottom:6px" id="salvarPlanMsg">Deseja realmente salvar o planejamento deste mês?</p>
+        <div class="modal-footer">
+          <button class="btn btn-g" onclick="closeModal('modalSalvarPlan')">Cancelar</button>
+          <button class="btn btn-p" onclick="closeModal('modalSalvarPlan');savePlanejamentoMes()">Salvar</button>
         </div>
       </div>
     </div>
+
 
 
     <!-- Modal replicar mês -->
