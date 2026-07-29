@@ -1722,7 +1722,7 @@ function addDividaPreview(){
   toast(`"${desc}" adicionada.`,'info');
 }
 async function submitDividas(){
-  if(!_dividasQ.length){toast('Sem dívidas — avançando.','info');markNavDone('dividas');goPanel('extraordinario');return;}
+  if(!_dividasQ.length){toast('Sem dívidas — avançando.','info');markNavDone('dividas');goPanel('vencimentos');return;}
   const rows=_dividasQ.map(d=>[d.banco,d.desc,d.vs,d.pt,d.vp,d.sd,d.j,d.up,d.tp,CFG.ANO]);
   const btn=document.querySelector('[onclick="submitDividas()"]');if(btn)btn.disabled=true;
   try{
@@ -1731,7 +1731,7 @@ async function submitDividas(){
     const tb=gel('dividasTbody'); if(tb) tb.innerHTML='';
     const tbl=gel('dividasTable'); if(tbl) tbl.classList.add('hidden');
     toast(`${rows.length} dívida(s) salvas!`,'success');
-    markNavDone('dividas');goPanel('extraordinario');
+    markNavDone('dividas');goPanel('vencimentos');
   }catch(e){toast('Erro: '+e.message,'error');}
   finally{if(btn)btn.disabled=false;}
 }
@@ -2885,12 +2885,13 @@ function updateImportRow(id,field,val){
   if(field==='selected'){r.selected=val;const row=gel(`irow_${id}`);if(row)row.style.opacity=val?'1':'.45';}
   else if(field==='parc'){
     r.parc=val;
-    if(val&&(!r.parcN||r.parcN<2))r.parcN=2;
+    if(val){ if(!r.parcN||r.parcN<2) r.parcN=2; }
+    else { r.parcN=1; }
     // Toggle in-place (sem rebuild da tabela inteira) para preservar foco/digitação
     const row=gel(`irow_${id}`);
     if(row){
       const np=row.querySelector('input[type="number"]');
-      if(np){ np.disabled=!val; if(val) np.value=r.parcN; }
+      if(np){ np.disabled=!val; np.value = val ? r.parcN : 1; }
     }
   }
   else r[field]=val;
