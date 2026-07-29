@@ -2386,7 +2386,11 @@ function refreshImportDropState(){
   const ready = !!(_importTipo && _importBanco && (!needMes || _importMesPag));
   const dw=gel('importDropWrap'); if(dw) dw.classList.toggle('imp-locked', !ready);
   const lbl=gel('importBancoLbl');
-  if(lbl) lbl.textContent = (_importBanco||'—') + (needMes && _importMesPag ? ` · ${_importMesPag[0]+_importMesPag.slice(1).toLowerCase()}/${_importAnoPag}` : '');
+  if(lbl){
+    const tipoTxt = _importTipo==='fatura' ? 'Fatura de cartão de crédito' : (_importTipo==='extrato' ? 'Extrato bancário' : '—');
+    lbl.textContent = tipoTxt + (_importBanco ? ` · ${_importBanco}` : '') + (needMes && _importMesPag ? ` · ${_importMesPag[0]+_importMesPag.slice(1).toLowerCase()}/${_importAnoPag}` : '');
+  }
+
   const rb=gel('impResetBtn3'); if(rb) rb.style.display = (_importTipo||_importBanco) ? '' : 'none';
   if(ready){
     gel('importDropIcon').textContent='📂';
