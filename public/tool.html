@@ -1803,7 +1803,7 @@ async function loadRendaPanel(force){
     const dt = renda?.data || {};
     // Preferência: data.fontes; fallback: salario+outras+rendaMensal
     if(Array.isArray(dt.fontes) && dt.fontes.length){
-      _rendaFontes = dt.fontes.map((f,idx)=>({nome:f.nome||(idx===0?'Salário / Pró-labore':''), valor:Number(f.valor)||0, fixed: idx===0}));
+      _rendaFontes = dt.fontes.map((f,idx)=>({nome:f.nome||(idx===0?'Salário / Pró-labore':''), valor:Number(f.valor)||0, recebido:Number(f.recebido)||0, fixed: idx===0}));
     } else if(renda){
       _rendaFontes = [{nome:'Salário / Pró-labore', valor:Number(renda.salario||0), fixed:true}];
       const outras = Number(renda.outras||0);
