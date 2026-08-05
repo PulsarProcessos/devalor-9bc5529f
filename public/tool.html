@@ -1101,12 +1101,12 @@ img,svg{display:block;max-width:100%}
       <div class="sim-grid">
         <div class="sim-inputs">
           <div style="display:flex;flex-direction:column;gap:14px">
-            <div class="field"><label class="lbl">Idade atual</label><input class="inp" type="number" id="aposIdadeAtual" placeholder="35" min="18" max="80" oninput="calcAposDebounced()"/></div>
-            <div class="field"><label class="lbl">Idade de aposentadoria desejada</label><input class="inp" type="number" id="aposIdadeMeta" placeholder="65" min="40" max="90" oninput="calcAposDebounced()"/></div>
-            <div class="field"><label class="lbl">Renda mensal desejada na aposentadoria (R$)</label><input class="inp inp-money" type="text" id="aposRendaMeta" placeholder="5.000,00" data-money oninput="calcAposDebounced()"/></div>
-            <div class="field"><label class="lbl">Quanto já tem investido (R$)</label><input class="inp inp-money" type="text" id="aposPatrimonio" placeholder="0,00" data-money oninput="calcAposDebounced()"/></div>
-            <div class="field"><label class="lbl">Taxa de retorno anual esperada (%)</label><input class="inp" type="number" id="aposTaxa" value="8" step="0.5" min="1" max="30" oninput="calcAposDebounced()"/></div>
-            <div class="field"><label class="lbl">Expectativa de vida (anos)</label><input class="inp" type="number" id="aposExpectativa" value="85" min="70" max="100" oninput="calcAposDebounced()"/></div>
+            <div class="field"><label class="lbl">Idade atual</label><input class="inp" type="number" id="aposIdadeAtual" placeholder="35" min="18" max="80" oninput="mMask(this);calcAposDebounced()"/></div>
+            <div class="field"><label class="lbl">Idade de aposentadoria desejada</label><input class="inp" type="number" id="aposIdadeMeta" placeholder="65" min="40" max="90" oninput="mMask(this);calcAposDebounced()"/></div>
+            <div class="field"><label class="lbl">Renda mensal desejada na aposentadoria (R$)</label><input class="inp inp-money" type="text" id="aposRendaMeta" placeholder="5.000,00" data-money oninput="mMask(this);calcAposDebounced()"/></div>
+            <div class="field"><label class="lbl">Quanto já tem investido (R$)</label><input class="inp inp-money" type="text" id="aposPatrimonio" placeholder="0,00" data-money oninput="mMask(this);calcAposDebounced()"/></div>
+            <div class="field"><label class="lbl">Taxa de retorno anual esperada (%)</label><input class="inp" type="number" id="aposTaxa" value="8" step="0.5" min="1" max="30" oninput="mMask(this);calcAposDebounced()"/></div>
+            <div class="field"><label class="lbl">Expectativa de vida (anos)</label><input class="inp" type="number" id="aposExpectativa" value="85" min="70" max="100" oninput="mMask(this);calcAposDebounced()"/></div>
             <div class="info-box" style="font-size:.76rem">Taxa SELIC atual aprox: <strong>10,5% a.a.</strong> · CDI: <strong>10,4% a.a.</strong> · IPCA: <strong>4,8% a.a.</strong></div>
           </div>
         </div>
@@ -1139,10 +1139,10 @@ img,svg{display:block;max-width:100%}
             </div>
           </div>
           <div style="display:flex;flex-direction:column;gap:14px">
-            <div class="field"><label class="lbl">Taxa anual (%)</label><input class="inp" type="number" id="investTaxa" value="10.5" step="0.1" min="0.1" oninput="calcInvestDebounced()"/></div>
-            <div class="field"><label class="lbl">Valor inicial (R$)</label><input class="inp inp-money" type="text" id="investInicial" placeholder="1.000,00" data-money oninput="calcInvestDebounced()"/></div>
-            <div class="field"><label class="lbl">Aporte mensal (R$)</label><input class="inp inp-money" type="text" id="investMensal" placeholder="500,00" data-money oninput="calcInvestDebounced()"/></div>
-            <div class="field"><label class="lbl">Período (anos)</label><input class="inp" type="number" id="investAnos" value="10" min="1" max="50" oninput="calcInvestDebounced()"/></div>
+            <div class="field"><label class="lbl">Taxa anual (%)</label><input class="inp" type="number" id="investTaxa" value="10.5" step="0.1" min="0.1" oninput="mMask(this);calcInvestDebounced()"/></div>
+            <div class="field"><label class="lbl">Valor inicial (R$)</label><input class="inp inp-money" type="text" id="investInicial" placeholder="1.000,00" data-money oninput="mMask(this);calcInvestDebounced()"/></div>
+            <div class="field"><label class="lbl">Aporte mensal (R$)</label><input class="inp inp-money" type="text" id="investMensal" placeholder="500,00" data-money oninput="mMask(this);calcInvestDebounced()"/></div>
+            <div class="field"><label class="lbl">Período (anos)</label><input class="inp" type="number" id="investAnos" value="10" min="1" max="50" oninput="mMask(this);calcInvestDebounced()"/></div>
             <div class="field"><label class="lbl">Tipo de rendimento</label>
               <select class="sel" id="investTipo" onchange="calcInvest()">
                 <option value="composto">Juros compostos</option>
@@ -1875,11 +1875,11 @@ function renderRendaFontes(){
       </div>
       <div class="field" style="margin:0">
         <label class="lbl" style="font-size:.7rem">Planejado (R$)</label>
-        <input class="inp inp-money" type="text" data-money data-renda="plan" value="${money(f.valor)}" oninput="updateRendaFonte(${i},'valor',this.value)" placeholder="0,00"/>
+        <input class="inp inp-money" type="text" data-money data-renda="plan" value="${money(f.valor)}" oninput="mMask(this);updateRendaFonte(${i},'valor',this.value)" placeholder="0,00"/>
       </div>
       <div class="field" style="margin:0">
         <label class="lbl" style="font-size:.7rem">Realizado (R$)</label>
-        <input class="inp inp-money" type="text" data-money data-renda="real" value="${money(f.recebido)}" oninput="updateRendaFonte(${i},'recebido',this.value)" placeholder="0,00"/>
+        <input class="inp inp-money" type="text" data-money data-renda="real" value="${money(f.recebido)}" oninput="mMask(this);updateRendaFonte(${i},'recebido',this.value)" placeholder="0,00"/>
       </div>
       <button type="button" class="btn btn-d btn-xs" ${f.fixed?'disabled style="opacity:.3;cursor:not-allowed"':''} onclick="removeRendaFonte(${i})" title="Remover">✕</button>
     </div>
@@ -3438,7 +3438,7 @@ function renderPlanejamentoMes(force){
       const pctCls = v>0 ? pctClass(pct) : '';
       return `<div class="plan-row">
         <span class="plan-cat">${esc(cat)}</span>
-        <input class="inp inp-money inp-sm" style="text-align:right" type="text" data-money data-grupo="${esc(grupo)}" data-cat="${esc(cat)}" value="${v>0?fBRL(v).replace('R$','').trim():''}" placeholder="0,00" oninput="updatePlanTotal()"/>
+        <input class="inp inp-money inp-sm" style="text-align:right" type="text" data-money data-grupo="${esc(grupo)}" data-cat="${esc(cat)}" value="${v>0?fBRL(v).replace('R$','').trim():''}" placeholder="0,00" oninput="mMask(this);updatePlanTotal()"/>
         <span class="plan-val ${rv>0?'':'muted'}" data-real-grupo="${esc(grupo)}">${rv>0?fBRL(rv):'–'}</span>
         <span class="plan-pct ${pctCls}">${pctTxt}</span>
       </div>`;
