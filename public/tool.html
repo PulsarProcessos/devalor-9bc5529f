@@ -3357,13 +3357,31 @@ async function loadPlanDespesas(force){
     _planDespRows = r?.rows || [];
   }catch{ _planDespRows = []; }
 }
+function _normKey(s){
+  return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+}
+/* Realizado do mês: casa por grupo+categoria de forma tolerante (sem acento/caixa).
+   Tudo que não casar cai em __unmatched → linha "Não classificados", nunca some do total. */
 function planRealizadoMap(mes,ano){
-  const map = {};
+  const cats=getCats();
+  const pares={}, porCat={};
+  Object.entries(cats||{}).forEach(([g,items])=>(items||[]).forEach(c=>{
+    pares[`${_normKey(g)}||${_normKey(c)}`]={g,c};
+    if(!porCat[_normKey(c)]) porCat[_normKey(c)]={g,c};
+  }));
+  const map = {__total:0, __unmatched:0};
   (_planDespRows||[]).forEach(r=>{
     if(String(r.mes||'').toUpperCase()!==String(mes||'').toUpperCase()) return;
     if(String(r.ano||'')!==String(ano||'')) return;
-    const k = `${r.grupo||''}||${r.categoria||''}`;
-    map[k] = (map[k]||0) + (Number(r.valor)||0);
+    const v = Number(r.valor)||0;
+    map.__total += v;
+    const hit = pares[`${_normKey(r.grupo)}||${_normKey(r.categoria)}`] || porCat[_normKey(r.categoria)];
+    if(hit){
+      const k = `${hit.g}||${hit.c}`;
+      map[k] = (map[k]||0) + v;
+    } else {
+      map.__unmatched += v;
+    }
   });
   return map;
 }
