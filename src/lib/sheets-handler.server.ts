@@ -660,5 +660,129 @@ export async function handleAction(action: string, params: Record<string, any>, 
     return json({ ok: true, count: rows.length });
   }
 
+  /* ── CADASTROS: CATEGORIAS ── */
+  if (action === "getCategorias") {
+    const { data } = await supabaseAdmin.from("categorias").select("*")
+      .eq("cliente_id", clienteId).order("grupo", { ascending: true }).order("ordem", { ascending: true });
+    return json({ ok: true, rows: data || [] });
+  }
+  if (action === "saveCategorias") {
+    const cats = params.cats && typeof params.cats === "object" ? params.cats : {};
+    const recs: any[] = [];
+    for (const grupo of Object.keys(cats)) {
+      const arr = Array.isArray(cats[grupo]) ? cats[grupo] : [];
+      arr.forEach((nome: any, i: number) => {
+        const n = String(nome || "").trim();
+        if (n) recs.push({ cliente_id: clienteId, grupo: String(grupo), nome: n, ordem: i });
+      });
+    }
+    await supabaseAdmin.from("categorias").delete().eq("cliente_id", clienteId);
+    if (recs.length) {
+      const { error } = await supabaseAdmin.from("categorias").insert(recs);
+      if (error) return json({ error: error.message });
+    }
+    return json({ ok: true, count: recs.length });
+  }
+
+  /* ── CADASTROS: BANCOS ── */
+  if (action === "getBancos") {
+    const { data } = await supabaseAdmin.from("bancos").select("*")
+      .eq("cliente_id", clienteId).order("nome", { ascending: true });
+    return json({ ok: true, rows: data || [] });
+  }
+  if (action === "saveBanco") {
+    const nome = String(params.nome || "").trim();
+    if (!nome) return json({ error: "Nome do banco obrigatório." });
+    const { error } = await supabaseAdmin.from("bancos")
+      .upsert({ cliente_id: clienteId, nome, updated_at: new Date().toISOString() }, { onConflict: "cliente_id,nome" });
+    if (error) return json({ error: error.message });
+    return json({ ok: true });
+  }
+  if (action === "saveBancos") {
+    const list = Array.isArray(params.list) ? params.list : [];
+    const recs = list
+      .map((n: any) => String(n || "").trim())
+      .filter((n: string, i: number, a: string[]) => n && a.indexOf(n) === i)
+      .map((nome: string) => ({ cliente_id: clienteId, nome }));
+    await supabaseAdmin.from("bancos").delete().eq("cliente_id", clienteId);
+    if (recs.length) {
+      const { error } = await supabaseAdmin.from("bancos").insert(recs);
+      if (error) return json({ error: error.message });
+    }
+    return json({ ok: true, count: recs.length });
+  }
+  if (action === "deleteBanco") {
+    const nome = String(params.nome || "").trim();
+    if (!nome) return json({ error: "Nome do banco obrigatório." });
+    await supabaseAdmin.from("bancos").delete().eq("cliente_id", clienteId).eq("nome", nome);
+    return json({ ok: true });
+  }
+
+  /* ── CADASTROS: CARTÕES ── */
+  if (action === "getCartoes") {
+    const { data } = await supabaseAdmin.from("cartoes").select("*")
+      .eq("cliente_id", clienteId).order("nome", { ascending: true });
+    return json({ ok: true, rows: data || [] });
+  }
+  if (action === "saveCartao") {
+    const nome = String(params.nome || "").trim();
+    if (!nome) return json({ error: "Nome do cartão obrigatório." });
+    const { error } = await supabaseAdmin.from("cartoes").upsert(
+      { cliente_id: clienteId, nome, banco: params.banco ? String(params.banco) : null, updated_at: new Date().toISOString() },
+      { onConflict: "cliente_id,nome" },
+    );
+    if (error) return json({ error: error.message });
+    return json({ ok: true });
+  }
+  if (action === "saveCartoes") {
+    const list = Array.isArray(params.list) ? params.list : [];
+    const recs = list
+      .map((c: any) => (typeof c === "string" ? { nome: c, banco: null } : { nome: String(c?.nome || ""), banco: c?.banco || null }))
+      .filter((c: any) => c.nome.trim())
+      .map((c: any) => ({ cliente_id: clienteId, nome: c.nome.trim(), banco: c.banco }))
+      .filter((c: any, i: number, a: any[]) => a.findIndex((x) => x.nome === c.nome) === i);
+    await supabaseAdmin.from("cartoes").delete().eq("cliente_id", clienteId);
+    if (recs.length) {
+      const { error } = await supabaseAdmin.from("cartoes").insert(recs);
+      if (error) return json({ error: error.message });
+    }
+    return json({ ok: true, count: recs.length });
+  }
+  if (action === "deleteCartao") {
+    const nome = String(params.nome || "").trim();
+    if (!nome) return json({ error: "Nome do cartão obrigatório." });
+    await supabaseAdmin.from("cartoes").delete().eq("cliente_id", clienteId).eq("nome", nome);
+    return json({ ok: true });
+  }
+
+  /* ── CADASTROS: VENCIMENTOS DE CONTAS ── */
+  if (action === "getVencimentos") {
+    const { data } = await supabaseAdmin.from("vencimentos").select("*")
+      .eq("cliente_id", clienteId).order("dia", { ascending: true });
+    return json({ ok: true, rows: data || [] });
+  }
+  if (action === "saveVencimentos") {
+    const list = Array.isArray(params.list) ? params.list : [];
+    const recs = list.map((v: any) => ({
+      cliente_id: clienteId,
+      descricao: String(v.descricao || v.desc || "").slice(0, 300),
+      dia: v.dia != null && v.dia !== "" ? Number(v.dia) : null,
+      valor: Number(v.valor || 0),
+      categoria: v.categoria || null,
+      grupo: v.grupo || null,
+      banco: v.banco || null,
+      forma_pagamento: v.forma_pagamento || v.forma || null,
+      status: v.status || (v.pausado ? "pausado" : "ativo"),
+      observacoes: v.observacoes || null,
+    })).filter((v: any) => v.descricao);
+    await supabaseAdmin.from("vencimentos").delete().eq("cliente_id", clienteId);
+    if (recs.length) {
+      const { error } = await supabaseAdmin.from("vencimentos").insert(recs);
+      if (error) return json({ error: error.message });
+    }
+    return json({ ok: true, count: recs.length });
+  }
+
   return json({ error: "Ação desconhecida: " + action });
 }
+
