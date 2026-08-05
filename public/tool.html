@@ -2014,10 +2014,13 @@ function renderCartoes(){
 ═══════════════════════════════════════════ */
 function vencKey(){ return 'dv_venc_'+(cid()||'anon'); }
 function getVencimentos(){
+  if(Array.isArray(_vencCache)) return _vencCache;
   try{ return JSON.parse(localStorage.getItem(vencKey())||'[]'); }catch{ return []; }
 }
 function saveVencimentos(list){
-  try{ localStorage.setItem(vencKey(), JSON.stringify(list)); }catch{}
+  _vencCache = Array.isArray(list)?list:[];
+  try{ localStorage.setItem(vencKey(), JSON.stringify(_vencCache)); }catch{}
+  try{ pushVencimentos(_vencCache); }catch{}
 }
 function buildVencCategoriaSelect(){
   const sel=gel('vencCategoria'); if(!sel) return;
