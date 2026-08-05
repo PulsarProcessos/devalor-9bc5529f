@@ -2924,22 +2924,35 @@ function processImportPdfLines(lines,fname){
   finishImportRows(rows,fname);
 }
 
+function catPadraoImport(allCats){
+  // Categoria neutra: prefere "Outros Variáveis" / qualquer "Outros" do grupo variável
+  return allCats.find(c=>/vari[áa]ve/i.test(c) && /outros/i.test(c))
+      || allCats.find(c=>/outros/i.test(c))
+      || allCats[0] || '';
+}
 function finishImportRows(rows,fname){
-  if(!rows.length){toast('Nenhum lançamento encontrado no arquivo.','error');return;}
+  const descartadas = _importDescartadasEntrada||0;
+  if(!rows.length){
+    toast(descartadas?`Nenhuma despesa encontrada — ${descartadas} linha(s) eram entradas (recebimentos) e foram ignoradas.`:'Nenhum lançamento encontrado no arquivo.','error');
+    return;
+  }
   gel('importFileName').textContent=fname;
-  gel('importRowCount').textContent=`${rows.length} lançamento(s) encontrado(s)`;
+  gel('importRowCount').textContent=`${rows.length} lançamento(s) encontrado(s)` + (descartadas?` · ${descartadas} entrada(s) ignorada(s)`:'');
   gel('importPreviewWrap').classList.remove('hidden');
   const cats=getCats();
   const allCats=Object.entries(cats).flatMap(([grp,items])=>items.map(i=>`${grp} · ${i}`));
+  const catPadrao = catPadraoImport(allCats);
   const now=new Date();
   const mesVigente=(_importTipo==='fatura' && _importMesPag) ? _importMesPag : CFG.MESES[now.getMonth()];
   const anoVigente=(_importTipo==='fatura' && _importAnoPag) ? _importAnoPag : String(now.getFullYear());
   _importMesVigente=mesVigente;_importAnoVigente=anoVigente;
   const cl=gel('importCompetLbl');
   if(cl)cl.textContent=`${_importSource==='cartao'?'Mês de pagamento da fatura':'Competência'}: ${mesVigente.charAt(0)+mesVigente.slice(1).toLowerCase()} / ${anoVigente} · ${_importSource==='cartao'?'💳 Fatura':'🏦 Extrato'} · ${_importBanco}`;
+  if(descartadas) toast(`${descartadas} entrada(s) do arquivo foram ignoradas — só despesas são importadas.`,'info');
   _importRows=rows.map((r,i)=>({
     id:i,data:r.data,desc:r.desc,valor:r.valor,
-    cat:allCats[0]||'',
+    cat:catPadrao,
+    naoClassificado:true,
     mes: mesVigente,
     parc:false, parcN:1,
     selected:true
