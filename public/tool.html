@@ -1982,7 +1982,7 @@ function renameCartao(oldName){
 function removeCartao(name){
   if(!confirm(`Remover o cartão "${name}"? Lançamentos já importados serão mantidos.`)) return;
   const list = loadCartoes().filter(c=>c!==name);
-  localStorage.setItem(CARTOES_KEY(), JSON.stringify(list));
+  storeCartoes(list);
   renderCartoes(); toast('Cartão removido.','info');
 }
 function addCartao(){
