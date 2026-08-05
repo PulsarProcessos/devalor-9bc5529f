@@ -1990,7 +1990,7 @@ function addCartao(){
   if(!n){ toast('Informe o nome do cartão.','error'); return; }
   const list = loadCartoes();
   if(list.some(c=>c.toLowerCase()===n.toLowerCase())){ toast('Cartão já cadastrado.','info'); return; }
-  list.push(n); localStorage.setItem(CARTOES_KEY(), JSON.stringify(list));
+  list.push(n); storeCartoes(list);
   if(el) el.value=''; renderCartoes(); toast('Cartão adicionado.','success');
 }
 function renderCartoes(){
