@@ -959,6 +959,9 @@ img,svg{display:block;max-width:100%}
         <div class="consol-cell"><span class="consol-lbl">Investimentos</span><strong class="consol-val mono" id="consolInvest">R$ 0,00</strong><span class="consol-sub mono" id="consolInvestReal">real. R$ 0,00</span></div>
         <div class="consol-cell"><span class="consol-lbl">Saldo final</span><strong class="consol-val mono" id="consolSaldo">R$ 0,00</strong><span class="consol-sub mono" id="consolSaldoReal">real. R$ 0,00</span></div>
       </div>
+      <div id="planConfBadge" style="margin-top:8px;font-size:.78rem;color:var(--text-muted)"></div>
+
+
 
       <!-- RESUMO -->
       <div class="resumo-wrap">
@@ -2688,6 +2691,7 @@ async function submitDespesas(){
       };
     });
     await gPost('addDespesas',{rows:recs,clienteId:cid()});
+    _planDespRows=[];
     toast(`${rows.length} lançamento(s) enviado(s)!`,'success');
     clearDespForm();clearPrev();
   }catch(e){toast('Erro: '+e.message,'error');}
@@ -2771,6 +2775,13 @@ function parseImportFile(file){
 /* Parser tolerante: detecta cabeçalho mesmo em faturas de cartão.
    Fallback: se não achar cabeçalho, varre como linhas livres com regex de data. */
 const _SKIP_LINE_RE = /(total\s+da\s+fatura|pagamento\s+recebido|^\s*saldo\b|\bsaldo\s+(?:anterior|atual|do\s+dia|em\s+conta|final|dispon[íi]vel|bloqueado|inicial|liquido|l[íi]quido)|subtotal|limite\s+(?:dispon|de\s+cr)|pr[óo]xima\s+fatura|encargos|juros\s+rotativ)/i;
+/* Entradas (dinheiro que ENTRA) nunca são despesa — filtro único p/ CSV/XLS/XLSX/PDF */
+const _ENTRADA_RE = /(recebimento|recebida|recebido|pix[_\s-]*cred|cred[ií]to\s+em\s+conta|dep[óo]sito|dep[oó]sito|transfer[êe]ncia\s+recebida|ted\s+recebid|doc\s+recebid|estorno|devolu[çc][ãa]o|reembolso|rendimento|remunera[çc][ãa]o|salario|sal[áa]rio|proventos|resgate|cashback|liq\.?\s*cobranca|liq\.?\s*cobran[çc]a|cobranca\s+simples|cobran[çc]a\s+simples)/i;
+let _importDescartadasEntrada = 0;
+function isEntradaRow(desc, dcFlag){
+  if(dcFlag === 'C') return true;
+  return _ENTRADA_RE.test(String(desc||''));
+}
 const _MES_TXT = {jan:'01',fev:'02',mar:'03',abr:'04',mai:'05',jun:'06',jul:'07',ago:'08',set:'09',out:'10',nov:'11',dez:'12',janeiro:'01',fevereiro:'02','março':'03',marco:'03',abril:'04',maio:'05',junho:'06',julho:'07',agosto:'08',setembro:'09',outubro:'10',novembro:'11',dezembro:'12'};
 function _normalizePdfDate(ln){
   // "15 JUN" / "15 JUNHO" / "15-jun-2025" → "15/06[/2025]"
@@ -2785,6 +2796,7 @@ function _normalizePdfDate(ln){
 
 function processImportSheet(aoa,fname){
   if(!aoa||!aoa.length){toast('Arquivo vazio.','error');return;}
+  _importDescartadasEntrada = 0;
   const isCartao = _importSource==='cartao';
 
   // 1) Tenta detectar cabeçalho
@@ -2826,13 +2838,16 @@ function processImportSheet(aoa,fname){
       if(!dt||!/\d/.test(dt))continue;
       const desc=String(r[iDesc]||'').trim();
       if(desc && _SKIP_LINE_RE.test(desc)) continue;
+      // Entrada (dinheiro recebido) nunca vira despesa — vale para cartão e extrato
+      const entColVal = iEnt>=0 ? pMoney(r[iEnt]) : 0;
+      if(entColVal>0 || isEntradaRow(desc,null)){ _importDescartadasEntrada++; continue; }
       let valor=0;
       if(isCartao){
         const v = iVal>=0 ? pMoney(r[iVal])
                : iDeb>=0 ? pMoney(r[iDeb])
                : iSaida>=0 ? pMoney(r[iSaida]) : 0;
         if(v===0)continue;
-        if(v<0)continue;
+        if(v<0){ _importDescartadasEntrada++; continue; }
         valor=Math.abs(v);
       } else if(iSaida>=0){
         const s=pMoney(r[iSaida]); if(s>0)valor=s; else continue;
@@ -2842,12 +2857,13 @@ function processImportSheet(aoa,fname){
         const v=pMoney(r[iVal]);
         if(v<0)valor=Math.abs(v);
         else if(iEnt<0)valor=Math.abs(v);
-        else continue;
+        else { _importDescartadasEntrada++; continue; }
       } else continue;
       if(valor<=0)continue;
       if(!desc && !isCartao)continue;
       rows.push({data:dt,desc:desc||'Lançamento',valor});
     }
+
   }
 
   // 2) Fallback heurístico
@@ -2870,6 +2886,7 @@ function processImportSheet(aoa,fname){
       if(isCartao){if(val<=0)continue;}
       else {if(val>=0)continue;}
       const desc=r.filter((_,k)=>k!==di&&k!==vi).join(' ').replace(/\s+/g,' ').trim();
+      if(isEntradaRow(desc,null)){ _importDescartadasEntrada++; continue; }
       if(!desc && !isCartao)continue;
       rows.push({data:r[di],desc:desc||'Lançamento',valor:Math.abs(val)});
     }
@@ -2881,6 +2898,7 @@ function processImportSheet(aoa,fname){
 /* PDF: regex por linha — aceita data dd/mm[/aaaa] e valor com ou sem vírgula */
 function processImportPdfLines(lines,fname){
   const rows=[];
+  _importDescartadasEntrada = 0;
   const dateRe=/^(\d{2}\/\d{2}(?:\/\d{2,4})?)\s+(.+?)\s+(-?(?:r\$\s*)?[\d\.]+(?:,\d{2})?)(?:\s+(-?(?:r\$\s*)?[\d\.]+(?:,\d{2})?))?\s*$/i;
   const isCartao = _importSource==='cartao';
   for(const lnRaw of lines){
@@ -2896,12 +2914,12 @@ function processImportPdfLines(lines,fname){
     if(!/\/\d{2,4}$/.test(dt)){ dt = dt + '/' + (CFG.ANO||new Date().getFullYear()); }
     const lanc=pMoney(m[3]);
     if(!lanc)continue;
+    if(isEntradaRow(desc,dcFlag)){ _importDescartadasEntrada++; continue; }
     if(isCartao){
-      if(lanc<=0)continue;
-      if(/pagamento.*efetuado|cr[ée]dito.*pagto|estorno/i.test(desc))continue;
+      if(lanc<=0){ _importDescartadasEntrada++; continue; }
+      if(/pagamento.*efetuado|cr[ée]dito.*pagto/i.test(desc))continue;
       rows.push({data:dt,desc,valor:Math.abs(lanc)});
     } else {
-      if(dcFlag==='C') continue; // crédito/entrada não importa
       const isDebito = dcFlag==='D' || lanc<0 || /pagamento|d[ée]bito|saque|pix enviado|compra|tarifa|envi[ao]/i.test(desc);
       if(!isDebito)continue;
       rows.push({data:dt,desc,valor:Math.abs(lanc)});
@@ -2910,22 +2928,35 @@ function processImportPdfLines(lines,fname){
   finishImportRows(rows,fname);
 }
 
+function catPadraoImport(allCats){
+  // Categoria neutra: prefere "Outros Variáveis" / qualquer "Outros" do grupo variável
+  return allCats.find(c=>/vari[áa]ve/i.test(c) && /outros/i.test(c))
+      || allCats.find(c=>/outros/i.test(c))
+      || allCats[0] || '';
+}
 function finishImportRows(rows,fname){
-  if(!rows.length){toast('Nenhum lançamento encontrado no arquivo.','error');return;}
+  const descartadas = _importDescartadasEntrada||0;
+  if(!rows.length){
+    toast(descartadas?`Nenhuma despesa encontrada — ${descartadas} linha(s) eram entradas (recebimentos) e foram ignoradas.`:'Nenhum lançamento encontrado no arquivo.','error');
+    return;
+  }
   gel('importFileName').textContent=fname;
-  gel('importRowCount').textContent=`${rows.length} lançamento(s) encontrado(s)`;
+  gel('importRowCount').textContent=`${rows.length} lançamento(s) encontrado(s)` + (descartadas?` · ${descartadas} entrada(s) ignorada(s)`:'');
   gel('importPreviewWrap').classList.remove('hidden');
   const cats=getCats();
   const allCats=Object.entries(cats).flatMap(([grp,items])=>items.map(i=>`${grp} · ${i}`));
+  const catPadrao = catPadraoImport(allCats);
   const now=new Date();
   const mesVigente=(_importTipo==='fatura' && _importMesPag) ? _importMesPag : CFG.MESES[now.getMonth()];
   const anoVigente=(_importTipo==='fatura' && _importAnoPag) ? _importAnoPag : String(now.getFullYear());
   _importMesVigente=mesVigente;_importAnoVigente=anoVigente;
   const cl=gel('importCompetLbl');
   if(cl)cl.textContent=`${_importSource==='cartao'?'Mês de pagamento da fatura':'Competência'}: ${mesVigente.charAt(0)+mesVigente.slice(1).toLowerCase()} / ${anoVigente} · ${_importSource==='cartao'?'💳 Fatura':'🏦 Extrato'} · ${_importBanco}`;
+  if(descartadas) toast(`${descartadas} entrada(s) do arquivo foram ignoradas — só despesas são importadas.`,'info');
   _importRows=rows.map((r,i)=>({
     id:i,data:r.data,desc:r.desc,valor:r.valor,
-    cat:allCats[0]||'',
+    cat:catPadrao,
+    naoClassificado:true,
     mes: mesVigente,
     parc:false, parcN:1,
     selected:true
@@ -2968,7 +2999,7 @@ function renderImportTable(){
   const pageRows=_importRows.slice(start,start+IMPORT_PAGE_SIZE);
 
   tb.innerHTML=pageRows.map(r=>`
-    <tr id="irow_${r.id}" style="${r.selected?'':'opacity:.45'}">
+    <tr id="irow_${r.id}" style="${r.selected?'':'opacity:.45'}${r.naoClassificado?';background:rgba(234,179,8,.10)':''}">
       <td>${esc(r.data)}</td>
       <td>${esc(r.desc)}</td>
       <td class="mono" style="text-align:right;font-weight:600">${fBRL(r.valor)}</td>
@@ -3013,7 +3044,14 @@ function updateImportRow(id,field,val){
       if(np){ np.disabled=!val; np.value = val ? r.parcN : 1; }
     }
   }
-  else r[field]=val;
+  else {
+    r[field]=val;
+    if(field==='cat'){
+      r.naoClassificado=false;
+      const row=gel(`irow_${id}`);
+      if(row) row.style.background='';
+    }
+  }
 }
 
 function selectAllImport(v){
@@ -3101,6 +3139,7 @@ async function submitImport(){
     const msg = ign>0
       ? `${ins} importado(s) · ${ign} ignorado(s) por já existirem.`
       : `${ins} despesa(s) importada(s)!`;
+    _planDespRows=[];
     toast(msg, ins>0?'success':'info');
     resetImportSource();
   }catch(e){toast('Erro: '+e.message,'error');}
@@ -3253,6 +3292,7 @@ async function deleteDespesaLanc(id){
   try{
     await gPost('deleteDespesa',{id,clienteId:cid()});
     _lancRows=_lancRows.filter(r=>r.id!==id);
+    _planDespRows=[];
     renderDespesasLancadas();
     toast('Despesa excluída.','success');
   }catch(e){toast('Erro: '+e.message,'error');}
@@ -3323,13 +3363,31 @@ async function loadPlanDespesas(force){
     _planDespRows = r?.rows || [];
   }catch{ _planDespRows = []; }
 }
+function _normKey(s){
+  return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+}
+/* Realizado do mês: casa por grupo+categoria de forma tolerante (sem acento/caixa).
+   Tudo que não casar cai em __unmatched → linha "Não classificados", nunca some do total. */
 function planRealizadoMap(mes,ano){
-  const map = {};
+  const cats=getCats();
+  const pares={}, porCat={};
+  Object.entries(cats||{}).forEach(([g,items])=>(items||[]).forEach(c=>{
+    pares[`${_normKey(g)}||${_normKey(c)}`]={g,c};
+    if(!porCat[_normKey(c)]) porCat[_normKey(c)]={g,c};
+  }));
+  const map = {__total:0, __unmatched:0};
   (_planDespRows||[]).forEach(r=>{
     if(String(r.mes||'').toUpperCase()!==String(mes||'').toUpperCase()) return;
     if(String(r.ano||'')!==String(ano||'')) return;
-    const k = `${r.grupo||''}||${r.categoria||''}`;
-    map[k] = (map[k]||0) + (Number(r.valor)||0);
+    const v = Number(r.valor)||0;
+    map.__total += v;
+    const hit = pares[`${_normKey(r.grupo)}||${_normKey(r.categoria)}`] || porCat[_normKey(r.categoria)];
+    if(hit){
+      const k = `${hit.g}||${hit.c}`;
+      map[k] = (map[k]||0) + v;
+    } else {
+      map.__unmatched += v;
+    }
   });
   return map;
 }
@@ -3398,6 +3456,18 @@ function renderPlanejamentoMes(force){
       </div>
     </div>`;
   }).join('');
+  if(Number(real.__unmatched||0) > 0){
+    c.insertAdjacentHTML('beforeend', `<div style="background:var(--bg-elev,#fff);border:1px solid rgba(234,179,8,.45);border-radius:12px;overflow:hidden">
+      <div style="padding:10px 14px;background:rgba(234,179,8,.12);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary)">Não classificados</div>
+      <div class="plan-head"><span>Categorias</span><span>Planejado</span><span>Realizado</span><span>% Real</span></div>
+      <div class="plan-row">
+        <span class="plan-cat">Lançamentos sem categoria válida</span>
+        <span class="plan-val muted">—</span>
+        <span class="plan-val">${fBRL(real.__unmatched)}</span>
+        <span class="plan-pct">—</span>
+      </div>
+    </div>`);
+  }
   initMasks(c);
   updatePlanTotal();
   const hasData = existing.length>0;
@@ -3407,7 +3477,7 @@ function renderPlanejamentoMes(force){
 function planTotais(){
   const mes=gel('planMesSel')?.value||'', ano=gel('planAnoSel')?.value||'';
   const real = planRealizadoMap(mes,ano);
-  const t = {plan:0, real:0, investPlan:0, investReal:0, grupos:{}};
+  const t = {plan:0, real:0, investPlan:0, investReal:0, grupos:{}, realLancado:Number(real.__total||0), naoClassificado:Number(real.__unmatched||0)};
   document.querySelectorAll('#planGroups [data-grupo]').forEach(i=>{
     const grupo=i.dataset.grupo||'', cat=i.dataset.cat||'';
     const v=pMoney(i.value)||0;
@@ -3417,6 +3487,10 @@ function planTotais(){
     const g = t.grupos[grupo] || (t.grupos[grupo]={plan:0,real:0});
     g.plan+=v; g.real+=rv;
   });
+  if(t.naoClassificado>0){
+    t.real += t.naoClassificado;
+    t.grupos['Não classificados'] = {plan:0, real:t.naoClassificado};
+  }
   return t;
 }
 function updatePlanTotal(){
@@ -3436,6 +3510,16 @@ function updatePlanTotal(){
       pc.className = 'plan-pct '+(g.plan>0?pctClass(v):'');
     }
   });
+  // Conferência: o realizado do planejamento tem que bater com o total lançado no mês
+  const cb=gel('planConfBadge');
+  if(cb){
+    const diff = Math.round(((t.realLancado||0) - (t.real||0))*100)/100;
+    if(Math.abs(diff) < 0.01){
+      cb.innerHTML = `<span style="color:var(--success,#16a34a)">✓ Realizado confere com os lançamentos do mês (${fBRL(t.realLancado||0)})</span>`;
+    } else {
+      cb.innerHTML = `<span style="color:var(--warning,#b45309)">⚠ Diferença de ${fBRL(Math.abs(diff))} entre o realizado do planejamento e os lançamentos do mês.</span>`;
+    }
+  }
   updatePlanConsolidado(t);
   renderPlanResumo(t);
 }
@@ -3509,7 +3593,7 @@ function renderResumoCartoes(){
 async function loadPlanejamentoMes(){
   initPlanejamentoSelectors();
   if(!_planAllRows.length) await loadAllPlanejamento();
-  await loadPlanDespesas();
+  await loadPlanDespesas(true);
   renderPlanejamentoMes(true); // troca de mês → força rebuild
 }
 async function openPlanejamentoPanel(){

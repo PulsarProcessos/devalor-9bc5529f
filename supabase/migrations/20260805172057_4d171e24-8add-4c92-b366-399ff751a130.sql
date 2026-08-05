@@ -1,0 +1,2 @@
+DELETE FROM public.despesas
+WHERE descricao ~* '(recebimento|pix[_ -]*cred|dep[oó]sito|estorno|devolu[çc][ãa]o|reembolso|rendimento|remunera[çc][ãa]o|sal[áa]rio|salario|proventos|resgate|cashback|transfer[êe]ncia recebida|ted recebid|doc recebid|cr[ée]dito em conta)';

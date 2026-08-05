@@ -545,6 +545,8 @@ export async function handleAction(action: string, params: Record<string, any>, 
         .map((d: any) => `${d.data}|${Number(d.valor)}|${(d.descricao || "").trim().toLowerCase()}|${(d.cartao || d.banco || "").toLowerCase()}`)
     );
     const fresh = records.filter((r) => {
+      // Deduplicação só para importações; lançamentos manuais podem repetir legitimamente.
+      if (!String(r.origem || "").startsWith("import")) return true;
       const k = `${r.data}|${Number(r.valor)}|${(r.descricao || "").trim().toLowerCase()}|${(r.cartao || r.banco || "").toLowerCase()}`;
       if (beforeIds.has(k)) return false;
       beforeIds.add(k);
