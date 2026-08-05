@@ -2792,6 +2792,7 @@ function _normalizePdfDate(ln){
 
 function processImportSheet(aoa,fname){
   if(!aoa||!aoa.length){toast('Arquivo vazio.','error');return;}
+  _importDescartadasEntrada = 0;
   const isCartao = _importSource==='cartao';
 
   // 1) Tenta detectar cabeçalho
