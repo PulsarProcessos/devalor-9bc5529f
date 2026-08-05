@@ -1379,6 +1379,108 @@ const apiGetSonhos   = ()=>gGet('getRows',{sheet:CFG.SH.SONHOS,clienteId:cid()})
 const apiGetPainel   = m=>gGet('getPainel',{sheet:CFG.SH.PAINEL,mes:m,clienteId:cid()});
 
 /* ═══════════════════════════════════════════
+   CADASTROS PERSISTIDOS NO BANCO
+   (categorias, bancos, cartões, vencimentos)
+   Cache em memória + espelho no navegador (offline),
+   fonte da verdade = banco de dados.
+═══════════════════════════════════════════ */
+let _bancosCache  = null;
+let _cartoesCache = null;
+let _vencCache    = null;
+let _cadastrosLoaded = false;
+
+function _migKey(){ return `dv_migrated_cad_${cid()||'_'}`; }
+function _silent(p){ return Promise.resolve(p).catch(e=>{ console.warn('[cadastros]',e); return null; }); }
+
+/* Persistências (fire-and-forget, com espelho local imediato) */
+function pushCategorias(cats){ return _silent(gPost('saveCategorias',{cats})); }
+function pushBancos(list){     return _silent(gPost('saveBancos',{list})); }
+function pushCartoes(list){    return _silent(gPost('saveCartoes',{list})); }
+function pushVencimentos(list){
+  const payload = list.map(v=>({
+    descricao:v.desc, dia:v.dia, valor:v.valor,
+    categoria:v.cat||null, observacoes:v.obs||null,
+    status:(v.ativo===false?'pausado':'ativo'),
+  }));
+  return _silent(gPost('saveVencimentos',{list:payload}));
+}
+
+/* Carrega todos os cadastros do banco ao abrir o cliente */
+async function loadCadastros(){
+  _cadastrosLoaded = false;
+  const cliente = cid(); if(!cliente) return;
+  let migrated = false;
+  try{ migrated = localStorage.getItem(_migKey())==='1'; }catch{}
+
+  const [rc,rb,rk,rv] = await Promise.all([
+    _silent(gGet('getCategorias',{clienteId:cliente})),
+    _silent(gGet('getBancos',{clienteId:cliente})),
+    _silent(gGet('getCartoes',{clienteId:cliente})),
+    _silent(gGet('getVencimentos',{clienteId:cliente})),
+  ]);
+
+  /* CATEGORIAS */
+  const catRows = (rc&&rc.rows)||[];
+  if(catRows.length){
+    const obj={};
+    catRows.forEach(r=>{ (obj[r.grupo] = obj[r.grupo]||[]).push(r.nome); });
+    _cats = obj;
+    try{ localStorage.setItem(CATS_KEY(), JSON.stringify(obj)); }catch{}
+  }else{
+    _cats = null; getCats();                        // local ou padrão
+    if(!migrated) await pushCategorias(getCats());  // sobe para o banco
+  }
+
+  /* BANCOS */
+  const bRows=(rb&&rb.rows)||[];
+  if(bRows.length){
+    _bancosCache = bRows.map(r=>r.nome);
+  }else{
+    _bancosCache = null;
+    const local = loadBancos();
+    _bancosCache = local;
+    if(!migrated) await pushBancos(local);
+  }
+
+  /* CARTÕES */
+  const kRows=(rk&&rk.rows)||[];
+  if(kRows.length){
+    _cartoesCache = kRows.map(r=>r.nome);
+  }else{
+    _cartoesCache = null;
+    const local = loadCartoes();
+    _cartoesCache = local;
+    if(!migrated && local.length) await pushCartoes(local);
+  }
+
+  /* VENCIMENTOS */
+  const vRows=(rv&&rv.rows)||[];
+  if(vRows.length){
+    _vencCache = vRows.map(r=>({
+      id:r.id, desc:r.descricao, valor:Number(r.valor||0), dia:Number(r.dia||1),
+      cat:r.categoria||'', obs:r.observacoes||'', ativo:r.status!=='pausado',
+    }));
+  }else{
+    _vencCache = null;
+    const local = getVencimentos();
+    _vencCache = local;
+    if(!migrated && local.length) await pushVencimentos(local);
+  }
+
+  try{ localStorage.setItem(_migKey(),'1'); }catch{}
+  _cadastrosLoaded = true;
+
+  /* Re-render das telas que dependem desses cadastros */
+  try{ refreshCatSelectors(); }catch{}
+  try{ fillBancoSelect(); }catch{}
+  try{ fillImpBancoSelect(); }catch{}
+  try{ fillFormaPagSelect(); }catch{}
+  try{ renderCartoes(); }catch{}
+  try{ renderVencimentos(); }catch{}
+  try{ renderVencimentosPlano(); }catch{}
+}
+
+/* ═══════════════════════════════════════════
    AUTH — sessionStorage (limpa ao fechar)
 ═══════════════════════════════════════════ */
 async function doLogin(){
