@@ -1225,7 +1225,7 @@ function saveCatsStore(){
   try{ localStorage.setItem(CATS_KEY(), JSON.stringify(cats)); }catch{}
   try{ pushCategorias(cats); }catch{}
 }
-function resetCatsCache(){ _cats=null; }
+function resetCatsCache(){ _cats=null; _bancosCache=null; _cartoesCache=null; _vencCache=null; _cadastrosLoaded=false; }
 function refreshCatSelectors(){
   try{ buildCatSelect(); }catch{}
   try{ buildVencCategoriaSelect(); }catch{}
