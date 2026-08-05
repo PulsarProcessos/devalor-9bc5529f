@@ -2833,13 +2833,16 @@ function processImportSheet(aoa,fname){
       if(!dt||!/\d/.test(dt))continue;
       const desc=String(r[iDesc]||'').trim();
       if(desc && _SKIP_LINE_RE.test(desc)) continue;
+      // Entrada (dinheiro recebido) nunca vira despesa — vale para cartão e extrato
+      const entColVal = iEnt>=0 ? pMoney(r[iEnt]) : 0;
+      if(entColVal>0 || isEntradaRow(desc,null)){ _importDescartadasEntrada++; continue; }
       let valor=0;
       if(isCartao){
         const v = iVal>=0 ? pMoney(r[iVal])
                : iDeb>=0 ? pMoney(r[iDeb])
                : iSaida>=0 ? pMoney(r[iSaida]) : 0;
         if(v===0)continue;
-        if(v<0)continue;
+        if(v<0){ _importDescartadasEntrada++; continue; }
         valor=Math.abs(v);
       } else if(iSaida>=0){
         const s=pMoney(r[iSaida]); if(s>0)valor=s; else continue;
@@ -2849,12 +2852,13 @@ function processImportSheet(aoa,fname){
         const v=pMoney(r[iVal]);
         if(v<0)valor=Math.abs(v);
         else if(iEnt<0)valor=Math.abs(v);
-        else continue;
+        else { _importDescartadasEntrada++; continue; }
       } else continue;
       if(valor<=0)continue;
       if(!desc && !isCartao)continue;
       rows.push({data:dt,desc:desc||'Lançamento',valor});
     }
+
   }
 
   // 2) Fallback heurístico
