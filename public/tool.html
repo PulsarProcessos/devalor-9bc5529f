@@ -3450,6 +3450,18 @@ function renderPlanejamentoMes(force){
       </div>
     </div>`;
   }).join('');
+  if(Number(real.__unmatched||0) > 0){
+    c.insertAdjacentHTML('beforeend', `<div style="background:var(--bg-elev,#fff);border:1px solid rgba(234,179,8,.45);border-radius:12px;overflow:hidden">
+      <div style="padding:10px 14px;background:rgba(234,179,8,.12);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary)">Não classificados</div>
+      <div class="plan-head"><span>Categorias</span><span>Planejado</span><span>Realizado</span><span>% Real</span></div>
+      <div class="plan-row">
+        <span class="plan-cat">Lançamentos sem categoria válida</span>
+        <span class="plan-val muted">—</span>
+        <span class="plan-val">${fBRL(real.__unmatched)}</span>
+        <span class="plan-pct">—</span>
+      </div>
+    </div>`);
+  }
   initMasks(c);
   updatePlanTotal();
   const hasData = existing.length>0;
@@ -3459,7 +3471,7 @@ function renderPlanejamentoMes(force){
 function planTotais(){
   const mes=gel('planMesSel')?.value||'', ano=gel('planAnoSel')?.value||'';
   const real = planRealizadoMap(mes,ano);
-  const t = {plan:0, real:0, investPlan:0, investReal:0, grupos:{}};
+  const t = {plan:0, real:0, investPlan:0, investReal:0, grupos:{}, realLancado:Number(real.__total||0), naoClassificado:Number(real.__unmatched||0)};
   document.querySelectorAll('#planGroups [data-grupo]').forEach(i=>{
     const grupo=i.dataset.grupo||'', cat=i.dataset.cat||'';
     const v=pMoney(i.value)||0;
@@ -3469,6 +3481,10 @@ function planTotais(){
     const g = t.grupos[grupo] || (t.grupos[grupo]={plan:0,real:0});
     g.plan+=v; g.real+=rv;
   });
+  if(t.naoClassificado>0){
+    t.real += t.naoClassificado;
+    t.grupos['Não classificados'] = {plan:0, real:t.naoClassificado};
+  }
   return t;
 }
 function updatePlanTotal(){
