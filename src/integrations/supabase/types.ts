@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      bancos: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cartoes: {
+        Row: {
+          banco: string | null
+          cliente_id: string
+          created_at: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          banco?: string | null
+          cliente_id: string
+          created_at?: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          banco?: string | null
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      categorias: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          grupo: string
+          id: string
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          grupo: string
+          id?: string
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          grupo?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       clientes: {
         Row: {
           cliente_id: string
@@ -431,6 +512,54 @@ export type Database = {
           nome?: string
           role?: string
           senha?: string
+        }
+        Relationships: []
+      }
+      vencimentos: {
+        Row: {
+          banco: string | null
+          categoria: string | null
+          cliente_id: string
+          created_at: string
+          descricao: string
+          dia: number | null
+          forma_pagamento: string | null
+          grupo: string | null
+          id: string
+          observacoes: string | null
+          status: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          banco?: string | null
+          categoria?: string | null
+          cliente_id: string
+          created_at?: string
+          descricao: string
+          dia?: number | null
+          forma_pagamento?: string | null
+          grupo?: string | null
+          id?: string
+          observacoes?: string | null
+          status?: string
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          banco?: string | null
+          categoria?: string | null
+          cliente_id?: string
+          created_at?: string
+          descricao?: string
+          dia?: number | null
+          forma_pagamento?: string | null
+          grupo?: string | null
+          id?: string
+          observacoes?: string | null
+          status?: string
+          updated_at?: string
+          valor?: number
         }
         Relationships: []
       }
