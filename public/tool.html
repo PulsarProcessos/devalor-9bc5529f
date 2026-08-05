@@ -1546,6 +1546,7 @@ function showCliente(user){
   resetCatsCache();
   buildCatSelect();fillBancoSelect();fillImpBancoSelect();fillFormaPagSelect();onDespFormaPagChange();
   try{ buildVencCategoriaSelect(); }catch{}
+  try{ loadCadastros(); }catch(e){ console.warn(e); }
   loadSonhosFromSheets();
   goPanel('perfil');
 }
