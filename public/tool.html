@@ -2894,6 +2894,7 @@ function processImportSheet(aoa,fname){
 /* PDF: regex por linha — aceita data dd/mm[/aaaa] e valor com ou sem vírgula */
 function processImportPdfLines(lines,fname){
   const rows=[];
+  _importDescartadasEntrada = 0;
   const dateRe=/^(\d{2}\/\d{2}(?:\/\d{2,4})?)\s+(.+?)\s+(-?(?:r\$\s*)?[\d\.]+(?:,\d{2})?)(?:\s+(-?(?:r\$\s*)?[\d\.]+(?:,\d{2})?))?\s*$/i;
   const isCartao = _importSource==='cartao';
   for(const lnRaw of lines){
@@ -2909,12 +2910,12 @@ function processImportPdfLines(lines,fname){
     if(!/\/\d{2,4}$/.test(dt)){ dt = dt + '/' + (CFG.ANO||new Date().getFullYear()); }
     const lanc=pMoney(m[3]);
     if(!lanc)continue;
+    if(isEntradaRow(desc,dcFlag)){ _importDescartadasEntrada++; continue; }
     if(isCartao){
-      if(lanc<=0)continue;
-      if(/pagamento.*efetuado|cr[ée]dito.*pagto|estorno/i.test(desc))continue;
+      if(lanc<=0){ _importDescartadasEntrada++; continue; }
+      if(/pagamento.*efetuado|cr[ée]dito.*pagto/i.test(desc))continue;
       rows.push({data:dt,desc,valor:Math.abs(lanc)});
     } else {
-      if(dcFlag==='C') continue; // crédito/entrada não importa
       const isDebito = dcFlag==='D' || lanc<0 || /pagamento|d[ée]bito|saque|pix enviado|compra|tarifa|envi[ao]/i.test(desc);
       if(!isDebito)continue;
       rows.push({data:dt,desc,valor:Math.abs(lanc)});
