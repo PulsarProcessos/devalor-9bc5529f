@@ -2995,7 +2995,7 @@ function renderImportTable(){
   const pageRows=_importRows.slice(start,start+IMPORT_PAGE_SIZE);
 
   tb.innerHTML=pageRows.map(r=>`
-    <tr id="irow_${r.id}" style="${r.selected?'':'opacity:.45'}">
+    <tr id="irow_${r.id}" style="${r.selected?'':'opacity:.45'}${r.naoClassificado?';background:rgba(234,179,8,.10)':''}">
       <td>${esc(r.data)}</td>
       <td>${esc(r.desc)}</td>
       <td class="mono" style="text-align:right;font-weight:600">${fBRL(r.valor)}</td>
