@@ -2691,6 +2691,7 @@ async function submitDespesas(){
       };
     });
     await gPost('addDespesas',{rows:recs,clienteId:cid()});
+    _planDespRows=[]; _lancLoaded=false;
     toast(`${rows.length} lançamento(s) enviado(s)!`,'success');
     clearDespForm();clearPrev();
   }catch(e){toast('Erro: '+e.message,'error');}
@@ -3138,6 +3139,7 @@ async function submitImport(){
     const msg = ign>0
       ? `${ins} importado(s) · ${ign} ignorado(s) por já existirem.`
       : `${ins} despesa(s) importada(s)!`;
+    _planDespRows=[]; _lancLoaded=false;
     toast(msg, ins>0?'success':'info');
     resetImportSource();
   }catch(e){toast('Erro: '+e.message,'error');}
@@ -3290,6 +3292,7 @@ async function deleteDespesaLanc(id){
   try{
     await gPost('deleteDespesa',{id,clienteId:cid()});
     _lancRows=_lancRows.filter(r=>r.id!==id);
+    _planDespRows=[];
     renderDespesasLancadas();
     toast('Despesa excluída.','success');
   }catch(e){toast('Erro: '+e.message,'error');}
@@ -3590,7 +3593,7 @@ function renderResumoCartoes(){
 async function loadPlanejamentoMes(){
   initPlanejamentoSelectors();
   if(!_planAllRows.length) await loadAllPlanejamento();
-  await loadPlanDespesas();
+  await loadPlanDespesas(true);
   renderPlanejamentoMes(true); // troca de mês → força rebuild
 }
 async function openPlanejamentoPanel(){
