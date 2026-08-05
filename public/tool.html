@@ -3507,6 +3507,16 @@ function updatePlanTotal(){
       pc.className = 'plan-pct '+(g.plan>0?pctClass(v):'');
     }
   });
+  // Conferência: o realizado do planejamento tem que bater com o total lançado no mês
+  const cb=gel('planConfBadge');
+  if(cb){
+    const diff = Math.round(((t.realLancado||0) - (t.real||0))*100)/100;
+    if(Math.abs(diff) < 0.01){
+      cb.innerHTML = `<span style="color:var(--success,#16a34a)">✓ Realizado confere com os lançamentos do mês (${fBRL(t.realLancado||0)})</span>`;
+    } else {
+      cb.innerHTML = `<span style="color:var(--warning,#b45309)">⚠ Diferença de ${fBRL(Math.abs(diff))} entre o realizado do planejamento e os lançamentos do mês.</span>`;
+    }
+  }
   updatePlanConsolidado(t);
   renderPlanResumo(t);
 }
