@@ -2569,6 +2569,7 @@ function handleFileSelect(file){
 const BANCOS_KEY = ()=>`dv_bancos_${cid()||'_'}`;
 const BANCOS_DEFAULT = ['Bradesco','Nubank','Banco do Brasil','Caixa Econômica','Itaú','Santander','Inter','C6 Bank'];
 function loadBancos(){
+  if(Array.isArray(_bancosCache)&&_bancosCache.length) return _bancosCache;
   try{
     const a=JSON.parse(localStorage.getItem(BANCOS_KEY())||'null');
     if(Array.isArray(a)&&a.length){
@@ -2578,7 +2579,11 @@ function loadBancos(){
   }catch{}
   return BANCOS_DEFAULT.slice();
 }
-function saveBancos(arr){localStorage.setItem(BANCOS_KEY(),JSON.stringify(arr));}
+function saveBancos(arr){
+  _bancosCache = Array.isArray(arr)?arr:[];
+  try{ localStorage.setItem(BANCOS_KEY(), JSON.stringify(_bancosCache)); }catch{}
+  try{ pushBancos(_bancosCache); }catch{}
+}
 function fillBancoSelect(selected){
   const sel=gel('despBanco');if(!sel)return;
   let list=loadBancos();
