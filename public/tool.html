@@ -1279,6 +1279,9 @@ function fBRL(v){
 }
 
 function mMask(el){
+  if(!el || !('value' in el)) return;
+  // só formata campos de dinheiro (evita quebrar campos numéricos comuns)
+  if(!el.hasAttribute || !el.hasAttribute('data-money')) return;
   const r=el.value.replace(/\D/g,'');
   el.value=r?(parseInt(r,10)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'';
 }
