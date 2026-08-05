@@ -1221,7 +1221,9 @@ function getCats(){
   return _cats;
 }
 function saveCatsStore(){
-  try{ localStorage.setItem(CATS_KEY(), JSON.stringify(getCats())); }catch{}
+  const cats = getCats();
+  try{ localStorage.setItem(CATS_KEY(), JSON.stringify(cats)); }catch{}
+  try{ pushCategorias(cats); }catch{}
 }
 function resetCatsCache(){ _cats=null; }
 function refreshCatSelectors(){
