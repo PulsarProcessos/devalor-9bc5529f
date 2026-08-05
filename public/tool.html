@@ -3040,7 +3040,14 @@ function updateImportRow(id,field,val){
       if(np){ np.disabled=!val; np.value = val ? r.parcN : 1; }
     }
   }
-  else r[field]=val;
+  else {
+    r[field]=val;
+    if(field==='cat'){
+      r.naoClassificado=false;
+      const row=gel(`irow_${id}`);
+      if(row) row.style.background='';
+    }
+  }
 }
 
 function selectAllImport(v){
