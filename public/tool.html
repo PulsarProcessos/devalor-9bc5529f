@@ -2881,6 +2881,7 @@ function processImportSheet(aoa,fname){
       if(isCartao){if(val<=0)continue;}
       else {if(val>=0)continue;}
       const desc=r.filter((_,k)=>k!==di&&k!==vi).join(' ').replace(/\s+/g,' ').trim();
+      if(isEntradaRow(desc,null)){ _importDescartadasEntrada++; continue; }
       if(!desc && !isCartao)continue;
       rows.push({data:r[di],desc:desc||'Lançamento',valor:Math.abs(val)});
     }
