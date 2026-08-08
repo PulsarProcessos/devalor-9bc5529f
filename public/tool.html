@@ -236,6 +236,11 @@ img,svg{display:block;max-width:100%}
 
 /* ══ DREAMS ═══════════════════════════════════════ */
 .dreams-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:16px}
+.dream-add{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:190px;border:2px dashed var(--border,#d9cfc2);border-radius:14px;background:transparent;color:var(--brand,#6b4a34);font-weight:700;font-size:.9rem;cursor:pointer;transition:.15s}
+.dream-add:hover{border-color:var(--brand,#6b4a34);background:var(--bg-muted)}
+.dream-add span.plus{font-size:1.9rem;line-height:1;opacity:.7}
+.nav-item.locked,.dv-step.locked{opacity:.42;cursor:not-allowed}
+
 .dream-card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--rl);padding:20px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:10px;transition:all var(--t);position:relative;overflow:hidden}
 .dream-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--rl) var(--rl) 0 0}
 .dream-card.tc::before{background:var(--success)}.dream-card.tm::before{background:var(--gold)}.dream-card.tl::before{background:var(--brand)}
