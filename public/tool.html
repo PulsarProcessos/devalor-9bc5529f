@@ -538,17 +538,12 @@ img,svg{display:block;max-width:100%}
   <aside class="app-sidebar" id="appSidebar">
     <div class="nav-year-tag" id="navYear"></div>
 
-    <!-- CADASTROS -->
+    <!-- ETAPAS PRINCIPAIS -->
     <div class="nav-section">
-      <div class="nav-group open" data-group="cadastros">
-        <button class="nav-group-hd" onclick="toggleNavGroup('cadastros')"><span class="nav-icon">📋</span>Cadastros<span class="nav-group-chev">›</span></button>
-        <div class="nav-group-items">
-          <button class="nav-item active" data-panel="perfil" onclick="goPanel('perfil',this)"><span class="nav-dot"></span><span class="nav-icon">👤</span>Perfil & Reserva</button>
-          <button class="nav-item" data-panel="sonhos" onclick="goPanel('sonhos',this)"><span class="nav-dot"></span><span class="nav-icon">✨</span>Sonhos & Objetivos</button>
-          <button class="nav-item" data-panel="dividas" onclick="goPanel('dividas',this)"><span class="nav-dot"></span><span class="nav-icon">📋</span>Inventário de Dívidas</button>
-          <button class="nav-item" data-panel="vencimentos" onclick="goPanel('vencimentos',this)"><span class="nav-dot"></span><span class="nav-icon">📆</span>Vencimentos de Contas</button>
-          <button class="nav-item" data-panel="__catsCad" onclick="openModal('modalCats');buildCatEditor()"><span class="nav-dot"></span><span class="nav-icon">🏷️</span>Categorias</button>
-        </div>
+      <div class="nav-group-items" style="display:flex;flex-direction:column;gap:2px">
+        <button class="nav-item active" data-panel="perfil" onclick="goPanel('perfil',this)"><span class="nav-dot"></span><span class="nav-icon">👤</span>Perfil &amp; Reserva</button>
+        <button class="nav-item" data-panel="vidarica" onclick="goPanel('vidarica',this)"><span class="nav-dot"></span><span class="nav-icon">🌟</span>Vida Rica</button>
+        <button class="nav-item" data-panel="vencimentos" onclick="goPanel('vencimentos',this)"><span class="nav-dot"></span><span class="nav-icon">📆</span>Vencimentos de Contas</button>
       </div>
     </div>
 
@@ -557,16 +552,18 @@ img,svg{display:block;max-width:100%}
       <div class="nav-group" data-group="acompanhamento">
         <button class="nav-group-hd" onclick="toggleNavGroup('acompanhamento')"><span class="nav-icon">📈</span>Acompanhamento<span class="nav-group-chev">›</span></button>
         <div class="nav-group-items">
-          <button class="nav-item" data-panel="vidarica" onclick="goPanel('vidarica',this)"><span class="nav-dot"></span><span class="nav-icon">🌟</span>Vida Rica</button>
           <button class="nav-item" data-panel="planoacao" onclick="goPanel('planoacao',this)"><span class="nav-dot"></span><span class="nav-icon">✅</span>Plano de Ação</button>
+          <button class="nav-item" data-panel="dividas" onclick="goPanel('dividas',this)"><span class="nav-dot"></span><span class="nav-icon">📋</span>Inventário de Dívidas</button>
           <button class="nav-item" data-panel="quitacao" onclick="goPanel('quitacao',this)"><span class="nav-dot"></span><span class="nav-icon">🏦</span>Quitação de Dívidas</button>
           <button class="nav-item" data-panel="despesas" onclick="goPanel('despesas',this)"><span class="nav-dot"></span><span class="nav-icon">💳</span>Despesas</button>
           <button class="nav-item" data-panel="extraordinario" onclick="goPanel('extraordinario',this)"><span class="nav-dot"></span><span class="nav-icon">📅</span>Planejamento Mensal</button>
+          <button class="nav-item" data-panel="__catsCad" onclick="openModal('modalCats');buildCatEditor()"><span class="nav-dot"></span><span class="nav-icon">🏷️</span>Categorias</button>
           <button class="nav-item" data-panel="painel" onclick="goPanel('painel',this)"><span class="nav-dot"></span><span class="nav-icon">📊</span>Painel</button>
 
         </div>
       </div>
     </div>
+
 
     <!-- SIMULADORES -->
     <div class="nav-section">
