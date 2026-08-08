@@ -1824,9 +1824,41 @@ function calcReserve(){
   const rede=document.querySelector('input[name="rede"]:checked')?.value||'sim';
   const g=pMoney(gel('gastosMensais')?.value);
   const m=calcLogic(clt,filhos,rede);
-  gel('reserveMonths').textContent=m;gel('reserveAmount').textContent=fBRL(m*g);
+  const mEl=gel('reserveMonths'), aEl=gel('reserveAmount');
+  if(mEl)mEl.textContent=m;
+  if(aEl)aEl.textContent=fBRL(m*g);
   gel('reserveResult')?.classList.remove('hidden');
+  const tb=gel('reservaResumoTbody');
+  if(tb){
+    const linhas=[
+      ['Carteira assinada (CLT)', clt==='sim'?'Sim':'Não'],
+      ['Tem filhos', filhos==='sim'?'Sim':'Não'],
+      ['Tem a quem recorrer', rede==='sim'?'Sim':'Não'],
+      ['Gastos fixos mensais', fBRL(g)],
+      ['Meses de cobertura', String(m)],
+      ['Reserva ideal', fBRL(m*g)],
+    ];
+    tb.innerHTML=linhas.map(([k,v])=>`<tr><td style="font-weight:600">${k}</td><td class="mono" style="text-align:right">${v}</td></tr>`).join('');
+  }
+  setReservaMeta(clt,filhos,rede,g);
+  return {clt,filhos,rede,g,m};
 }
+let _reserveT=null;
+function calcReserveAuto(){
+  clearTimeout(_reserveT);
+  _reserveT=setTimeout(()=>{ try{ calcReserve(); }catch(e){} if(_onboardingDone) autoSavePerfil(); },400);
+}
+async function autoSavePerfil(){
+  const nome=gel('nomeCliente')?.value.trim(); if(!nome) return;
+  const r=calcReserve();
+  try{
+    await apiSavePerfil({nome,email:gel('emailCliente')?.value.trim()||'',clt:r.clt,filhos:r.filhos,rede:r.rede,
+      gastosMensais:r.g,reservaMeses:r.m,reservaValor:r.m*r.g,ano:CFG.ANO,
+      vidaRicaTexto:gel('vidaRicaTexto')?.value||'',onboardingDone:_onboardingDone});
+    syncReserve(r.clt,r.filhos,r.rede,r.g);
+  }catch(e){}
+}
+
 function calcReserveDash(){
   const drM=gel('drMonths'), drA=gel('drAmount');
   if(!drM||!drA) return;
