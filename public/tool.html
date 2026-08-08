@@ -1668,8 +1668,48 @@ function showCliente(user){
   try{ buildVencCategoriaSelect(); }catch{}
   try{ loadCadastros(); }catch(e){ console.warn(e); }
   loadSonhosFromSheets();
+  bindPerfilAuto();
   goPanel('perfil');
+  loadPerfilRemoto();
 }
+
+/* Recupera o perfil salvo e o estado do cadastro inicial */
+async function loadPerfilRemoto(){
+  try{
+    const r=await gGet('getPerfil',{clienteId:cid()});
+    const p=r?.perfil; if(!p) { applyLocks(); return; }
+    const d=p.data||{};
+    if(gel('nomeCliente')&&p.nome) gel('nomeCliente').value=p.nome;
+    if(gel('emailCliente')&&p.email) gel('emailCliente').value=p.email;
+    const setR=(n,v)=>{const el=document.querySelector(`input[name="${n}"][value="${v}"]`);if(el)el.checked=true;};
+    if(p.clt!==null&&p.clt!==undefined) setR('clt',p.clt?'sim':'nao');
+    if(p.filhos!==null&&p.filhos!==undefined) setR('filhos',Number(p.filhos)>0?'sim':'nao');
+    if(d.rede) setR('rede',d.rede);
+    const g=Number(p.gastos_mensais||0);
+    if(g>0&&gel('gastosMensais')) gel('gastosMensais').value=g.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    if(gel('vidaRicaTexto')&&d.vidaRicaTexto) gel('vidaRicaTexto').value=d.vidaRicaTexto;
+    _onboardingDone = d.onboardingDone===true;
+    if(_onboardingDone){ DV_STEP_IDS.forEach(id=>{const b=document.querySelector(`.nav-item[data-panel="${id}"]`);if(b)b.classList.add('done');}); }
+    else if(p.nome){ const b=document.querySelector('.nav-item[data-panel="perfil"]'); if(b)b.classList.add('done'); }
+    calcReserve();
+    renderSteppers(); applyLocks();
+    if(!_onboardingDone){ const pend=nextPendingStep(); if(pend) goPanel(pend); }
+  }catch(e){ try{ applyLocks(); }catch{} }
+}
+
+/* Cálculo automático da reserva ao editar o perfil */
+let _perfilBound=false;
+function bindPerfilAuto(){
+  if(_perfilBound) return; _perfilBound=true;
+  const gm=gel('gastosMensais');
+  if(gm) gm.addEventListener('input',()=>{ try{mMask(gm);}catch(e){} calcReserveAuto(); });
+  ['clt','filhos','rede'].forEach(n=>{
+    document.querySelectorAll(`input[name="${n}"]`).forEach(el=>el.addEventListener('change',calcReserveAuto));
+  });
+  const vr=gel('vidaRicaTexto');
+  if(vr) vr.addEventListener('blur',()=>{ if(_onboardingDone) saveVidaRicaTexto(false); });
+}
+
 
 function backToConsultor(){
   _cliente=null;
