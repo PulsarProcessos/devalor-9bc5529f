@@ -735,7 +735,11 @@ img,svg{display:block;max-width:100%}
       <div class="tbl-wrap mt16">
         <table class="tbl" id="vencTable"><thead><tr><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Dia do vencimento</th><th>Status</th><th>Obs.</th><th></th></tr></thead><tbody id="vencTbody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:18px">Nenhuma conta cadastrada.</td></tr></tbody></table>
       </div>
+      <div class="form-footer" style="margin-top:18px">
+        <button class="btn btn-p" onclick="markNavDone('vencimentos');renderSteppers();toast('Cadastro inicial concluído!','success');goPanel('painel')">Concluir cadastro →</button>
+      </div>
     </div>
+
 
     <!-- ══ QUITAÇÃO ════════════════════════════════ -->
     <div class="panel" id="panel-quitacao">
