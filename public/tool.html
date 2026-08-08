@@ -1853,7 +1853,7 @@ async function submitSonhos(){
     _sonhosQ.length=0;
     const tb=gel('sonhosTbody'); if(tb) tb.innerHTML='';
     toast(`${rows.length} sonho(s) salvos!`,'success');
-    markNavDone('sonhos');goPanel('dividas');
+    markNavDone('vidarica');toggleSonhoForm(false);
   }catch(e){toast('Erro: '+e.message,'error');}
   finally{if(btn)btn.disabled=false;}
 }
