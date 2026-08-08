@@ -138,6 +138,16 @@ img,svg{display:block;max-width:100%}
 .nav-item.active{background:var(--gold-light);color:var(--brand);font-weight:600}
 .nav-item.done{color:var(--success)}
 .nav-item.done .nav-dot{background:var(--success);border-color:var(--success)}
+.dv-stepper{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px;padding:12px 14px;background:var(--bg-muted);border-radius:12px}
+.dv-step{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:99px;border:1px solid var(--border,#e6e0d5);background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.76rem;font-weight:600;color:var(--text-muted);transition:all var(--t)}
+.dv-step:hover{background:var(--gold-pale)}
+.dv-step .dv-step-n{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--border,#e6e0d5);color:#fff;font-size:.66rem;font-weight:700}
+.dv-step.current{background:var(--gold-light);color:var(--brand);border-color:var(--brand)}
+.dv-step.current .dv-step-n{background:var(--brand)}
+.dv-step.done{color:var(--success);border-color:var(--success)}
+.dv-step.done .dv-step-n{background:var(--success)}
+.dv-step-sep{color:var(--text-muted);opacity:.5}
+
 .nav-dot{width:6px;height:6px;border-radius:50%;border:1.5px solid var(--border-default);background:transparent;flex-shrink:0;transition:all var(--t)}
 .nav-item.active .nav-dot{background:var(--brand);border-color:var(--brand)}
 .nav-icon{font-size:.95rem;width:20px;text-align:center;flex-shrink:0}
@@ -538,17 +548,12 @@ img,svg{display:block;max-width:100%}
   <aside class="app-sidebar" id="appSidebar">
     <div class="nav-year-tag" id="navYear"></div>
 
-    <!-- CADASTROS -->
+    <!-- ETAPAS PRINCIPAIS -->
     <div class="nav-section">
-      <div class="nav-group open" data-group="cadastros">
-        <button class="nav-group-hd" onclick="toggleNavGroup('cadastros')"><span class="nav-icon">📋</span>Cadastros<span class="nav-group-chev">›</span></button>
-        <div class="nav-group-items">
-          <button class="nav-item active" data-panel="perfil" onclick="goPanel('perfil',this)"><span class="nav-dot"></span><span class="nav-icon">👤</span>Perfil & Reserva</button>
-          <button class="nav-item" data-panel="sonhos" onclick="goPanel('sonhos',this)"><span class="nav-dot"></span><span class="nav-icon">✨</span>Sonhos & Objetivos</button>
-          <button class="nav-item" data-panel="dividas" onclick="goPanel('dividas',this)"><span class="nav-dot"></span><span class="nav-icon">📋</span>Inventário de Dívidas</button>
-          <button class="nav-item" data-panel="vencimentos" onclick="goPanel('vencimentos',this)"><span class="nav-dot"></span><span class="nav-icon">📆</span>Vencimentos de Contas</button>
-          <button class="nav-item" data-panel="__catsCad" onclick="openModal('modalCats');buildCatEditor()"><span class="nav-dot"></span><span class="nav-icon">🏷️</span>Categorias</button>
-        </div>
+      <div class="nav-group-items" style="display:flex;flex-direction:column;gap:2px">
+        <button class="nav-item active" data-panel="perfil" onclick="goPanel('perfil',this)"><span class="nav-dot"></span><span class="nav-icon">👤</span>Perfil &amp; Reserva</button>
+        <button class="nav-item" data-panel="vidarica" onclick="goPanel('vidarica',this)"><span class="nav-dot"></span><span class="nav-icon">🌟</span>Vida Rica</button>
+        <button class="nav-item" data-panel="vencimentos" onclick="goPanel('vencimentos',this)"><span class="nav-dot"></span><span class="nav-icon">📆</span>Vencimentos de Contas</button>
       </div>
     </div>
 
@@ -557,16 +562,18 @@ img,svg{display:block;max-width:100%}
       <div class="nav-group" data-group="acompanhamento">
         <button class="nav-group-hd" onclick="toggleNavGroup('acompanhamento')"><span class="nav-icon">📈</span>Acompanhamento<span class="nav-group-chev">›</span></button>
         <div class="nav-group-items">
-          <button class="nav-item" data-panel="vidarica" onclick="goPanel('vidarica',this)"><span class="nav-dot"></span><span class="nav-icon">🌟</span>Vida Rica</button>
           <button class="nav-item" data-panel="planoacao" onclick="goPanel('planoacao',this)"><span class="nav-dot"></span><span class="nav-icon">✅</span>Plano de Ação</button>
+          <button class="nav-item" data-panel="dividas" onclick="goPanel('dividas',this)"><span class="nav-dot"></span><span class="nav-icon">📋</span>Inventário de Dívidas</button>
           <button class="nav-item" data-panel="quitacao" onclick="goPanel('quitacao',this)"><span class="nav-dot"></span><span class="nav-icon">🏦</span>Quitação de Dívidas</button>
           <button class="nav-item" data-panel="despesas" onclick="goPanel('despesas',this)"><span class="nav-dot"></span><span class="nav-icon">💳</span>Despesas</button>
           <button class="nav-item" data-panel="extraordinario" onclick="goPanel('extraordinario',this)"><span class="nav-dot"></span><span class="nav-icon">📅</span>Planejamento Mensal</button>
+          <button class="nav-item" data-panel="__catsCad" onclick="openModal('modalCats');buildCatEditor()"><span class="nav-dot"></span><span class="nav-icon">🏷️</span>Categorias</button>
           <button class="nav-item" data-panel="painel" onclick="goPanel('painel',this)"><span class="nav-dot"></span><span class="nav-icon">📊</span>Painel</button>
 
         </div>
       </div>
     </div>
+
 
     <!-- SIMULADORES -->
     <div class="nav-section">
@@ -588,7 +595,9 @@ img,svg{display:block;max-width:100%}
 
     <!-- ══ PERFIL ════════════════════════════════ -->
     <div class="panel active" id="panel-perfil">
+      <div class="dv-stepper" data-step="perfil"></div>
       <div class="panel-hd"><h1 class="panel-title">Perfil do Cliente</h1><p class="panel-sub">Dados iniciais para cálculo da Reserva de Emergência</p></div>
+
       <div class="card-form">
         <div class="grid2">
           <div class="field"><label class="lbl">Nome completo</label><input class="inp" type="text" id="nomeCliente" placeholder="Ex: Maria Silva"/></div>
@@ -613,29 +622,8 @@ img,svg{display:block;max-width:100%}
       </div>
     </div>
 
-    <!-- ══ SONHOS ══════════════════════════════════ -->
-    <div class="panel" id="panel-sonhos">
-      <div class="panel-hd"><h1 class="panel-title">Sonhos & Objetivos de Vida</h1><p class="panel-sub">Cadastre os objetivos que dão sentido ao planejamento</p></div>
-      <div class="card-form">
-        <div class="grid2">
-          <div class="field"><label class="lbl">Quem <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label><input class="inp" type="text" id="sonhoQuem" placeholder="Ex: Família toda"/></div>
-          <div class="field"><label class="lbl">Objetivo / Sonho</label><input class="inp" type="text" id="sonhoObj" placeholder="Ex: Casa própria"/></div>
-          <div class="field"><label class="lbl">Motivo</label><input class="inp" type="text" id="sonhoMotivo" placeholder="Por que é importante?"/></div>
-          <div class="field"><label class="lbl">Valor total (R$)</label><input class="inp inp-money" type="text" id="sonhoValor" placeholder="0,00" data-money/></div>
-          <div class="field"><label class="lbl">Prazo (data limite)</label>
-            <div style="display:flex;gap:8px;align-items:center">
-              <input class="inp" type="date" id="sonhoPrazo" oninput="updateTipoPrazoBadge()" style="flex:1"/>
-              <span id="sonhoTipoBadge" style="display:inline-flex;padding:6px 12px;border-radius:99px;font-size:.72rem;font-weight:700;text-transform:uppercase;background:var(--success-bg);color:var(--success);white-space:nowrap">Curto</span>
-            </div>
-          </div>
-        </div>
-        <div class="form-footer">
-          <button class="btn btn-s" onclick="addSonhoPreview()">+ Adicionar à lista</button>
-          <button class="btn btn-p" onclick="submitSonhos()">Salvar & avançar →</button>
-        </div>
-      </div>
-      <div class="tbl-wrap"><table class="tbl hidden" id="sonhosTable"><thead><tr><th>Quem</th><th>Objetivo</th><th>Motivo</th><th>Valor</th><th>Prazo</th><th>Tipo</th><th></th></tr></thead><tbody id="sonhosTbody"></tbody></table></div>
-    </div>
+
+
 
     <!-- ══ DÍVIDAS ═════════════════════════════════ -->
     <div class="panel" id="panel-dividas">
@@ -667,12 +655,40 @@ img,svg{display:block;max-width:100%}
 
     <!-- ══ VIDA RICA ═══════════════════════════════ -->
     <div class="panel" id="panel-vidarica">
+      <div class="dv-stepper" data-step="vidarica"></div>
       <div class="sec-hd">
-        <div><h2 class="sec-title">Vida Rica</h2><p class="sec-sub">Objetivos e sonhos em construção</p></div>
-        <button class="btn btn-p btn-sm" onclick="goPanel('sonhos')">+ Novo sonho</button>
+        <div><h2 class="sec-title">Vida Rica</h2><p class="sec-sub">Cadastre aqui os sonhos e objetivos que dão sentido ao planejamento</p></div>
+        <button class="btn btn-p btn-sm" onclick="toggleSonhoForm(true)">+ Novo sonho</button>
       </div>
+
+      <div class="card-form hidden" id="sonhoFormCard" style="margin-bottom:18px">
+        <div class="grid2">
+          <div class="field"><label class="lbl">Quem <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label><input class="inp" type="text" id="sonhoQuem" placeholder="Ex: Família toda"/></div>
+          <div class="field"><label class="lbl">Objetivo / Sonho</label><input class="inp" type="text" id="sonhoObj" placeholder="Ex: Casa própria"/></div>
+          <div class="field"><label class="lbl">Motivo</label><input class="inp" type="text" id="sonhoMotivo" placeholder="Por que é importante?"/></div>
+          <div class="field"><label class="lbl">Valor total (R$)</label><input class="inp inp-money" type="text" id="sonhoValor" placeholder="0,00" data-money/></div>
+          <div class="field"><label class="lbl">Prazo (data limite)</label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input class="inp" type="date" id="sonhoPrazo" oninput="updateTipoPrazoBadge()" style="flex:1"/>
+              <span id="sonhoTipoBadge" style="display:inline-flex;padding:6px 12px;border-radius:99px;font-size:.72rem;font-weight:700;text-transform:uppercase;background:var(--success-bg);color:var(--success);white-space:nowrap">Curto</span>
+            </div>
+          </div>
+        </div>
+        <div class="form-footer">
+          <button class="btn btn-s" onclick="toggleSonhoForm(false)">Cancelar</button>
+          <button class="btn btn-s" onclick="addSonhoPreview()">+ Adicionar à lista</button>
+          <button class="btn btn-p" onclick="submitSonhos()">Salvar sonhos</button>
+        </div>
+        <div class="tbl-wrap"><table class="tbl hidden" id="sonhosTable"><thead><tr><th>Quem</th><th>Objetivo</th><th>Motivo</th><th>Valor</th><th>Prazo</th><th>Tipo</th><th></th></tr></thead><tbody id="sonhosTbody"></tbody></table></div>
+      </div>
+
       <div class="dreams-grid" id="dreamsGrid"><div style="grid-column:1/-1;padding:48px;text-align:center;color:var(--text-muted)"><span style="font-size:2.5rem;opacity:.25;display:block;margin-bottom:10px">◈</span>Nenhum sonho cadastrado ainda.</div></div>
+
+      <div class="form-footer" style="margin-top:18px">
+        <button class="btn btn-p" onclick="markNavDone('vidarica');goPanel('vencimentos')">Avançar para Vencimentos →</button>
+      </div>
     </div>
+
 
     <!-- Edit Sonho Modal -->
     <div id="editSonhoModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;padding:20px">
@@ -711,7 +727,9 @@ img,svg{display:block;max-width:100%}
 
     <!-- ══ VENCIMENTOS DE CONTAS ═══════════════════ -->
     <div class="panel" id="panel-vencimentos">
+      <div class="dv-stepper" data-step="vencimentos"></div>
       <div class="panel-hd"><h1 class="panel-title">Vencimentos de Contas</h1><p class="panel-sub">Cadastre contas recorrentes para acompanhamento e lembrete</p></div>
+
       <div class="card-form">
         <div class="grid3">
           <div class="field"><label class="lbl">Descrição</label><input class="inp" type="text" id="vencDesc" placeholder="Ex: Conta de luz"/></div>
@@ -727,7 +745,11 @@ img,svg{display:block;max-width:100%}
       <div class="tbl-wrap mt16">
         <table class="tbl" id="vencTable"><thead><tr><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Dia do vencimento</th><th>Status</th><th>Obs.</th><th></th></tr></thead><tbody id="vencTbody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:18px">Nenhuma conta cadastrada.</td></tr></tbody></table>
       </div>
+      <div class="form-footer" style="margin-top:18px">
+        <button class="btn btn-p" onclick="markNavDone('vencimentos');renderSteppers();toast('Cadastro inicial concluído!','success');goPanel('painel')">Concluir cadastro →</button>
+      </div>
     </div>
+
 
     <!-- ══ QUITAÇÃO ════════════════════════════════ -->
     <div class="panel" id="panel-quitacao">
@@ -1311,6 +1333,7 @@ function toast(msg,type='success'){
 }
 
 function goPanel(id, btnEl){
+  if(id==='sonhos'){ id='vidarica'; btnEl=null; }
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const p=gel(`panel-${id}`); if(p)p.classList.add('active');
@@ -1331,20 +1354,37 @@ function goPanel(id, btnEl){
   if(id==='vencimentos'){ buildVencCategoriaSelect(); renderVencimentos(); }
   if(id==='renda'){ goPanel('extraordinario'); return; }
   if(id==='painel'){ loadPainelAnual(); }
+  renderSteppers(id);
 }
 
-function toggleNavGroup(name){
-  const grp=document.querySelector(`.nav-group[data-group="${name}"]`);
-  if(!grp)return;
-  const wasOpen=grp.classList.contains('open');
-  document.querySelectorAll('.nav-group').forEach(g=>g.classList.remove('open'));
-  if(!wasOpen)grp.classList.add('open');
+/* ── Etapas do cadastro inicial ───────────────── */
+const DV_STEPS=[
+  {id:'perfil',    lbl:'Perfil & Reserva'},
+  {id:'vidarica',  lbl:'Vida Rica'},
+  {id:'vencimentos',lbl:'Vencimentos'}
+];
+function renderSteppers(currentId){
+  const cur=currentId||document.querySelector('.panel.active')?.id.replace('panel-','')||'';
+  document.querySelectorAll('.dv-stepper').forEach(box=>{
+    box.innerHTML=DV_STEPS.map((s,i)=>{
+      const done=document.querySelector(`.nav-item[data-panel="${s.id}"]`)?.classList.contains('done');
+      const cls=['dv-step']; if(s.id===cur)cls.push('current'); if(done)cls.push('done');
+      return `${i?'<span class="dv-step-sep">›</span>':''}<button class="${cls.join(' ')}" onclick="goPanel('${s.id}')"><span class="dv-step-n">${done?'✓':i+1}</span>${s.lbl}</button>`;
+    }).join('');
+  });
+}
+function toggleSonhoForm(open){
+  const c=gel('sonhoFormCard'); if(!c)return;
+  c.classList.toggle('hidden', !open);
+  if(open){ setTimeout(()=>gel('sonhoObj')?.focus(),50); }
 }
 
 function markNavDone(panelId){
   const btn=document.querySelector(`.nav-item[data-panel="${panelId}"]`);
   if(btn) btn.classList.add('done');
+  try{ renderSteppers(); }catch(e){}
 }
+
 
 function openModal(id){ gel(id).classList.add('active'); }
 function closeModal(id){ gel(id).classList.remove('active'); }
@@ -1754,7 +1794,7 @@ async function submitPerfil(){
     gel('clientBadge').textContent=nome.value.trim().split(' ')[0];
     syncReserve(clt,filhos,rede,g);
     toast('Perfil salvo!','success');
-    markNavDone('perfil');goPanel('sonhos');
+    markNavDone('perfil');goPanel('vidarica');
   }catch(e){toast('Erro: '+e.message,'error');}
   finally{if(btn)btn.disabled=false;}
 }
@@ -1813,7 +1853,7 @@ async function submitSonhos(){
     _sonhosQ.length=0;
     const tb=gel('sonhosTbody'); if(tb) tb.innerHTML='';
     toast(`${rows.length} sonho(s) salvos!`,'success');
-    markNavDone('sonhos');goPanel('dividas');
+    markNavDone('vidarica');toggleSonhoForm(false);
   }catch(e){toast('Erro: '+e.message,'error');}
   finally{if(btn)btn.disabled=false;}
 }
