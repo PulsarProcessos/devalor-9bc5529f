@@ -1794,7 +1794,7 @@ async function submitPerfil(){
     gel('clientBadge').textContent=nome.value.trim().split(' ')[0];
     syncReserve(clt,filhos,rede,g);
     toast('Perfil salvo!','success');
-    markNavDone('perfil');goPanel('sonhos');
+    markNavDone('perfil');goPanel('vidarica');
   }catch(e){toast('Erro: '+e.message,'error');}
   finally{if(btn)btn.disabled=false;}
 }
