@@ -2355,7 +2355,8 @@ function renderDreams(list){
         <button class="btn btn-d btn-xs" onclick="deleteSonho(${i})">✕</button>
       </div>
     </article>`;
-  }).join('');
+  }).join('')+addCard;
+
 }
 async function loadSonhosFromSheets(){
   try{
