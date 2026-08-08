@@ -1889,21 +1889,69 @@ function syncReserve(clt,filhos,rede,g){
 async function submitPerfil(){
   const nome=gel('nomeCliente');
   if(!nome.value.trim()){toast('Informe o nome do cliente.','error');nome.focus();return;}
+  const email=gel('emailCliente');
+  if(!_onboardingDone && !email?.value.trim()){toast('Informe o e-mail.','error');email?.focus();return;}
   const clt=document.querySelector('input[name="clt"]:checked')?.value||'nao';
   const filhos=document.querySelector('input[name="filhos"]:checked')?.value||'nao';
   const rede=document.querySelector('input[name="rede"]:checked')?.value||'sim';
   const g=pMoney(gel('gastosMensais')?.value);
+  if(!_onboardingDone && !(g>0)){toast('Informe os gastos fixos mensais.','error');gel('gastosMensais')?.focus();return;}
   const m=calcLogic(clt,filhos,rede);
   const btn=document.querySelector('[onclick="submitPerfil()"]');if(btn)btn.disabled=true;
   try{
-    await apiSavePerfil({nome:nome.value.trim(),email:gel('emailCliente')?.value.trim()||'',clt,filhos,rede,gastosMensais:g,reservaMeses:m,reservaValor:m*g,ano:CFG.ANO});
+    await apiSavePerfil({nome:nome.value.trim(),email:email?.value.trim()||'',clt,filhos,rede,gastosMensais:g,reservaMeses:m,reservaValor:m*g,ano:CFG.ANO,
+      vidaRicaTexto:gel('vidaRicaTexto')?.value||'',onboardingDone:_onboardingDone});
     gel('clientBadge').textContent=nome.value.trim().split(' ')[0];
     syncReserve(clt,filhos,rede,g);
     toast('Perfil salvo!','success');
-    markNavDone('perfil');goPanel('vidarica');
+    markNavDone('perfil');
+    calcReserve();
+    goPanel('reserva');
   }catch(e){toast('Erro: '+e.message,'error');}
   finally{if(btn)btn.disabled=false;}
 }
+
+function concluirReserva(){
+  calcReserve();
+  markNavDone('reserva');
+  goPanel('vidarica');
+}
+
+async function saveVidaRicaTexto(showToast){
+  const nome=gel('nomeCliente')?.value.trim();
+  if(!nome){ if(showToast)toast('Preencha o perfil primeiro.','error'); return false; }
+  const r=calcReserve();
+  try{
+    await apiSavePerfil({nome,email:gel('emailCliente')?.value.trim()||'',clt:r.clt,filhos:r.filhos,rede:r.rede,
+      gastosMensais:r.g,reservaMeses:r.m,reservaValor:r.m*r.g,ano:CFG.ANO,
+      vidaRicaTexto:gel('vidaRicaTexto')?.value||'',onboardingDone:_onboardingDone});
+    if(showToast)toast('Texto salvo!','success');
+    return true;
+  }catch(e){ if(showToast)toast('Erro: '+e.message,'error'); return false; }
+}
+
+async function avancarVidaRica(){
+  const txt=(gel('vidaRicaTexto')?.value||'').trim();
+  if(!_onboardingDone && !txt){toast('Escreva como está a sua vida hoje.','error');gel('vidaRicaTexto')?.focus();return;}
+  if(!_onboardingDone && !_dreamsCache.length){toast('Cadastre ao menos um sonho.','error');return;}
+  await saveVidaRicaTexto(false);
+  markNavDone('vidarica');
+  goPanel('vencimentos');
+}
+
+async function concluirCadastro(semContas){
+  const temContas=(typeof _vencCache!=='undefined' && Array.isArray(_vencCache) && _vencCache.length)|| (gel('vencTbody')?.querySelectorAll('tr[data-id]').length||0)>0;
+  if(!semContas && !_onboardingDone && !temContas){
+    toast('Cadastre uma conta ou use "Não tenho contas fixas".','error');return;
+  }
+  markNavDone('vencimentos');
+  _onboardingDone=true;
+  try{ await saveVidaRicaTexto(false); }catch(e){}
+  renderSteppers(); applyLocks();
+  toast('Cadastro inicial concluído! Agora você pode editar tudo livremente.','success');
+  goPanel('painel');
+}
+
 
 function calcTipoPrazo(prazo){
   if(!prazo) return 'Curto';
