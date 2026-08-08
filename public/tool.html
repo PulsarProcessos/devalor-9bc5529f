@@ -236,6 +236,11 @@ img,svg{display:block;max-width:100%}
 
 /* ══ DREAMS ═══════════════════════════════════════ */
 .dreams-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:16px}
+.dream-add{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:190px;border:2px dashed var(--border,#d9cfc2);border-radius:14px;background:transparent;color:var(--brand,#6b4a34);font-weight:700;font-size:.9rem;cursor:pointer;transition:.15s}
+.dream-add:hover{border-color:var(--brand,#6b4a34);background:var(--bg-muted)}
+.dream-add span.plus{font-size:1.9rem;line-height:1;opacity:.7}
+.nav-item.locked,.dv-step.locked{opacity:.42;cursor:not-allowed}
+
 .dream-card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--rl);padding:20px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:10px;transition:all var(--t);position:relative;overflow:hidden}
 .dream-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--rl) var(--rl) 0 0}
 .dream-card.tc::before{background:var(--success)}.dream-card.tm::before{background:var(--gold)}.dream-card.tl::before{background:var(--brand)}
@@ -552,8 +557,10 @@ img,svg{display:block;max-width:100%}
     <div class="nav-section">
       <div class="nav-group-items" style="display:flex;flex-direction:column;gap:2px">
         <button class="nav-item active" data-panel="perfil" onclick="goPanel('perfil',this)"><span class="nav-dot"></span><span class="nav-icon">👤</span>Perfil &amp; Reserva</button>
+        <button class="nav-item" data-panel="reserva" onclick="goPanel('reserva',this)"><span class="nav-dot"></span><span class="nav-icon">🛡️</span>Reserva de Emergência</button>
         <button class="nav-item" data-panel="vidarica" onclick="goPanel('vidarica',this)"><span class="nav-dot"></span><span class="nav-icon">🌟</span>Vida Rica</button>
         <button class="nav-item" data-panel="vencimentos" onclick="goPanel('vencimentos',this)"><span class="nav-dot"></span><span class="nav-icon">📆</span>Vencimentos de Contas</button>
+
       </div>
     </div>
 
@@ -611,16 +618,31 @@ img,svg{display:block;max-width:100%}
             <div class="field"><label class="lbl">Gastos fixos mensais (R$)</label><input class="inp inp-money" type="text" id="gastosMensais" placeholder="0,00" data-money/></div>
           </div>
         </fieldset>
-        <div class="res-box hidden" id="reserveResult">
-          <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--brand2)">Meses recomendados</span><span style="font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:600;color:var(--brand)" id="reserveMonths">—</span></div>
-          <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--brand2)">Valor ideal</span><span style="font-family:'DM Mono',monospace;font-size:1.6rem;font-weight:700;color:var(--brand)" id="reserveAmount">R$ —</span></div>
-        </div>
         <div class="form-footer">
-          <button class="btn btn-g" onclick="calcReserve()">Calcular reserva</button>
           <button class="btn btn-p" onclick="submitPerfil()">Salvar & avançar →</button>
         </div>
       </div>
     </div>
+
+    <!-- ══ RESERVA DE EMERGÊNCIA (extensão do Perfil) ═════ -->
+    <div class="panel" id="panel-reserva">
+      <div class="dv-stepper" data-step="reserva"></div>
+      <div class="panel-hd"><h1 class="panel-title">Reserva de Emergência</h1><p class="panel-sub">Calculada automaticamente a partir das respostas do seu perfil</p></div>
+      <div class="card-form">
+        <div class="res-box" id="reserveResult">
+          <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--brand2)">Meses recomendados</span><span style="font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:600;color:var(--brand)" id="reserveMonths">—</span></div>
+          <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--brand2)">Valor ideal</span><span style="font-family:'DM Mono',monospace;font-size:1.6rem;font-weight:700;color:var(--brand)" id="reserveAmount">R$ —</span></div>
+        </div>
+        <div class="tbl-wrap mt16">
+          <table class="tbl"><tbody id="reservaResumoTbody"></tbody></table>
+        </div>
+        <div class="form-footer">
+          <button class="btn btn-s" onclick="goPanel('perfil')">← Voltar ao perfil</button>
+          <button class="btn btn-p" onclick="concluirReserva()">Salvar & avançar →</button>
+        </div>
+      </div>
+    </div>
+
 
 
 
@@ -657,36 +679,51 @@ img,svg{display:block;max-width:100%}
     <div class="panel" id="panel-vidarica">
       <div class="dv-stepper" data-step="vidarica"></div>
       <div class="sec-hd">
-        <div><h2 class="sec-title">Vida Rica</h2><p class="sec-sub">Cadastre aqui os sonhos e objetivos que dão sentido ao planejamento</p></div>
-        <button class="btn btn-p btn-sm" onclick="toggleSonhoForm(true)">+ Novo sonho</button>
+        <div><h2 class="sec-title">Vida Rica</h2><p class="sec-sub">Descreva como está a sua vida hoje e cadastre os sonhos que dão sentido ao planejamento</p></div>
       </div>
 
-      <div class="card-form hidden" id="sonhoFormCard" style="margin-bottom:18px">
-        <div class="grid2">
-          <div class="field"><label class="lbl">Quem <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label><input class="inp" type="text" id="sonhoQuem" placeholder="Ex: Família toda"/></div>
-          <div class="field"><label class="lbl">Objetivo / Sonho</label><input class="inp" type="text" id="sonhoObj" placeholder="Ex: Casa própria"/></div>
-          <div class="field"><label class="lbl">Motivo</label><input class="inp" type="text" id="sonhoMotivo" placeholder="Por que é importante?"/></div>
-          <div class="field"><label class="lbl">Valor total (R$)</label><input class="inp inp-money" type="text" id="sonhoValor" placeholder="0,00" data-money/></div>
-          <div class="field"><label class="lbl">Prazo (data limite)</label>
-            <div style="display:flex;gap:8px;align-items:center">
-              <input class="inp" type="date" id="sonhoPrazo" oninput="updateTipoPrazoBadge()" style="flex:1"/>
-              <span id="sonhoTipoBadge" style="display:inline-flex;padding:6px 12px;border-radius:99px;font-size:.72rem;font-weight:700;text-transform:uppercase;background:var(--success-bg);color:var(--success);white-space:nowrap">Curto</span>
-            </div>
-          </div>
+      <div class="card-form" style="margin-bottom:18px">
+        <div class="field">
+          <label class="lbl">Como está a sua vida hoje?</label>
+          <textarea class="inp" id="vidaRicaTexto" rows="5" style="min-height:120px;resize:vertical" placeholder="Escreva em poucas linhas o seu momento atual: o que funciona, o que incomoda e o que você quer mudar."></textarea>
         </div>
         <div class="form-footer">
-          <button class="btn btn-s" onclick="toggleSonhoForm(false)">Cancelar</button>
-          <button class="btn btn-s" onclick="addSonhoPreview()">+ Adicionar à lista</button>
-          <button class="btn btn-p" onclick="submitSonhos()">Salvar sonhos</button>
+          <button class="btn btn-s" onclick="saveVidaRicaTexto(true)">Salvar texto</button>
         </div>
-        <div class="tbl-wrap"><table class="tbl hidden" id="sonhosTable"><thead><tr><th>Quem</th><th>Objetivo</th><th>Motivo</th><th>Valor</th><th>Prazo</th><th>Tipo</th><th></th></tr></thead><tbody id="sonhosTbody"></tbody></table></div>
       </div>
 
-      <div class="dreams-grid" id="dreamsGrid"><div style="grid-column:1/-1;padding:48px;text-align:center;color:var(--text-muted)"><span style="font-size:2.5rem;opacity:.25;display:block;margin-bottom:10px">◈</span>Nenhum sonho cadastrado ainda.</div></div>
+      <!-- Modal de novo sonho -->
+      <div id="sonhoFormCard" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;padding:20px">
+        <div style="background:var(--bg-elev,#fff);color:var(--text-primary);border-radius:14px;max-width:640px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.4);max-height:90vh;overflow:auto">
+          <h3 style="margin:0 0 16px;font-family:'Playfair Display',serif">Novo Sonho</h3>
+          <div class="grid2">
+            <div class="field"><label class="lbl">Quem <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label><input class="inp" type="text" id="sonhoQuem" placeholder="Ex: Família toda"/></div>
+            <div class="field"><label class="lbl">Objetivo / Sonho</label><input class="inp" type="text" id="sonhoObj" placeholder="Ex: Casa própria"/></div>
+            <div class="field"><label class="lbl">Motivo</label><input class="inp" type="text" id="sonhoMotivo" placeholder="Por que é importante?"/></div>
+            <div class="field"><label class="lbl">Valor total (R$)</label><input class="inp inp-money" type="text" id="sonhoValor" placeholder="0,00" data-money/></div>
+            <div class="field"><label class="lbl">Prazo (data limite)</label>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input class="inp" type="date" id="sonhoPrazo" oninput="updateTipoPrazoBadge()" style="flex:1"/>
+                <span id="sonhoTipoBadge" style="display:inline-flex;padding:6px 12px;border-radius:99px;font-size:.72rem;font-weight:700;text-transform:uppercase;background:var(--success-bg);color:var(--success);white-space:nowrap">Curto</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-footer">
+            <button class="btn btn-s" onclick="toggleSonhoForm(false)">Cancelar</button>
+            <button class="btn btn-s" onclick="addSonhoPreview()">+ Adicionar à lista</button>
+            <button class="btn btn-p" onclick="submitSonhos()">Salvar sonhos</button>
+          </div>
+          <div class="tbl-wrap"><table class="tbl hidden" id="sonhosTable"><thead><tr><th>Quem</th><th>Objetivo</th><th>Motivo</th><th>Valor</th><th>Prazo</th><th>Tipo</th><th></th></tr></thead><tbody id="sonhosTbody"></tbody></table></div>
+        </div>
+      </div>
+
+      <div class="dreams-grid" id="dreamsGrid"></div>
+
 
       <div class="form-footer" style="margin-top:18px">
-        <button class="btn btn-p" onclick="markNavDone('vidarica');goPanel('vencimentos')">Avançar para Vencimentos →</button>
+        <button class="btn btn-p" onclick="avancarVidaRica()">Salvar & avançar →</button>
       </div>
+
     </div>
 
 
@@ -746,7 +783,9 @@ img,svg{display:block;max-width:100%}
         <table class="tbl" id="vencTable"><thead><tr><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Dia do vencimento</th><th>Status</th><th>Obs.</th><th></th></tr></thead><tbody id="vencTbody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:18px">Nenhuma conta cadastrada.</td></tr></tbody></table>
       </div>
       <div class="form-footer" style="margin-top:18px">
-        <button class="btn btn-p" onclick="markNavDone('vencimentos');renderSteppers();toast('Cadastro inicial concluído!','success');goPanel('painel')">Concluir cadastro →</button>
+        <button class="btn btn-s" onclick="concluirCadastro(true)">Não tenho contas fixas</button>
+        <button class="btn btn-p" onclick="concluirCadastro(false)">Concluir cadastro →</button>
+
       </div>
     </div>
 
@@ -1332,8 +1371,44 @@ function toast(msg,type='success'){
   setTimeout(()=>{ t.classList.add('removing'); t.addEventListener('animationend',()=>t.remove(),{once:true}); },CFG.TOAST_MS);
 }
 
+/* ── Estado do cadastro inicial ───────────────── */
+let _onboardingDone=false;
+const DV_STEPS=[
+  {id:'perfil',    lbl:'Perfil'},
+  {id:'reserva',   lbl:'Reserva'},
+  {id:'vidarica',  lbl:'Vida Rica'},
+  {id:'vencimentos',lbl:'Vencimentos'}
+];
+const DV_STEP_IDS=DV_STEPS.map(s=>s.id);
+function stepDone(id){ return !!document.querySelector(`.nav-item[data-panel="${id}"]`)?.classList.contains('done'); }
+function nextPendingStep(){ return DV_STEP_IDS.find(id=>!stepDone(id))||null; }
+function isStepAllowed(id){
+  if(_onboardingDone) return true;
+  const pend=nextPendingStep();
+  if(!pend){ return true; }
+  const i=DV_STEP_IDS.indexOf(id);
+  if(i<0) return false;                 // fora do cadastro → bloqueado
+  return i<=DV_STEP_IDS.indexOf(pend);  // só até a etapa pendente
+}
+function applyLocks(){
+  const pend=_onboardingDone?null:nextPendingStep();
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    const id=n.getAttribute('data-panel');
+    n.classList.toggle('locked', !isStepAllowed(id));
+  });
+  document.querySelectorAll('.nav-group').forEach(g=>{
+    g.style.opacity = pend?'.55':'';
+  });
+}
+
 function goPanel(id, btnEl){
   if(id==='sonhos'){ id='vidarica'; btnEl=null; }
+  if(!isStepAllowed(id)){
+    const pend=nextPendingStep();
+    toast('Conclua o cadastro inicial para liberar as demais telas.','info');
+    if(pend&&pend!==id) return goPanel(pend);
+    return;
+  }
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const p=gel(`panel-${id}`); if(p)p.classList.add('active');
@@ -1354,28 +1429,25 @@ function goPanel(id, btnEl){
   if(id==='vencimentos'){ buildVencCategoriaSelect(); renderVencimentos(); }
   if(id==='renda'){ goPanel('extraordinario'); return; }
   if(id==='painel'){ loadPainelAnual(); }
+  if(id==='reserva'){ calcReserve(); }
   renderSteppers(id);
+  applyLocks();
 }
 
-/* ── Etapas do cadastro inicial ───────────────── */
-const DV_STEPS=[
-  {id:'perfil',    lbl:'Perfil & Reserva'},
-  {id:'vidarica',  lbl:'Vida Rica'},
-  {id:'vencimentos',lbl:'Vencimentos'}
-];
 function renderSteppers(currentId){
   const cur=currentId||document.querySelector('.panel.active')?.id.replace('panel-','')||'';
   document.querySelectorAll('.dv-stepper').forEach(box=>{
     box.innerHTML=DV_STEPS.map((s,i)=>{
-      const done=document.querySelector(`.nav-item[data-panel="${s.id}"]`)?.classList.contains('done');
+      const done=stepDone(s.id);
       const cls=['dv-step']; if(s.id===cur)cls.push('current'); if(done)cls.push('done');
+      if(!isStepAllowed(s.id))cls.push('locked');
       return `${i?'<span class="dv-step-sep">›</span>':''}<button class="${cls.join(' ')}" onclick="goPanel('${s.id}')"><span class="dv-step-n">${done?'✓':i+1}</span>${s.lbl}</button>`;
     }).join('');
   });
 }
 function toggleSonhoForm(open){
   const c=gel('sonhoFormCard'); if(!c)return;
-  c.classList.toggle('hidden', !open);
+  c.style.display = open?'flex':'none';
   if(open){ setTimeout(()=>gel('sonhoObj')?.focus(),50); }
 }
 
@@ -1383,7 +1455,9 @@ function markNavDone(panelId){
   const btn=document.querySelector(`.nav-item[data-panel="${panelId}"]`);
   if(btn) btn.classList.add('done');
   try{ renderSteppers(); }catch(e){}
+  try{ applyLocks(); }catch(e){}
 }
+
 
 
 function openModal(id){ gel(id).classList.add('active'); }
@@ -1594,8 +1668,48 @@ function showCliente(user){
   try{ buildVencCategoriaSelect(); }catch{}
   try{ loadCadastros(); }catch(e){ console.warn(e); }
   loadSonhosFromSheets();
+  bindPerfilAuto();
   goPanel('perfil');
+  loadPerfilRemoto();
 }
+
+/* Recupera o perfil salvo e o estado do cadastro inicial */
+async function loadPerfilRemoto(){
+  try{
+    const r=await gGet('getPerfil',{clienteId:cid()});
+    const p=r?.perfil; if(!p) { applyLocks(); return; }
+    const d=p.data||{};
+    if(gel('nomeCliente')&&p.nome) gel('nomeCliente').value=p.nome;
+    if(gel('emailCliente')&&p.email) gel('emailCliente').value=p.email;
+    const setR=(n,v)=>{const el=document.querySelector(`input[name="${n}"][value="${v}"]`);if(el)el.checked=true;};
+    if(p.clt!==null&&p.clt!==undefined) setR('clt',p.clt?'sim':'nao');
+    if(p.filhos!==null&&p.filhos!==undefined) setR('filhos',Number(p.filhos)>0?'sim':'nao');
+    if(d.rede) setR('rede',d.rede);
+    const g=Number(p.gastos_mensais||0);
+    if(g>0&&gel('gastosMensais')) gel('gastosMensais').value=g.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    if(gel('vidaRicaTexto')&&d.vidaRicaTexto) gel('vidaRicaTexto').value=d.vidaRicaTexto;
+    _onboardingDone = d.onboardingDone===true;
+    if(_onboardingDone){ DV_STEP_IDS.forEach(id=>{const b=document.querySelector(`.nav-item[data-panel="${id}"]`);if(b)b.classList.add('done');}); }
+    else if(p.nome){ const b=document.querySelector('.nav-item[data-panel="perfil"]'); if(b)b.classList.add('done'); }
+    calcReserve();
+    renderSteppers(); applyLocks();
+    if(!_onboardingDone){ const pend=nextPendingStep(); if(pend) goPanel(pend); }
+  }catch(e){ try{ applyLocks(); }catch{} }
+}
+
+/* Cálculo automático da reserva ao editar o perfil */
+let _perfilBound=false;
+function bindPerfilAuto(){
+  if(_perfilBound) return; _perfilBound=true;
+  const gm=gel('gastosMensais');
+  if(gm) gm.addEventListener('input',()=>{ try{mMask(gm);}catch(e){} calcReserveAuto(); });
+  ['clt','filhos','rede'].forEach(n=>{
+    document.querySelectorAll(`input[name="${n}"]`).forEach(el=>el.addEventListener('change',calcReserveAuto));
+  });
+  const vr=gel('vidaRicaTexto');
+  if(vr) vr.addEventListener('blur',()=>{ if(_onboardingDone) saveVidaRicaTexto(false); });
+}
+
 
 function backToConsultor(){
   _cliente=null;
@@ -1750,9 +1864,41 @@ function calcReserve(){
   const rede=document.querySelector('input[name="rede"]:checked')?.value||'sim';
   const g=pMoney(gel('gastosMensais')?.value);
   const m=calcLogic(clt,filhos,rede);
-  gel('reserveMonths').textContent=m;gel('reserveAmount').textContent=fBRL(m*g);
+  const mEl=gel('reserveMonths'), aEl=gel('reserveAmount');
+  if(mEl)mEl.textContent=m;
+  if(aEl)aEl.textContent=fBRL(m*g);
   gel('reserveResult')?.classList.remove('hidden');
+  const tb=gel('reservaResumoTbody');
+  if(tb){
+    const linhas=[
+      ['Carteira assinada (CLT)', clt==='sim'?'Sim':'Não'],
+      ['Tem filhos', filhos==='sim'?'Sim':'Não'],
+      ['Tem a quem recorrer', rede==='sim'?'Sim':'Não'],
+      ['Gastos fixos mensais', fBRL(g)],
+      ['Meses de cobertura', String(m)],
+      ['Reserva ideal', fBRL(m*g)],
+    ];
+    tb.innerHTML=linhas.map(([k,v])=>`<tr><td style="font-weight:600">${k}</td><td class="mono" style="text-align:right">${v}</td></tr>`).join('');
+  }
+  setReservaMeta(clt,filhos,rede,g);
+  return {clt,filhos,rede,g,m};
 }
+let _reserveT=null;
+function calcReserveAuto(){
+  clearTimeout(_reserveT);
+  _reserveT=setTimeout(()=>{ try{ calcReserve(); }catch(e){} if(_onboardingDone) autoSavePerfil(); },400);
+}
+async function autoSavePerfil(){
+  const nome=gel('nomeCliente')?.value.trim(); if(!nome) return;
+  const r=calcReserve();
+  try{
+    await apiSavePerfil({nome,email:gel('emailCliente')?.value.trim()||'',clt:r.clt,filhos:r.filhos,rede:r.rede,
+      gastosMensais:r.g,reservaMeses:r.m,reservaValor:r.m*r.g,ano:CFG.ANO,
+      vidaRicaTexto:gel('vidaRicaTexto')?.value||'',onboardingDone:_onboardingDone});
+    syncReserve(r.clt,r.filhos,r.rede,r.g);
+  }catch(e){}
+}
+
 function calcReserveDash(){
   const drM=gel('drMonths'), drA=gel('drAmount');
   if(!drM||!drA) return;
@@ -1783,21 +1929,69 @@ function syncReserve(clt,filhos,rede,g){
 async function submitPerfil(){
   const nome=gel('nomeCliente');
   if(!nome.value.trim()){toast('Informe o nome do cliente.','error');nome.focus();return;}
+  const email=gel('emailCliente');
+  if(!_onboardingDone && !email?.value.trim()){toast('Informe o e-mail.','error');email?.focus();return;}
   const clt=document.querySelector('input[name="clt"]:checked')?.value||'nao';
   const filhos=document.querySelector('input[name="filhos"]:checked')?.value||'nao';
   const rede=document.querySelector('input[name="rede"]:checked')?.value||'sim';
   const g=pMoney(gel('gastosMensais')?.value);
+  if(!_onboardingDone && !(g>0)){toast('Informe os gastos fixos mensais.','error');gel('gastosMensais')?.focus();return;}
   const m=calcLogic(clt,filhos,rede);
   const btn=document.querySelector('[onclick="submitPerfil()"]');if(btn)btn.disabled=true;
   try{
-    await apiSavePerfil({nome:nome.value.trim(),email:gel('emailCliente')?.value.trim()||'',clt,filhos,rede,gastosMensais:g,reservaMeses:m,reservaValor:m*g,ano:CFG.ANO});
+    await apiSavePerfil({nome:nome.value.trim(),email:email?.value.trim()||'',clt,filhos,rede,gastosMensais:g,reservaMeses:m,reservaValor:m*g,ano:CFG.ANO,
+      vidaRicaTexto:gel('vidaRicaTexto')?.value||'',onboardingDone:_onboardingDone});
     gel('clientBadge').textContent=nome.value.trim().split(' ')[0];
     syncReserve(clt,filhos,rede,g);
     toast('Perfil salvo!','success');
-    markNavDone('perfil');goPanel('vidarica');
+    markNavDone('perfil');
+    calcReserve();
+    goPanel('reserva');
   }catch(e){toast('Erro: '+e.message,'error');}
   finally{if(btn)btn.disabled=false;}
 }
+
+function concluirReserva(){
+  calcReserve();
+  markNavDone('reserva');
+  goPanel('vidarica');
+}
+
+async function saveVidaRicaTexto(showToast){
+  const nome=gel('nomeCliente')?.value.trim();
+  if(!nome){ if(showToast)toast('Preencha o perfil primeiro.','error'); return false; }
+  const r=calcReserve();
+  try{
+    await apiSavePerfil({nome,email:gel('emailCliente')?.value.trim()||'',clt:r.clt,filhos:r.filhos,rede:r.rede,
+      gastosMensais:r.g,reservaMeses:r.m,reservaValor:r.m*r.g,ano:CFG.ANO,
+      vidaRicaTexto:gel('vidaRicaTexto')?.value||'',onboardingDone:_onboardingDone});
+    if(showToast)toast('Texto salvo!','success');
+    return true;
+  }catch(e){ if(showToast)toast('Erro: '+e.message,'error'); return false; }
+}
+
+async function avancarVidaRica(){
+  const txt=(gel('vidaRicaTexto')?.value||'').trim();
+  if(!_onboardingDone && !txt){toast('Escreva como está a sua vida hoje.','error');gel('vidaRicaTexto')?.focus();return;}
+  if(!_onboardingDone && !_dreamsCache.length){toast('Cadastre ao menos um sonho.','error');return;}
+  await saveVidaRicaTexto(false);
+  markNavDone('vidarica');
+  goPanel('vencimentos');
+}
+
+async function concluirCadastro(semContas){
+  const temContas=(typeof _vencCache!=='undefined' && Array.isArray(_vencCache) && _vencCache.length)|| (gel('vencTbody')?.querySelectorAll('tr[data-id]').length||0)>0;
+  if(!semContas && !_onboardingDone && !temContas){
+    toast('Cadastre uma conta ou use "Não tenho contas fixas".','error');return;
+  }
+  markNavDone('vencimentos');
+  _onboardingDone=true;
+  try{ await saveVidaRicaTexto(false); }catch(e){}
+  renderSteppers(); applyLocks();
+  toast('Cadastro inicial concluído! Agora você pode editar tudo livremente.','success');
+  goPanel('painel');
+}
+
 
 function calcTipoPrazo(prazo){
   if(!prazo) return 'Curto';
@@ -1853,7 +2047,7 @@ async function submitSonhos(){
     _sonhosQ.length=0;
     const tb=gel('sonhosTbody'); if(tb) tb.innerHTML='';
     toast(`${rows.length} sonho(s) salvos!`,'success');
-    markNavDone('vidarica');toggleSonhoForm(false);
+    toggleSonhoForm(false);
   }catch(e){toast('Erro: '+e.message,'error');}
   finally{if(btn)btn.disabled=false;}
 }
@@ -2181,8 +2375,10 @@ let _dreamsCache=[];
 function renderDreams(list){
   _dreamsCache=list||[];
   const g=gel('dreamsGrid');if(!g)return;
-  if(!list?.length){g.innerHTML='<div style="grid-column:1/-1;padding:48px;text-align:center;color:var(--text-muted)"><span style="font-size:2.5rem;opacity:.25;display:block;margin-bottom:10px">◈</span>Nenhum sonho cadastrado ainda.</div>';return;}
+  const addCard='<button type="button" class="dream-add" onclick="toggleSonhoForm(true)"><span class="plus">+</span>Novo sonho</button>';
+  if(!list?.length){g.innerHTML=addCard;return;}
   g.innerHTML=list.map((s,i)=>{
+
     const tipo=(s.tipo||'Curto').toLowerCase();
     const c=tipo.startsWith('m')?'tm':tipo.startsWith('l')?'tl':'tc';
     return`<article class="dream-card ${c}">
@@ -2199,7 +2395,8 @@ function renderDreams(list){
         <button class="btn btn-d btn-xs" onclick="deleteSonho(${i})">✕</button>
       </div>
     </article>`;
-  }).join('');
+  }).join('')+addCard;
+
 }
 async function loadSonhosFromSheets(){
   try{
