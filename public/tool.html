@@ -611,16 +611,31 @@ img,svg{display:block;max-width:100%}
             <div class="field"><label class="lbl">Gastos fixos mensais (R$)</label><input class="inp inp-money" type="text" id="gastosMensais" placeholder="0,00" data-money/></div>
           </div>
         </fieldset>
-        <div class="res-box hidden" id="reserveResult">
-          <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--brand2)">Meses recomendados</span><span style="font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:600;color:var(--brand)" id="reserveMonths">—</span></div>
-          <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--brand2)">Valor ideal</span><span style="font-family:'DM Mono',monospace;font-size:1.6rem;font-weight:700;color:var(--brand)" id="reserveAmount">R$ —</span></div>
-        </div>
         <div class="form-footer">
-          <button class="btn btn-g" onclick="calcReserve()">Calcular reserva</button>
           <button class="btn btn-p" onclick="submitPerfil()">Salvar & avançar →</button>
         </div>
       </div>
     </div>
+
+    <!-- ══ RESERVA DE EMERGÊNCIA (extensão do Perfil) ═════ -->
+    <div class="panel" id="panel-reserva">
+      <div class="dv-stepper" data-step="reserva"></div>
+      <div class="panel-hd"><h1 class="panel-title">Reserva de Emergência</h1><p class="panel-sub">Calculada automaticamente a partir das respostas do seu perfil</p></div>
+      <div class="card-form">
+        <div class="res-box" id="reserveResult">
+          <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--brand2)">Meses recomendados</span><span style="font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:600;color:var(--brand)" id="reserveMonths">—</span></div>
+          <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--brand2)">Valor ideal</span><span style="font-family:'DM Mono',monospace;font-size:1.6rem;font-weight:700;color:var(--brand)" id="reserveAmount">R$ —</span></div>
+        </div>
+        <div class="tbl-wrap mt16">
+          <table class="tbl"><tbody id="reservaResumoTbody"></tbody></table>
+        </div>
+        <div class="form-footer">
+          <button class="btn btn-s" onclick="goPanel('perfil')">← Voltar ao perfil</button>
+          <button class="btn btn-p" onclick="concluirReserva()">Salvar & avançar →</button>
+        </div>
+      </div>
+    </div>
+
 
 
 
