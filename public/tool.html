@@ -138,6 +138,16 @@ img,svg{display:block;max-width:100%}
 .nav-item.active{background:var(--gold-light);color:var(--brand);font-weight:600}
 .nav-item.done{color:var(--success)}
 .nav-item.done .nav-dot{background:var(--success);border-color:var(--success)}
+.dv-stepper{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px;padding:12px 14px;background:var(--bg-muted);border-radius:12px}
+.dv-step{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:99px;border:1px solid var(--border,#e6e0d5);background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.76rem;font-weight:600;color:var(--text-muted);transition:all var(--t)}
+.dv-step:hover{background:var(--gold-pale)}
+.dv-step .dv-step-n{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--border,#e6e0d5);color:#fff;font-size:.66rem;font-weight:700}
+.dv-step.current{background:var(--gold-light);color:var(--brand);border-color:var(--brand)}
+.dv-step.current .dv-step-n{background:var(--brand)}
+.dv-step.done{color:var(--success);border-color:var(--success)}
+.dv-step.done .dv-step-n{background:var(--success)}
+.dv-step-sep{color:var(--text-muted);opacity:.5}
+
 .nav-dot{width:6px;height:6px;border-radius:50%;border:1.5px solid var(--border-default);background:transparent;flex-shrink:0;transition:all var(--t)}
 .nav-item.active .nav-dot{background:var(--brand);border-color:var(--brand)}
 .nav-icon{font-size:.95rem;width:20px;text-align:center;flex-shrink:0}
