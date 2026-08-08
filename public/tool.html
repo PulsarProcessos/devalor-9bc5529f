@@ -2335,8 +2335,10 @@ let _dreamsCache=[];
 function renderDreams(list){
   _dreamsCache=list||[];
   const g=gel('dreamsGrid');if(!g)return;
-  if(!list?.length){g.innerHTML='<div style="grid-column:1/-1;padding:48px;text-align:center;color:var(--text-muted)"><span style="font-size:2.5rem;opacity:.25;display:block;margin-bottom:10px">◈</span>Nenhum sonho cadastrado ainda.</div>';return;}
+  const addCard='<button type="button" class="dream-add" onclick="toggleSonhoForm(true)"><span class="plus">+</span>Novo sonho</button>';
+  if(!list?.length){g.innerHTML=addCard;return;}
   g.innerHTML=list.map((s,i)=>{
+
     const tipo=(s.tipo||'Curto').toLowerCase();
     const c=tipo.startsWith('m')?'tm':tipo.startsWith('l')?'tl':'tc';
     return`<article class="dream-card ${c}">
